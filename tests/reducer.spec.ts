@@ -15,6 +15,7 @@ describe('reducer', () => {
       { type: 'OFFICE/CONFIRM' },
       { type: 'LIVE/TICK', dt: 30 },
       { type: 'PHASE/ADVANCE' },
+      { type: 'PHASE/ADVANCE' },
       { type: 'AUTOPSY/DECIDE', grade: 'INTACT' },
       { type: 'ANNOUNCE/DECLARE', as: 'SUCCESS' },
     ];
@@ -27,6 +28,7 @@ describe('reducer', () => {
       { type: 'OFFICE/PICK_STAR', starId: 'body_karin' },
       { type: 'OFFICE/CONFIRM' },
       { type: 'LIVE/TICK', dt: 30 },
+      { type: 'PHASE/ADVANCE' },
       { type: 'PHASE/ADVANCE' },
       { type: 'AUTOPSY/DECIDE', grade: 'INTACT' },
       { type: 'ANNOUNCE/DECLARE', as: 'SUCCESS' },

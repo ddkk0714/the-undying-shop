@@ -1,6 +1,6 @@
 import { content } from './content';
-import { draw } from './rng';
 import { createInitialState } from './state';
+import { chooseCombat, startLive, tickLive } from './systems/dive';
 import type { Action } from './actions';
 import type { Corpse, GameState, PhaseId, Star, TodayRun } from './types';
 
@@ -24,15 +24,6 @@ function aliveStars(state: GameState): Star[] {
 
 function latestTodayCorpse(state: GameState): Corpse | undefined {
   return state.today === null ? undefined : state.corpses.find((corpse) => corpse.starId === state.today?.starId && corpse.diedDay === state.day);
-}
-
-function startLive(state: GameState): GameState {
-  if (state.today === null) return state;
-  const star = state.stars.find((candidate) => candidate.id === state.today?.starId);
-  if (star === undefined) return state;
-  // 계약서(M05)가 확정한 자기 신고 도달층을 그대로 사용한다.
-  const claimedCeiling = Math.max(1, state.today.claimedCeiling);
-  return withPhase({ ...state, today: { ...state.today, claimedCeiling } }, 'LIVE');
 }
 
 function finishLive(state: GameState): GameState {
@@ -102,15 +93,8 @@ export function reducer(state: GameState, action: Action): GameState {
       return { ...state, shelf };
     }
     case 'OFFICE/CONFIRM': return state.phase === 'OFFICE' ? startLive(state) : state;
-    case 'LIVE/TICK': {
-      if (state.phase !== 'LIVE' || state.today === null || action.dt <= 0) return state;
-      const floorSteps = Math.max(1, Math.floor(action.dt / content.balance.dive.floorSeconds));
-      const currentFloor = Math.min(state.today.claimedCeiling, state.today.currentFloor + floorSteps);
-      const progressed = { ...state, today: { ...state.today, currentFloor } };
-      const [, advancedRng] = draw(progressed);
-      return currentFloor >= progressed.today.claimedCeiling ? finishLive(advancedRng) : advancedRng;
-    }
-    case 'COMBAT/CHOOSE': return state;            // v3 미구현 — M06 · Codex
+    case 'LIVE/TICK': return tickLive(state, action.dt);
+    case 'COMBAT/CHOOSE': return chooseCombat(state, action.choice);
     case 'RADIO/ANSWER': return state;
     case 'CHAT/SPAWN': return state;
     case 'CHAT/DELETE': return state;

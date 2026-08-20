@@ -18,7 +18,10 @@ export const randomPolicy: Policy = (state) => {
     if (state.today !== null || choices.length === 0) return { type: 'OFFICE/CONFIRM' };
     return { type: 'OFFICE/PICK_STAR', starId: choices[Math.floor(roll * choices.length)]?.id ?? choices[0]!.id };
   }
-  if (state.phase === 'LIVE') return { type: 'LIVE/TICK', dt: 30 };
+  if (state.phase === 'LIVE') {
+    if (state.today?.encounter !== null && state.today?.encounter !== undefined) return { type: 'COMBAT/CHOOSE', choice: roll < 0.7 ? 'APPEAL' : 'ATTACK' };
+    return { type: 'LIVE/TICK', dt: 30 };
+  }
   if (state.phase === 'AUTOPSY') return { type: 'AUTOPSY/DECIDE', grade: 'INTACT' };
   if (state.phase === 'ANNOUNCE') return { type: 'ANNOUNCE/DECLARE', as: 'SUCCESS' };
   return { type: 'PHASE/ADVANCE' };
