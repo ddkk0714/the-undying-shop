@@ -8,6 +8,12 @@ import { TitleScene } from './scenes/TitleScene';
 import { HelpScene } from './scenes/HelpScene';
 import { OptionsScene } from './scenes/OptionsScene';
 import { DayScene } from './scenes/DayScene';
+import { RevivePhase } from './scenes/phases/RevivePhase';
+import { OfficePhase } from './scenes/phases/OfficePhase';
+import { LivePhase } from './scenes/phases/LivePhase';
+import { DeathPhase } from './scenes/phases/DeathPhase';
+import { AutopsyPhase } from './scenes/phases/AutopsyPhase';
+import { AnnouncePhase } from './scenes/phases/AnnouncePhase';
 
 const game = new Phaser.Game({
   type: Phaser.AUTO,
@@ -25,7 +31,11 @@ const game = new Phaser.Game({
     autoCenter: Phaser.Scale.NO_CENTER,
     zoom: 1, // scaler.ts 가 런타임에 정수로 재설정
   },
-  scene: [BootScene, PreloadScene, TitleScene, DayScene, HelpScene, OptionsScene],
+  // 첫 씬만 자동 시작한다. 단계 씬은 DayScene 이 launch 할 때까지 잠들어 있다.
+  scene: [
+    BootScene, PreloadScene, TitleScene, DayScene, HelpScene, OptionsScene,
+    RevivePhase, OfficePhase, LivePhase, DeathPhase, AutopsyPhase, AnnouncePhase,
+  ],
 });
 
 applyIntegerScale(game);

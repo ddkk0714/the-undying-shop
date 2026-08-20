@@ -11,6 +11,14 @@ export const SCENES = {
   ENDING: 'Ending',
   HELP: 'Help',
   OPTIONS: 'Options',
+
+  // 단계 씬 — DayScene 이 phase 에 맞춰 launch/stop 한다 (v3 6단계)
+  PHASE_REVIVE: 'PhaseRevive',
+  PHASE_OFFICE: 'PhaseOffice',
+  PHASE_LIVE: 'PhaseLive',
+  PHASE_DEATH: 'PhaseDeath',
+  PHASE_AUTOPSY: 'PhaseAutopsy',
+  PHASE_ANNOUNCE: 'PhaseAnnounce',
 } as const;
 
 export type SceneKey = (typeof SCENES)[keyof typeof SCENES];

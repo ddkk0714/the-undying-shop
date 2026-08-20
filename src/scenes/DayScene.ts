@@ -4,6 +4,7 @@ import { PALETTE, css } from '../render/palette';
 import { FONT } from '../render/font';
 import { L } from '../ui/layout';
 import { Button } from '../ui/Button';
+import { content } from '../core/content';
 import { currentRun, newRun } from './run';
 import type { Store } from '../core/store';
 import type { GameState, PhaseId } from '../core/types';
@@ -25,8 +26,15 @@ const PHASE_LABEL: Record<PhaseId, string> = {
   ANNOUNCE: '발표',
 };
 
-/** 단계 → 담당 씬 키. M04~M09 가 도착하면 여기만 채운다. */
-const PHASE_SCENE: Partial<Record<PhaseId, string>> = {};
+/** 단계 → 담당 씬 키 (v3 6단계). 골격은 `scenes/phases/` 에 있다. */
+const PHASE_SCENE: Partial<Record<PhaseId, string>> = {
+  REVIVE: SCENES.PHASE_REVIVE,
+  OFFICE: SCENES.PHASE_OFFICE,
+  LIVE: SCENES.PHASE_LIVE,
+  DEATH: SCENES.PHASE_DEATH,
+  AUTOPSY: SCENES.PHASE_AUTOPSY,
+  ANNOUNCE: SCENES.PHASE_ANNOUNCE,
+};
 
 export class DayScene extends Phaser.Scene {
   private store!: Store;
@@ -36,6 +44,7 @@ export class DayScene extends Phaser.Scene {
   private fxLine!: Phaser.GameObjects.Text;
   private unsubscribe: (() => void) | null = null;
   private launched: string | null = null;
+  private fallback: Button[] = [];
 
   constructor() {
     super(SCENES.DAY);
@@ -68,16 +77,20 @@ export class DayScene extends Phaser.Scene {
       .text(BASE_W / 2, 196, '', { ...FONT, color: css('dust') })
       .setOrigin(0.5, 0);
 
-    new Button(this, {
-      x: 84, y: L.actions.y + 8, w: 132, h: 24,
-      label: '다음 단계', hotkey: '1',
-      onClick: () => this.advancePhase(),
-    });
-    new Button(this, {
-      x: 264, y: L.actions.y + 8, w: 132, h: 24,
-      label: '타이틀로', hotkey: '2', variant: 'ghost',
-      onClick: () => this.scene.start(SCENES.TITLE),
-    });
+    // 폴백 조작 — 단계 씬이 붙어 있는 동안에는 숨긴다.
+    // 숨기기만 하면 핫키가 남아 단계 씬의 1/2 와 겹치므로 setActive(false) 까지 한다.
+    this.fallback = [
+      new Button(this, {
+        x: 84, y: L.actions.y + 8, w: 132, h: 24,
+        label: '다음 단계', hotkey: '1',
+        onClick: () => this.advancePhase(),
+      }),
+      new Button(this, {
+        x: 264, y: L.actions.y + 8, w: 132, h: 24,
+        label: '타이틀로', hotkey: '2', variant: 'ghost',
+        onClick: () => this.scene.start(SCENES.TITLE),
+      }),
+    ];
 
     this.render(this.store.getState());
     this.unsubscribe = this.store.subscribe((s) => this.render(s));
@@ -112,26 +125,30 @@ export class DayScene extends Phaser.Scene {
 
   private render(s: Readonly<GameState>): void {
     this.hudLeft.setText(
-      `DAY ${s.day}/8   ${fmtGold(s.gold)}G   팬 ${fmtFans(s.fans)}   최고 ${s.maxFloor}/40F`,
+      `DAY ${s.day}/${content.balance.start.days}   ${fmtGold(s.gold)}G   팬 ${fmtFans(s.fans)}   최고 ${s.maxFloor}/${content.balance.start.targetFloor}F`,
     );
     this.hudRight.setText(s.isOver ? '종료' : PHASE_LABEL[s.phase]);
 
     this.syncPhaseScene(s);
 
+    // 단계 씬이 화면을 맡으면 셸의 폴백 UI 는 물러난다.
+    const hosted = !s.isOver && PHASE_SCENE[s.phase] !== undefined;
+    this.body.setVisible(!hosted);
+    for (const button of this.fallback) button.setVisible(!hosted).setActive(!hosted);
+
     if (s.isOver) {
       this.body.setText(`8일이 끝났다\n엔딩 ${s.ending ?? '-'}\n최고 ${s.stats.deepestFloor}F`);
       return;
     }
+    if (hosted) return;
 
     const star = s.today === null ? null : s.stars.find((x) => x.id === s.today?.starId) ?? null;
     this.body.setText(
       [
         `${PHASE_LABEL[s.phase]} 단계`,
         star === null ? '오늘의 스타 미정' : `오늘의 스타 · ${star.bodyName}`,
-        PHASE_SCENE[s.phase] === undefined ? '단계 씬 미구현 — 기본 선택으로 진행한다' : '',
-      ]
-        .filter((line) => line !== '')
-        .join('\n'),
+        '단계 씬 미구현 — 기본 선택으로 진행한다',
+      ].join('\n'),
     );
   }
 
