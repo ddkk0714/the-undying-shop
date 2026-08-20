@@ -1,12 +1,13 @@
 import Phaser from 'phaser';
 import { BASE_W, BASE_H } from './config';
 import { PALETTE } from './render/palette';
-import { waitForFont } from './render/font';
 import { applyIntegerScale } from './render/scaler';
 import { BootScene } from './scenes/BootScene';
-
-// 01-ARCHITECTURE §5 — 폰트를 먼저 기다린다. 3초 초과 시 폴백으로 그냥 부팅한다.
-const fontReady = await waitForFont();
+import { PreloadScene } from './scenes/PreloadScene';
+import { TitleScene } from './scenes/TitleScene';
+import { HelpScene } from './scenes/HelpScene';
+import { OptionsScene } from './scenes/OptionsScene';
+import { DayScene } from './scenes/DayScene';
 
 const game = new Phaser.Game({
   type: Phaser.AUTO,
@@ -14,15 +15,21 @@ const game = new Phaser.Game({
   height: BASE_H,
   parent: 'game',
   backgroundColor: PALETTE.soot,
-  pixelArt: true,
+  pixelArt: true, // antialias off + roundPixels 유도
   roundPixels: true,
   scale: {
     mode: Phaser.Scale.NONE, // ★ FIT 금지. 정수배만 — 01-ARCHITECTURE §4
-    autoCenter: Phaser.Scale.CENTER_BOTH,
-    zoom: 1, // scaler 가 런타임에 정수로 재설정
+    // CSS grid(#game{place-items:center})가 중앙 정렬을 담당한다.
+    // Phaser 의 autoCenter 까지 켜면 canvas 에 marginLeft 가 더해져 둘이 겹치고,
+    // 캔버스가 좌우 3:1 로 밀린다. (상수 이름은 NO_CENTER — CENTER_OFF 는 없다)
+    autoCenter: Phaser.Scale.NO_CENTER,
+    zoom: 1, // scaler.ts 가 런타임에 정수로 재설정
   },
-  scene: [BootScene],
+  scene: [BootScene, PreloadScene, TitleScene, DayScene, HelpScene, OptionsScene],
 });
 
-game.registry.set('fontReady', fontReady);
 applyIntegerScale(game);
+
+// ?seed=12345 — 버그 재현 및 심사 시연용 결정적 플레이 (01-ARCHITECTURE §6)
+const seed = Number(new URLSearchParams(location.search).get('seed'));
+if (Number.isFinite(seed) && seed > 0) game.registry.set('seed', seed);

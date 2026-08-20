@@ -2,5 +2,18 @@
 export const BASE_W = 480;
 export const BASE_H = 270;
 
+/** M01 인터페이스 — 씬 키는 문자열 리터럴을 흩뿌리지 않고 여기서만 관리한다. */
+export const SCENES = {
+  BOOT: 'Boot',
+  PRELOAD: 'Preload',
+  TITLE: 'Title',
+  DAY: 'Day',
+  ENDING: 'Ending',
+  HELP: 'Help',
+  OPTIONS: 'Options',
+} as const;
+
+export type SceneKey = (typeof SCENES)[keyof typeof SCENES];
+
 /** 캔버스 밖 여백("액자") 색. soot 보다 한 단계 어둡다. */
 export const LETTERBOX = '#0A0908';

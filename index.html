@@ -3,7 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="죽지 않는 가게 — 당신은 한 세계를 속이고 있다." />
     <title>죽지 않는 가게</title>
     <style>
       /* 네오둥근모 (OFL 1.1) — Project_docs/CREDITS.md 참조. 16px 네이티브 픽셀 폰트 */
@@ -16,6 +17,7 @@
         font-style: normal;
         font-display: block;
       }
+
       html,
       body {
         margin: 0;
@@ -23,19 +25,94 @@
         background: #0a0908;
         overflow: hidden;
       }
+
       #game {
         display: grid;
         place-items: center;
         height: 100%;
       }
+
       #game canvas {
         image-rendering: pixelated;
         image-rendering: crisp-edges;
+      }
+
+      /* ── 부팅 인디케이터 ─────────────────────────────────────
+         M01 §2: 로딩 중 검은 화면 금지.
+         Phaser 가 뜨기 전까지 봉랍 도장 하나가 맥박친다. BootScene 이 제거한다. */
+      #boot-loader {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        background: #0a0908;
+        z-index: 10;
+      }
+
+      #boot-loader .seal {
+        width: 28px;
+        height: 28px;
+        background: #c0392f;
+        box-shadow: 0 0 0 2px #12100e;
+        animation: pulse 1.15s ease-in-out infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          transform: scale(1);
+          opacity: 0.55;
+        }
+        50% {
+          transform: scale(1.18);
+          opacity: 1;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        #boot-loader .seal {
+          animation: none;
+          opacity: 0.9;
+        }
+      }
+
+      /* 게임을 띄울 수 없는 뷰포트 — scaler.ts 가 문구와 표시를 정한다
+         (세로로 든 폰 / 480x270 보다 작은 창) */
+      #viewport-notice {
+        position: fixed;
+        inset: 0;
+        display: none;
+        place-items: center;
+        background: #0a0908;
+        color: #e6dcc8;
+        font-family: 'NeoDunggeunmo', monospace;
+        font-size: 16px;
+        line-height: 1.6;
+        text-align: center;
+        z-index: 20;
+      }
+
+      #noscript {
+        color: #e6dcc8;
+        font-family: 'NeoDunggeunmo', monospace;
+        font-size: 16px;
+        text-align: center;
+        padding: 40px 16px;
       }
     </style>
   </head>
   <body>
     <div id="game"></div>
+
+    <div id="boot-loader"><div class="seal"></div></div>
+
+    <noscript>
+      <div id="noscript">
+        이 게임은 자바스크립트로 동작합니다.<br />
+        브라우저에서 자바스크립트를 켜고 새로고침 해주세요.
+      </div>
+    </noscript>
+
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
