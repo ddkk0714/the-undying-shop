@@ -1,6 +1,7 @@
 import { content } from './content';
 import { createInitialState } from './state';
 import { chooseCombat, startLive, tickLive } from './systems/dive';
+import { reviveQuote } from './systems/economy';
 import { acceptContract, confirmOffice, pickStar, rejectContract } from './systems/office';
 import type { Action } from './actions';
 import type { Corpse, GameState, PhaseId } from './types';
@@ -49,9 +50,17 @@ export function reducer(state: GameState, action: Action): GameState {
     case 'PHASE/ADVANCE': return advance(state);
     case 'REVIVE/PAY': {
       if (state.phase !== 'REVIVE') return state;
-      const corpse = state.corpses.find((candidate) => candidate.starId === action.starId && candidate.grade === 'INTACT');
-      if (corpse === undefined) return state;
-      return { ...state, stars: state.stars.map((star) => star.id === action.starId ? { ...star, status: 'ALIVE' as const, reviveCount: star.reviveCount + 1 } : star), stats: { ...state.stats, totalRevived: state.stats.totalRevived + 1 } };
+      const corpse = state.corpses.find((candidate) => candidate.starId === action.starId);
+      const star = state.stars.find((candidate) => candidate.id === action.starId && candidate.status === 'DEAD');
+      if (corpse === undefined || star === undefined) return state;
+      const quote = reviveQuote(state, corpse, star);
+      if (!quote.affordable) return state;
+      return {
+        ...state,
+        gold: state.gold - quote.cost,
+        stars: state.stars.map((candidate) => candidate.id === action.starId ? { ...candidate, status: 'ALIVE' as const, reviveCount: candidate.reviveCount + 1 } : candidate),
+        stats: { ...state.stats, totalRevived: state.stats.totalRevived + 1, goldSpentOnRevive: state.stats.goldSpentOnRevive + quote.cost },
+      };
     }
     case 'REVIVE/SKIP': return state;
     case 'REVIVE/INHERIT': return state;

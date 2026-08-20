@@ -10,10 +10,12 @@ import type { ForkOutcome, ItemDef, Persona, Star } from './types';
 
 export interface Balance {
   start: { gold: number; fans: number; reputation: number; maxFloor: number; days: number; targetFloor: number };
+  revive: { base: number; floorExp: number; gradeMul: Record<'INTACT' | 'DAMAGED', number>; degradeExp: number; decayPerDay: number; roundTo: number };
   dive: { floorSeconds: number; encounterEvery: number; delayGraceSeconds: number; delayFanLossPerSec: number; delayFanLossCap: number };
   combat: CombatBalance;
   degrade: { statMul: number[] };
   income: { superchat: { witness: number[] } };
+  opinion: { leakPerWitnessRevive: Record<string, number> };
 }
 
 export interface CombatBalance {
@@ -160,11 +162,16 @@ function makeFloors(raw: unknown): FloorContent {
 }
 
 export function loadContent(): Content {
-  assertShape(isRecord(balanceJson) && isRecord(balanceJson.start) && isRecord(balanceJson.dive) && isRecord(balanceJson.combat) && isRecord(balanceJson.degrade) && isRecord(balanceJson.income), 'balance sections missing');
+  assertShape(isRecord(balanceJson) && isRecord(balanceJson.start) && isRecord(balanceJson.revive) && isRecord(balanceJson.dive) && isRecord(balanceJson.combat) && isRecord(balanceJson.degrade) && isRecord(balanceJson.income), 'balance sections missing');
   for (const key of ['gold', 'fans', 'reputation', 'maxFloor', 'days', 'targetFloor'] as const) assertNumber(balanceJson.start[key], `balance.start.${key}`);
+  for (const key of ['base', 'floorExp', 'degradeExp', 'decayPerDay', 'roundTo'] as const) assertNumber(balanceJson.revive[key], `balance.revive.${key}`);
+  assertShape(isRecord(balanceJson.revive.gradeMul), 'balance.revive.gradeMul missing');
+  assertNumber(balanceJson.revive.gradeMul.INTACT, 'balance.revive.gradeMul.INTACT');
+  assertNumber(balanceJson.revive.gradeMul.DAMAGED, 'balance.revive.gradeMul.DAMAGED');
   for (const key of ['floorSeconds', 'encounterEvery', 'delayGraceSeconds', 'delayFanLossPerSec', 'delayFanLossCap'] as const) assertNumber(balanceJson.dive[key], `balance.dive.${key}`);
   assertShape(Array.isArray(balanceJson.degrade.statMul) && balanceJson.degrade.statMul.length > 0, 'balance.degrade.statMul missing');
   assertShape(isRecord(balanceJson.income.superchat) && Array.isArray(balanceJson.income.superchat.witness), 'balance.income.superchat.witness missing');
+  assertShape(isRecord(balanceJson.opinion) && isRecord(balanceJson.opinion.leakPerWitnessRevive), 'balance.opinion.leakPerWitnessRevive missing');
   assertShape(isRecord(radioJson) && isRecord(chatJson) && isRecord(narrativeJson), 'localized content must be objects');
   return {
     balance: balanceJson as Balance,

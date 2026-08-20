@@ -51,3 +51,9 @@
 **Project**: Replaced the OFFICE/PICK_STAR placeholder with real combat stats and a meaningful claimed ceiling; added contract accept/reject and shelf-sale resolution.
 **Deliverables**: `systems/office.ts`, reducer integration, `tests/office.spec.ts`.
 **Validation**: `npm run typecheck` and `npm test` passed (5 files, 16 tests). Contract fees, honesty propagation, permanent rejection, relic leak, gold, and HP/ATK/DEF updates are covered.
+
+## D1 8/21 · M04 revive economy core
+
+**Project**: Added balance-driven revive quotes and connected payment to the reducer without touching the RevivePhase UI.
+**Deliverables**: `systems/economy.ts`, balance validation, revive payment integration, and `tests/economy.spec.ts`.
+**Validation**: The 12F/24F/31F reference costs, one-day decay, affordability, single-payment, and witness warning are covered by tests.
