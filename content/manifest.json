@@ -14,8 +14,8 @@
         "bg.studio":           { "type": "image",       "file": "bg/studio.png" },
         "star.portrait.karin": { "type": "image",       "file": "star/karin.png" },
         "star.silhouette":     { "type": "spritesheet", "file": "star/silhouette.png", "frameWidth": 96, "frameHeight": 120 },
-        "sfx.stamp":           { "type": "audio",       "file": "sfx/stamp.ogg" },
-        "sfx.superchat":       { "type": "audio",       "file": "sfx/superchat.ogg" }
+        "sfx.stamp":           { "type": "audio",       "file": "sfx/stamp.wav" },
+        "sfx.superchat":       { "type": "audio",       "file": "sfx/superchat.wav" }
       }
     },
     "final": {
