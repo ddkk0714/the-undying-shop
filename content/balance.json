@@ -19,16 +19,19 @@
     "statMul": [1.0, 0.94, 0.87, 0.78, 0.67, 0.55]
   },
   "dive": {
-    "baseFloorConst": 10,
-    "gritMul": 1.2,
-    "luckMul": 0.5,
-    "riskBase": 0.04,
-    "riskPerFloorAbove20": 0.012,
-    "gritRiskReduce": 0.06,
-    "overCeilingMul": 3.0,
-    "forcedDeathOffset": 3,
     "floorSeconds": 0.35,
-    "forkWaitSeconds": 5
+    "encounterEvery": 3,
+    "delayGraceSeconds": 3,
+    "delayFanLossPerSec": 0.0015,
+    "delayFanLossCap": 0.08
+  },
+  "combat": {
+    "hero": { "hpBase": 40, "hpPerGrit": 6, "atkBase": 6, "atkPerGrit": 1, "defBase": 2 },
+    "enemy": { "hpBase": 18, "hpPerFloor": 1.6, "atkBase": 5, "atkPerFloor": 0.55 },
+    "attack": { "varMin": 0.9, "varMax": 1.1, "counterChance": 0.55 },
+    "defend": { "damageMul": 0.25, "fanPenalty": 0.004 },
+    "appeal": { "fanBase": 300, "charismaMul": 0.08, "floorMul": 0.0333, "hitChance": 0.55, "damageMul": 1.4, "leakRiskMul": 1.5, "leakFromFloor": 18 },
+    "hazardAtkMul": { "NONE": 1.0, "FLAME": 1.25, "COLLAPSE": 1.2, "BEAST": 1.3, "GATEKEEPER": 1.6 }
   },
   "fans": {
     "base": 800,

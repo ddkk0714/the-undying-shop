@@ -30,8 +30,8 @@ function startLive(state: GameState): GameState {
   if (state.today === null) return state;
   const star = state.stars.find((candidate) => candidate.id === state.today?.starId);
   if (star === undefined) return state;
-  // v3: 아이템은 depth 가 아니라 hp/atk/def 를 준다. 전투 산식이 오기 전까지는 층수만 잡는다.
-  const claimedCeiling = Math.max(1, Math.round(content.balance.dive.baseFloorConst + star.stats.grit * content.balance.dive.gritMul + star.stats.luck * content.balance.dive.luckMul));
+  // 계약서(M05)가 확정한 자기 신고 도달층을 그대로 사용한다.
+  const claimedCeiling = Math.max(1, state.today.claimedCeiling);
   return withPhase({ ...state, today: { ...state.today, claimedCeiling } }, 'LIVE');
 }
 

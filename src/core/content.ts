@@ -10,7 +10,24 @@ import type { ForkOutcome, ItemDef, Persona, Star } from './types';
 
 export interface Balance {
   start: { gold: number; fans: number; reputation: number; maxFloor: number; days: number; targetFloor: number };
-  dive: { baseFloorConst: number; gritMul: number; luckMul: number; floorSeconds: number; forcedDeathOffset: number };
+  dive: { floorSeconds: number; encounterEvery: number; delayGraceSeconds: number; delayFanLossPerSec: number; delayFanLossCap: number };
+  combat: CombatBalance;
+}
+
+export interface CombatBalance {
+  hero: { hpBase: number; hpPerGrit: number; atkBase: number; atkPerGrit: number; defBase: number };
+  enemy: { hpBase: number; hpPerFloor: number; atkBase: number; atkPerFloor: number };
+  attack: { varMin: number; varMax: number; counterChance: number };
+  defend: { damageMul: number; fanPenalty: number };
+  appeal: { fanBase: number; charismaMul: number; floorMul: number; hitChance: number; damageMul: number; leakRiskMul: number; leakFromFloor: number };
+  hazardAtkMul: Record<ForkOutcome['hazard'], number>;
+}
+
+export interface FloorContent {
+  encounterEvery: number;
+  enemy: Balance['combat']['enemy'];
+  enemiesByZone: { upTo: number; keys: string[] }[];
+  forks: { atFloor: number; a: ForkOutcome; b: ForkOutcome }[];
 }
 
 export interface Content {
@@ -18,7 +35,7 @@ export interface Content {
   items: ItemDef[];
   stars: Star[];
   personas: Persona[];
-  forks: { atFloor: number; left: ForkOutcome; right: ForkOutcome }[];
+  floors: FloorContent;
   radio: Record<string, string[]>;
   chat: Record<string, unknown>;
   narrative: Record<string, unknown>;
@@ -94,35 +111,63 @@ function makeItems(raw: unknown): ItemDef[] {
   return raw.map((value, index) => {
     assertShape(isRecord(value), `items[${index}] must be an object`);
     assertShape(typeof value.id === 'string' && typeof value.name === 'string', `items[${index}] id/name missing`);
+    assertNumber(value.hp, `items[${index}].hp`);
+    assertNumber(value.atk, `items[${index}].atk`);
+    assertNumber(value.def, `items[${index}].def`);
     assertNumber(value.price, `items[${index}].price`);
     assertShape(typeof value.tier === 'string' && typeof value.isRelic === 'boolean', `items[${index}] tier/relic missing`);
-    // v3(CCR-001): depth 삭제, hp/atk/def 신설. items.json 12종 재작성은 M05 · Codex 몫이라
-    // 아직 v2 파일이 들어온다. 필드가 없으면 0 으로 읽는다 (HANDOFF HO-002).
-    return { id: value.id, name: value.name, iconKey: `item.${value.id}`, hp: numberOr(value.hp), atk: numberOr(value.atk), def: numberOr(value.def), price: value.price, tier: value.tier as ItemDef['tier'], isRelic: value.isRelic };
+    return { id: value.id, name: value.name, iconKey: `item.${value.id}`, hp: value.hp, atk: value.atk, def: value.def, price: value.price, tier: value.tier as ItemDef['tier'], isRelic: value.isRelic };
   });
 }
 
-function makeForks(raw: unknown): Content['forks'] {
-  assertShape(isRecord(raw) && Array.isArray(raw.forks), 'floors.forks must be an array');
-  return raw.forks.map((value, index) => {
+function makeOutcome(raw: Record<string, unknown>, path: string): ForkOutcome {
+  assertShape(typeof raw.label === 'string', `${path}.label must be a string`);
+  assertNumber(raw.reachDelta, `${path}.reachDelta`);
+  assertShape(typeof raw.hazard === 'string', `${path}.hazard must be a string`);
+  return { label: raw.label, reachDelta: raw.reachDelta, risk: numberOr(raw.risk), hazard: raw.hazard as ForkOutcome['hazard'] };
+}
+
+function makeFloors(raw: unknown): FloorContent {
+  assertShape(isRecord(raw) && Array.isArray(raw.forks) && Array.isArray(raw.enemiesByZone), 'floors sections missing');
+  assertNumber(raw.encounterEvery, 'floors.encounterEvery');
+  assertShape(isRecord(raw.enemy), 'floors.enemy missing');
+  for (const key of ['hpBase', 'hpPerFloor', 'atkBase', 'atkPerFloor'] as const) assertNumber(raw.enemy[key], `floors.enemy.${key}`);
+  const enemiesByZone = raw.enemiesByZone.map((value, index) => {
+    assertShape(isRecord(value) && Array.isArray(value.keys), `floors.enemiesByZone[${index}] invalid`);
+    assertNumber(value.upTo, `floors.enemiesByZone[${index}].upTo`);
+    assertShape(value.keys.every((key) => typeof key === 'string'), `floors.enemiesByZone[${index}].keys invalid`);
+    return { upTo: value.upTo, keys: value.keys as string[] };
+  });
+  const forks = raw.forks.map((value, index) => {
     assertShape(isRecord(value), `forks[${index}] must be an object`);
     assertNumber(value.atFloor, `forks[${index}].atFloor`);
-    assertShape(isRecord(value.left) && isRecord(value.right), `forks[${index}] branches missing`);
-    return { atFloor: value.atFloor, left: value.left as unknown as ForkOutcome, right: value.right as unknown as ForkOutcome };
+    assertShape(isRecord(value.a) && isRecord(value.b), `forks[${index}] branches missing`);
+    return { atFloor: value.atFloor, a: makeOutcome(value.a, `forks[${index}].a`), b: makeOutcome(value.b, `forks[${index}].b`) };
   });
+  return {
+    encounterEvery: raw.encounterEvery,
+    enemy: {
+      hpBase: numberOr(raw.enemy.hpBase),
+      hpPerFloor: numberOr(raw.enemy.hpPerFloor),
+      atkBase: numberOr(raw.enemy.atkBase),
+      atkPerFloor: numberOr(raw.enemy.atkPerFloor),
+    },
+    enemiesByZone,
+    forks,
+  };
 }
 
 export function loadContent(): Content {
-  assertShape(isRecord(balanceJson) && isRecord(balanceJson.start) && isRecord(balanceJson.dive), 'balance start/dive missing');
+  assertShape(isRecord(balanceJson) && isRecord(balanceJson.start) && isRecord(balanceJson.dive) && isRecord(balanceJson.combat), 'balance start/dive/combat missing');
   for (const key of ['gold', 'fans', 'reputation', 'maxFloor', 'days', 'targetFloor'] as const) assertNumber(balanceJson.start[key], `balance.start.${key}`);
-  for (const key of ['baseFloorConst', 'gritMul', 'luckMul', 'floorSeconds', 'forcedDeathOffset'] as const) assertNumber(balanceJson.dive[key], `balance.dive.${key}`);
+  for (const key of ['floorSeconds', 'encounterEvery', 'delayGraceSeconds', 'delayFanLossPerSec', 'delayFanLossCap'] as const) assertNumber(balanceJson.dive[key], `balance.dive.${key}`);
   assertShape(isRecord(radioJson) && isRecord(chatJson) && isRecord(narrativeJson), 'localized content must be objects');
   return {
     balance: balanceJson as Balance,
     items: makeItems(itemsJson),
     stars: makeStars(starsJson),
     personas: makePersonas(personasJson),
-    forks: makeForks(floorsJson),
+    floors: makeFloors(floorsJson),
     radio: radioJson as Record<string, string[]>,
     chat: chatJson,
     narrative: narrativeJson,

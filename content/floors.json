@@ -1,24 +1,15 @@
 {
+  "encounterEvery": 3,
+  "enemy": { "hpBase": 18, "hpPerFloor": 1.6, "atkBase": 5, "atkPerFloor": 0.55 },
+  "enemiesByZone": [
+    { "upTo": 22, "keys": ["enemy.rat", "enemy.husk"] },
+    { "upTo": 30, "keys": ["enemy.beast", "enemy.flame"] },
+    { "upTo": 40, "keys": ["enemy.gatekeeper"] }
+  ],
   "forks": [
-    {
-      "atFloor": 14,
-      "left": { "label": "안전 · 15F에서 막힘", "reachDelta": 1, "risk": 0.05, "hazard": "NONE" },
-      "right": { "label": "화염 구역 · 22F까지 뚫림", "reachDelta": 8, "risk": 0.35, "hazard": "FLAME" }
-    },
-    {
-      "atFloor": 22,
-      "left": { "label": "붕괴 위험 · 26F", "reachDelta": 4, "risk": 0.4, "hazard": "COLLAPSE" },
-      "right": { "label": "짐승 소굴 · 31F까지", "reachDelta": 9, "risk": 0.3, "hazard": "BEAST" }
-    },
-    {
-      "atFloor": 28,
-      "left": { "label": "물소리가 난다 · 34F", "reachDelta": 6, "risk": 0.25, "hazard": "NONE" },
-      "right": { "label": "막다른 길 · 29F", "reachDelta": 1, "risk": 0.1, "hazard": "NONE" }
-    },
-    {
-      "atFloor": 34,
-      "left": { "label": "문지기 · 40F까지", "reachDelta": 6, "risk": 0.55, "hazard": "GATEKEEPER" },
-      "right": { "label": "우회로 · 36F", "reachDelta": 2, "risk": 0.15, "hazard": "NONE" }
-    }
+    { "atFloor": 14, "a": { "label": "안전 · 17F에서 막힘", "reachDelta": 3, "hazard": "NONE" }, "b": { "label": "화염 구역 · 22F까지", "reachDelta": 8, "hazard": "FLAME" } },
+    { "atFloor": 22, "a": { "label": "붕괴 위험 · 26F", "reachDelta": 4, "hazard": "COLLAPSE" }, "b": { "label": "짐승 소굴 · 31F까지", "reachDelta": 9, "hazard": "BEAST" } },
+    { "atFloor": 28, "a": { "label": "물소리가 난다 · 34F", "reachDelta": 6, "hazard": "NONE" }, "b": { "label": "막다른 길 · 29F", "reachDelta": 1, "hazard": "NONE" } },
+    { "atFloor": 34, "a": { "label": "문지기 · 40F까지", "reachDelta": 6, "hazard": "GATEKEEPER" }, "b": { "label": "우회로 · 36F", "reachDelta": 2, "hazard": "NONE" } }
   ]
 }
