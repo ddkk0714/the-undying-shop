@@ -62,8 +62,11 @@ src/core/actions.ts   ← D1 오전에 Project_docs/modules/M02 에서 옮겨 �
 6. **좌표는 정수.** 레이아웃은 `src/ui/layout.ts`의 `L` 상수만 사용
 7. **새 npm 의존성을 추가하지 않는다**
 8. **P0 완료 전 P1 금지**
-9. **`main`에 직접 push 하지 않는다** (계약 동결 커밋만 예외). 브랜치는 `cc/<모듈>`
-10. **`git add .` 금지.** 경로를 지정한다
+9. **`main`에서 직접 작업한다. 브랜치를 만들거나 전환하지 마라** — 작업 폴더를 Codex와 공유하기 때문이다.
+   작업 시작 전과 push 직전에 각각 `git pull --rebase origin main` 을 한다.
+10. **`git add .` 금지.** `git add src/scenes src/ui` 처럼 경로를 지정한다.
+    `git reset --hard` / `git checkout -- .` / `git restore .` / `git stash` / `git clean -fd` /
+    `git checkout <브랜치>` / `git switch` 도 **전부 금지** — 상대의 미커밋 작업이 사라진다.
 
 ---
 
@@ -123,11 +126,12 @@ export const fakeStore: Store = {
 
 ---
 
-## 7. 머지 담당
+## 7. 통합 담당
 
-동기화 시각(10:00 / 14:00 / 21:00)에 **머지 순서는 항상 Codex → Claude Code**다.
-Codex 브랜치를 main에 먼저 넣고, 네가 rebase 후 통합을 확인한다.
-빌드가 깨진 채 main에 올라갔으면 **즉시 revert.** 고치려 하지 말고 되돌리고 나서 고쳐라.
+**push 순서는 항상 Codex → Claude Code**다. Codex가 먼저 push 하고,
+너는 `git pull --rebase origin main` 후 통합이 깨지지 않았는지 확인한 다음 push 한다.
+빌드가 깨진 커밋이 올라갔으면 **`git revert <해시>`** 로 되돌린 뒤에 고쳐라.
+`reset --hard` 는 쓰지 마라 — Codex의 미커밋 작업이 같은 폴더에 있다.
 
 ---
 

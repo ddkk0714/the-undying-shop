@@ -137,21 +137,29 @@ export const fakeStore: Store = { getState: () => FAKE_STATE, dispatch: () => {}
 
 ---
 
-## 6. Git 운용
+## 6. Git 운용 — **한 폴더, 한 브랜치(main)**
 
-### 브랜치
-```
-main            ← 항상 빌드되고 배포되는 상태
-codex/<모듈>    ← 예: codex/m06-dive
-cc/<모듈>       ← 예: cc/m06-dive-scene
-```
+두 에이전트가 **같은 작업 폴더를 공유한다.** git 브랜치는 폴더 단위라서, 한쪽이 브랜치를 바꾸면
+같은 폴더에서 작업 중인 상대의 파일까지 통째로 바뀐다. **그래서 브랜치를 나누지 않는다.**
+파일 소유권(§3)이 이미 충돌을 막고 있으므로, 브랜치는 이 구성에서 이득 없는 위험이다.
 
 ### 규칙
-1. **`main`에 직접 push 금지** (계약 동결 커밋만 예외)
-2. 커밋에는 **자기 소유 파일만** 담는다. `git add .` 금지, `git add src/core` 처럼 경로 지정
-3. main에 합칠 때는 **rebase** (`git pull --rebase origin main`)
-4. force push 절대 금지
-5. 빌드가 깨진 상태로 main에 올리지 않는다 — `npm run typecheck && npm test` 통과 후에만
+1. 둘 다 **`main`에서 직접 작업한다.** 브랜치를 만들거나 전환하지 않는다.
+2. **작업 시작 전** `git pull --rebase origin main`
+3. 한 덩어리가 끝날 때마다 **자기 소유 파일만** 커밋하고 **즉시 push** 한다.
+   `git add <자기 경로만>` — 예: `git add src/core content tests`
+4. **push 직전에 다시** `git pull --rebase origin main`
+5. 빌드가 깨진 상태로 push 하지 않는다 — `npm run typecheck && npm test` 통과 후에만
+6. force push 절대 금지
+
+### ⛔ 파괴적 명령 금지 — 상대의 미커밋 작업이 사라진다
+```
+git add .              git commit -a
+git reset --hard       git checkout -- .      git restore .
+git stash              git clean -fd
+git checkout <브랜치>   git switch
+```
+이 중 하나가 필요하다고 판단되면 **실행하지 말고 사람에게 요청해라.**
 
 ### 커밋 접두어에 주체를 남긴다 (CODEX_LOG 작성용)
 ```
@@ -159,6 +167,13 @@ cc/<모듈>       ← 예: cc/m06-dive-scene
 [cc]    M06: 탑 단면도 프로시저럴 렌더링
 [cc]    contract: GameState에 viewerFatigue 추가 (CCR-002 승인)
 ```
+
+### 정말 격리하고 싶다면 (선택 — 6일 일정엔 과하다)
+```
+git worktree add ../ws-codex -b codex-track
+```
+폴더가 분리되어 브랜치를 따로 쓸 수 있다. 다만 `node_modules` 를 따로 설치해야 하고
+머지 단계가 하나 더 늘어난다. **기본은 한 폴더 / main 이다.**
 
 ---
 
@@ -172,7 +187,8 @@ cc/<모듈>       ← 예: cc/m06-dive-scene
 | 14:00~21:00 | 각자 작업 |
 | **21:00 · 저녁 머지 + 점검** | 같은 순서로 머지 → `05-PRIORITY.md` 매일 밤 점검 5항목 실행 |
 
-**머지 순서는 항상 Codex → Claude Code다.** 로직이 먼저 들어오고 화면이 그것에 맞춘다. 반대로 하면 화면이 두 번 고쳐진다.
+**push 순서는 항상 Codex → Claude Code다.** 로직이 먼저 들어오고 화면이 그것에 맞춘다. 반대로 하면 화면이 두 번 고쳐진다.
+한 폴더를 공유하므로 실제로는 «Codex가 커밋·push → Claude Code가 pull --rebase → 통합 확인 → 커밋·push» 순서다.
 
 ---
 
@@ -238,6 +254,7 @@ cc/<모듈>       ← 예: cc/m06-dive-scene
 | 상황 | 대응 |
 |---|---|
 | 같은 파일 충돌 | **소유자 버전이 이긴다.** 비소유자는 자기 변경을 버리고 HANDOFF로 요청한다 |
+| 상대의 미커밋 파일이 내 커밋에 섞임 | `git reset HEAD <그 파일>` 로 스테이지에서만 빼라. `git checkout`/`reset --hard` 로 되돌리지 마라 |
 | 계약 파일 충돌 | 둘 다 버리고 `Project_Project_docs/02-DATA-SCHEMA.md` 기준으로 사람이 다시 작성 |
 | `content/*.json` 충돌 | Codex 버전 채택 |
 | `package.json` 충돌 | Claude Code 버전 채택 후 Codex가 rebase |

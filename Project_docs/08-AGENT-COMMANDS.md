@@ -57,8 +57,10 @@ git add . && git commit -m "docs: 기획서 세트 + 병렬 개발 규약"
 읽기만: 그 외 전부. 특히 src/scenes, src/ui, src/render 는 Claude Code 소유다.
 계약 파일(src/core/types.ts, src/core/actions.ts)은 수정 금지 — 필요하면 CCR 절차로 보고만.
 
-금지: phaser import / Math.random() / 리듀서 안의 Date.now() / 밸런스 숫자 하드코딩 /
-      새 npm 의존성 / main 직접 push / git add .
+git: main 에서 직접 작업한다. 브랜치를 만들거나 전환하지 마라 — Claude Code와 같은 폴더를 쓴다.
+     시작 전과 push 직전에 git pull --rebase origin main. 커밋은 git add src/core content tests 처럼 경로 지정.
+금지: phaser import / Math.random() / 리듀서 안의 Date.now() / 밸런스 숫자 하드코딩 / 새 npm 의존성 /
+      git add . / git reset --hard / git checkout -- . / git stash / git clean / git checkout <브랜치>
 ```
 
 ### Claude Code 고정 헤더
@@ -72,16 +74,19 @@ git add . && git commit -m "docs: 기획서 세트 + 병렬 개발 규약"
 읽기만: src/core/**, content/*.json(manifest 제외), tests/**
 계약 파일(types.ts, actions.ts)은 D1 오전 동결 이후 CCR 없이 수정 금지.
 
-금지: 게임 규칙·수식을 scenes/ui 에 구현 / 밸런스 숫자 하드코딩 / 팔레트 9색 외 색상 /
-      소수 좌표 / 새 npm 의존성 / main 직접 push / git add . /
+git: main 에서 직접 작업한다. 브랜치를 만들거나 전환하지 마라 — Codex와 같은 폴더를 쓴다.
+     시작 전과 push 직전에 git pull --rebase origin main. 커밋은 git add src/scenes src/ui 처럼 경로 지정.
+금지: 게임 규칙·수식을 scenes/ui 에 구현 / 밸런스 숫자 하드코딩 / 팔레트 9색 외 색상 / 소수 좌표 /
+      새 npm 의존성 / git add . / git reset --hard / git checkout -- . / git stash / git clean /
       Codex 소유 파일 수정 (막히면 Project_docs/HANDOFF.md 에 적어라)
 ```
 
 ---
 
-## 3. D0 (오늘) — **Claude Code 단독.** Codex는 아직 켜지 마라
+## 3. D0 (오늘) — Claude Code 먼저, 그 다음 Codex는 **데이터만**
 
-이유: 레포·빌드·배포가 없으면 Codex가 커밋할 곳이 없다. 계약 파일도 아직 없다.
+레포·빌드가 없으면 Codex가 커밋할 곳이 없으므로 **D0-1이 끝나기 전에는 Codex를 켜지 마라.**
+D0-1이 끝나면 Codex는 `content/*.json` 데이터 작성을 시작할 수 있다 — **이 파일들은 계약(types.ts)에 의존하지 않기 때문이다.** 그래서 오늘부터 병렬이 가능하다.
 
 ### D0-1 · 스캐폴딩
 ```
@@ -93,9 +98,8 @@ git add . && git commit -m "docs: 기획서 세트 + 병렬 개발 규약"
    버전은 캐럿 없이 정확히 "3.90.0" 으로 고정한다.
 2) Project_docs/01-ARCHITECTURE.md §2 의 폴더 구조를 그대로 만들어라.
    src/core/ 안은 빈 폴더로만 두고 파일을 만들지 마라 (Codex 소유다).
-3) content/ 에 balance.json, floors.json, stars.json, personas.json, items.json,
-   chat.ko.json, radio.ko.json, narrative.ko.json 을 빈 스켈레톤({} 또는 [])으로 만들어라.
-   내용은 채우지 마라 — Codex 소유다.
+3) content/ 폴더만 만들고 그 안의 *.json 은 **하나도 만들지 마라.** Codex 소유이고 오늘 Codex가 채운다.
+   (단 content/manifest.json 은 예외 — 네 소유다. 아래 4)에서 만든다)
 4) content/manifest.json 은 Project_docs/03-ASSET-MODULES.md §2 형식으로 네가 직접 채워라.
 5) vite.config.ts 에 base: './' 를 넣어라.
 6) package.json 스크립트: dev, build, typecheck, test, sim
@@ -104,7 +108,10 @@ git add . && git commit -m "docs: 기획서 세트 + 병렬 개발 규약"
 - npm run dev 가 뜨고 브라우저에서 빈 화면이라도 열린다 (스크린샷으로 보여라)
 - npm run build 가 통과하고 dist/ 가 생긴다
 - src/core/ 안에 파일이 0개다
+- content/ 안에 manifest.json 외의 파일이 0개다
 ```
+
+**D0-1이 끝나면 즉시 Codex를 켜고 아래 D0-4를 던져라.** 이후 D0-2·D0-3과 병렬로 돈다.
 
 ### D0-2 · 배포 URL 확보 ★ 오늘 안 하면 마감일에 터진다
 ```
@@ -131,6 +138,36 @@ manifest.json 의 모든 키에 대응하는 더미 파일이 public/assets/pack
 - node tools/gen-placeholder.mjs 실행 후 누락 키 0개
 - 폰트 파일(네오둥근모 또는 대체 픽셀 한글 폰트)을 public/assets/fonts/ 에 넣고
   라이선스를 Project_docs/CREDITS.md 에 기록했다
+```
+
+### D0-4 · Codex — 콘텐츠 데이터 (D0-1 완료 후 시작)
+```
+[Codex 고정 헤더]
+
+main 에서 작업해라. 브랜치를 만들거나 전환하지 마라 (작업 폴더를 상대와 공유한다).
+오늘은 코드를 짜지 마라. content/*.json 데이터 파일만 작성한다.
+src/ 는 아무것도 건드리지 마라. 이 작업은 types.ts 에 의존하지 않는다.
+
+작성할 파일 (각 문서에 표/스펙이 이미 있다. 그대로 옮겨라):
+1) content/balance.json   ← Project_docs/modules/M10-economy.md §"balance.json 전문" 그대로
+2) content/items.json     ← M05-casting-shop.md 의 아이템 12종 표
+3) content/stars.json     ← M03-roster-persona.md 의 스타 5명 표
+4) content/personas.json  ← M03 의 페르소나 2종 표 (리온 3대 계보 포함)
+5) content/floors.json    ← M06-dive-radio.md §"갈림길 데이터" 전문
+6) content/radio.ko.json  ← M11-narrative.md §5 의 무전 대사 27줄 (카테고리별)
+7) content/chat.ko.json   ← M07-chat-superchat.md §"예시 코퍼스" + 각 톤을 12줄 이상으로 확장
+8) content/narrative.ko.json ← M11 의 유언 3종 + 34F 컷신 + 엔딩 3종 텍스트
+
+content/manifest.json 은 Claude Code 소유다. 건드리지 마라.
+
+완료 조건:
+- 8개 파일 전부 JSON 파싱 통과 (node -e 로 검증한 출력을 붙여라)
+- balance.json 의 revive 계수로 손계산했을 때 12F/온전/0회 = 760±5%,
+  24F/훼손/2회 = 4250±5%, 31F/훼손/4회 = 12120±5% 가 나온다 (계산 과정을 보여라)
+- 문서 표에 있는 항목 수와 JSON 항목 수가 정확히 일치한다 (아이템 12, 스타 5, 갈림길 4, 무전 27)
+- 한글이 UTF-8 로 깨지지 않는다
+
+Project_docs/CODEX_LOG.md 에 오늘 항목을 추가해라. 커밋 전후로 git pull --rebase origin main 을 하고, 자기 소유 경로만 git add 해라. git add . 금지.
 ```
 
 ---
@@ -167,12 +204,12 @@ manifest.json 의 모든 키에 대응하는 더미 파일이 public/assets/pack
 ```
 [Codex 고정 헤더]
 
-브랜치 codex/m02-core 를 만들고 작업해라.
+main 에서 작업해라. 브랜치를 만들거나 전환하지 마라 (작업 폴더를 상대와 공유한다).
 오늘 할 일: Project_docs/modules/M02-core-state.md 의 「담당」행에서 Codex 파트 전부.
   - src/core/state.ts, reducer.ts(및 분리 파일), store.ts, rng.ts, content.ts
   - src/core/sim.ts  ← 최우선. 이게 있어야 이후 모든 검증이 가능하다
   - tests/reducer.spec.ts, tests/sim.spec.ts
-이어서 Project_docs/modules/M10-economy.md 의 content/balance.json 전문을 작성해라.
+content/*.json 은 D0-4 에서 이미 작성했다. 필요하면 값만 조정해라.
 
 types.ts 와 actions.ts 는 이미 main 에 있다. 읽되 수정하지 마라.
 
@@ -185,14 +222,14 @@ types.ts 와 actions.ts 는 이미 main 에 있다. 읽되 수정하지 마라.
 - JSON.parse(JSON.stringify(state)) 왕복 무손실
 
 끝나면 Project_docs/CODEX_LOG.md 에 오늘 항목을 추가해라.
-main 에 직접 push 하지 마라.
+커밋 전후로 git pull --rebase origin main 을 하고, 자기 소유 경로만 git add 해라. git add . 금지.
 ```
 
 ### D1 · Claude Code (계약 동결 직후 이어서)
 ```
 [Claude Code 고정 헤더]
 
-브랜치 cc/m01-shell 을 만들고 작업해라.
+main 에서 작업해라. 브랜치를 만들거나 전환하지 마라 (작업 폴더를 상대와 공유한다).
 오늘 할 일: Project_docs/modules/M01-app-shell.md 전부 (이 모듈은 네 단독이다).
 
 src/core/ 는 Codex가 지금 작업 중이다. 절대 건드리지 마라.
@@ -207,7 +244,7 @@ core 가 필요하면 Project_docs/07-PARALLEL-DEV.md §5-3 의 FakeStore 를 �
 - npm run build 후 dist/ 를 로컬 서버로 열어도 동작
 ```
 
----
+--- (2028 08 20) - 16:58
 
 ## 6. D2~D5 — 날짜별 명령 대본
 
@@ -216,7 +253,7 @@ core 가 필요하면 Project_docs/07-PARALLEL-DEV.md §5-3 의 FakeStore 를 �
 ### D2 · Codex
 ```
 [Codex 고정 헤더]
-브랜치 codex/d2 . 오늘 할 일 — 각 문서의 「담당」행 Codex 파트만:
+main 에서 작업. 브랜치 금지. 오늘 할 일 — 각 문서의 「담당」행 Codex 파트만:
   1) Project_docs/modules/M06-dive-radio.md  ← 오늘의 절반을 여기에 써라
      src/core/systems/dive.ts, content/floors.json, content/radio.ko.json, tests/dive.spec.ts
   2) Project_docs/modules/M04-revive.md  — reviveCost 산식 + tests/economy.spec.ts
@@ -234,7 +271,7 @@ Project_docs/CODEX_LOG.md 갱신. main 직접 push 금지.
 ### D2 · Claude Code
 ```
 [Claude Code 고정 헤더]
-브랜치 cc/d2 . 오늘 할 일 — 각 문서의 「담당」행 Claude Code 파트만:
+main 에서 작업. 브랜치 금지. 오늘 할 일 — 각 문서의 「담당」행 Claude Code 파트만:
   1) src/scenes/DayScene.ts — HUD(DAY/GOLD/FANS/REP/n·40) + 단계 씬 전환 호스트
   2) Project_docs/modules/M04-revive.md — RevivePhase 화면 (spirit 색은 여기서만)
   3) Project_docs/modules/M05-casting-shop.md — CastingPhase, ShopPhase 3칸 UI
@@ -252,7 +289,7 @@ core 가 아직 없으면 FakeStore 로 진행해라. Codex 파일을 임시로 
 ### D3 · Codex
 ```
 [Codex 고정 헤더]
-브랜치 codex/d3 . Codex 파트만:
+main 에서 작업. 브랜치 금지. Codex 파트만:
   1) M09-autopsy-announce.md — 검시 2택 판정, 발표 4조합, 은닉(HIDDEN) 전이, 유품 드랍
   2) M08-death-record.md — 팬 변동 계산, 일일 정산 집계
   3) M11-narrative.md — 트리거 테이블, judgeEnding, content/narrative.ko.json
@@ -268,7 +305,7 @@ core 가 아직 없으면 FakeStore 로 진행해라. Codex 파일을 임시로 
 ### D3 · Claude Code
 ```
 [Claude Code 고정 헤더]
-브랜치 cc/d3 . Claude Code 파트만:
+main 에서 작업. 브랜치 금지. Claude Code 파트만:
   1) M06 DivePhase ★ — 탑 단면도 프로시저럴 렌더링(풀 배경 아트 만들지 마라),
      무전 3택 UI, 「당신만 보는 진짜 지도」 박스, 소프트 타이머
   2) M08 DeathPhase — RECORD_BREAK 연출 (Project_docs/modules/M08 의 연출 사양대로)
@@ -284,7 +321,7 @@ core 가 아직 없으면 FakeStore 로 진행해라. Codex 파일을 임시로 
 ### D4 · Codex
 ```
 [Codex 고정 헤더]
-브랜치 codex/d4 . Codex 파트만:
+main 에서 작업. 브랜치 금지. Codex 파트만:
   1) M07-chat-superchat.md — src/core/systems/opinion.ts, content/chat.ko.json
      (leak 누적, 과잉 삭제 역풍, payPool 고갈)
   2) M06 거짓말 지연 콜백 — 거짓말한 스타를 부활시키면 다음 런 첫 무전에서 언급.
@@ -302,7 +339,7 @@ core 가 아직 없으면 FakeStore 로 진행해라. Codex 파일을 임시로 
 ### D4 · Claude Code
 ```
 [Claude Code 고정 헤더]
-브랜치 cc/d4 . Claude Code 파트만:
+main 에서 작업. 브랜치 금지. Claude Code 파트만:
   1) M07 채팅 UI — src/ui/Ticker.ts (텍스트 객체 12개 풀링), 삭제/차단 버튼(클릭영역 16×16 이상),
      슈퍼챗 연출 (+340G 가 HUD GOLD 로 날아가 흡수)
   2) M03 페르소나 승계 화면 + 초상 균열 오버레이 (reviewCount 단계별)
@@ -319,7 +356,7 @@ core 가 아직 없으면 FakeStore 로 진행해라. Codex 파일을 임시로 
 ### D5 · Codex — 밸런스 전담
 ```
 [Codex 고정 헤더]
-브랜치 codex/d5-balance . 오늘은 코드를 새로 짜지 마라. content/balance.json 만 튜닝한다.
+main 에서 작업. 브랜치 금지. 오늘은 코드를 새로 짜지 마라. content/balance.json 만 튜닝한다.
 
 목표: Project_docs/modules/M10-economy.md §"의도된 경제 곡선" 표에 ±25% 이내로 수렴시켜라.
 특히 Day 5 가 처음으로 순 골드 마이너스가 되어야 한다.
@@ -337,7 +374,7 @@ core 가 아직 없으면 FakeStore 로 진행해라. Codex 파일을 임시로 
 ### D5 · Claude Code — 아트/폴리시
 ```
 [Claude Code 고정 헤더]
-브랜치 cc/d5-polish . 오늘은 보이는 것만 만진다.
+main 에서 작업. 브랜치 금지. 오늘은 보이는 것만 만진다.
   1) content/manifest.json 의 activePack 을 "final" 로 전환할 준비 (inherit 동작 확인)
   2) 사운드 8종 연결 (도장/슈퍼챗/사망/부활/클릭/신기록/BGM 2)
   3) 34F 문지기 컷신, 엔딩 A(40F), 엔딩 성적표 화면
@@ -427,7 +464,7 @@ Project_docs/CODEX_LOG.md 를 제출 가능한 문서로 정리해라.
 
 | 시점 | Codex | Claude Code |
 |---|---|---|
-| D0 | **끄고 있어라** | 스캐폴딩 · 배포 URL · 플레이스홀더 |
+| D0 | (D0-1 후) `content/*.json` 8종 | 스캐폴딩 · 배포 URL · 플레이스홀더 · manifest |
 | D1 오전 | 대기 | **계약 동결** → main push |
 | D1 오후 | M02 코어 + sim + balance.json | M01 셸 · 폰트 · 타이틀 |
 | D2 | M06 dive.ts · M04 산식 · M05 items | DayScene HUD · 소생실 · 캐스팅 · 진열대 |

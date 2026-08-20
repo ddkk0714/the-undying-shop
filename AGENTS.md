@@ -62,8 +62,12 @@ src/core/actions.ts
 6. **화면·연출·좌표에 관한 코드를 쓰지 않는다.** 그건 Claude Code 영역이다.
 7. **새 npm 의존성을 추가하지 않는다.** 필요하면 먼저 물어봐라.
 8. **P0가 전부 끝나기 전에 P1 코드를 쓰지 않는다.**
-9. **`main`에 직접 push 하지 않는다.** 브랜치는 `codex/<모듈>`.
+9. **`main`에서 직접 작업한다. 브랜치를 만들거나 전환하지 마라** — 작업 폴더를 상대와 공유하기 때문이다.
+   작업 시작 전과 push 직전에 각각 `git pull --rebase origin main` 을 한다.
 10. **`git add .` 금지.** `git add src/core content tests` 처럼 경로를 지정한다.
+    `git reset --hard` / `git checkout -- .` / `git restore .` / `git stash` / `git clean -fd` /
+    `git checkout <브랜치>` / `git switch` 도 **전부 금지** — 상대의 미커밋 작업이 사라진다.
+    필요하면 실행하지 말고 사람에게 요청해라.
 
 ---
 

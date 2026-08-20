@@ -5,9 +5,9 @@
 | 레이어 | 선택 | 버전 | 비고 |
 |---|---|---|---|
 | 엔진 | **Phaser** | `3.90.0` | 고정. `package.json`에 `"phaser": "3.90.0"` (캐럿 금지) |
-| 언어 | TypeScript | `~5.5` | `strict: true` |
-| 번들러 | Vite | `^5.4` | `base: './'` (상대경로 배포) |
-| 테스트 | Vitest | `^2.0` | `src/core/**` 만 대상 |
+| 언어 | TypeScript | `~6.0` | `strict: true` |
+| 번들러 | Vite | `^8.2` | `base: './'` (상대경로 배포) |
+| 테스트 | Vitest | `^4.1` | `src/core/**` 만 대상 |
 | 린트 | ESLint + Prettier | — | 6일 일정상 `--fix` 자동만 |
 | 폰트 | 네오둥근모(OFL) 또는 갈무리 | — | §5 참조 |
 | 오디오 | Phaser WebAudio | — | `.ogg` + `.m4a` 폴백 |
