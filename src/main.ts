@@ -1,41 +1,23 @@
 import Phaser from 'phaser';
-import './style.css';
+import { BASE_W, BASE_H } from './config';
+import { PALETTE } from './render/palette';
+import { applyIntegerScale } from './render/scaler';
+import { BootScene } from './scenes/BootScene';
 
-class BootScene extends Phaser.Scene {
-  constructor() {
-    super('BootScene');
-  }
-
-  create() {
-    this.cameras.main.setBackgroundColor('#12100E');
-
-    this.add
-      .text(240, 135, 'THE UNDYING SHOP', {
-        fontFamily: 'monospace',
-        fontSize: '16px',
-        color: '#E6DCC8',
-      })
-      .setOrigin(0.5);
-  }
-}
-
-const config: Phaser.Types.Core.GameConfig = {
+const game = new Phaser.Game({
   type: Phaser.AUTO,
-
-  width: 480,
-  height: 270,
-
+  width: BASE_W,
+  height: BASE_H,
+  parent: 'game',
+  backgroundColor: PALETTE.soot,
   pixelArt: true,
   roundPixels: true,
-
-  backgroundColor: '#12100E',
-
   scale: {
-    mode: Phaser.Scale.FIT,
+    mode: Phaser.Scale.NONE, // ★ FIT 금지. 정수배만 — 01-ARCHITECTURE §4
     autoCenter: Phaser.Scale.CENTER_BOTH,
+    zoom: 1, // scaler 가 런타임에 정수로 재설정
   },
-
   scene: [BootScene],
-};
+});
 
-new Phaser.Game(config);
+applyIntegerScale(game);

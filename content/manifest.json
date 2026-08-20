@@ -1,0 +1,29 @@
+{
+  "activePack": "placeholder",
+  "packs": {
+    "placeholder": {
+      "root": "assets/packs/placeholder/",
+      "entries": {
+        "ui.panel.9s":         { "type": "nineslice",   "file": "ui/panel.png",  "slice": [4, 4, 4, 4] },
+        "ui.button.9s":        { "type": "nineslice",   "file": "ui/button.png", "slice": [3, 3, 3, 3] },
+        "ui.seal":             { "type": "spritesheet", "file": "ui/seal.png",   "frameWidth": 48, "frameHeight": 48 },
+        "bg.shop":             { "type": "image",       "file": "bg/shop.png" },
+        "bg.revive":           { "type": "image",       "file": "bg/revive.png" },
+        "bg.tower":            { "type": "image",       "file": "bg/tower.png" },
+        "bg.autopsy":          { "type": "image",       "file": "bg/autopsy.png" },
+        "bg.studio":           { "type": "image",       "file": "bg/studio.png" },
+        "star.portrait.karin": { "type": "image",       "file": "star/karin.png" },
+        "star.silhouette":     { "type": "spritesheet", "file": "star/silhouette.png", "frameWidth": 96, "frameHeight": 120 },
+        "sfx.stamp":           { "type": "audio",       "file": "sfx/stamp.ogg" },
+        "sfx.superchat":       { "type": "audio",       "file": "sfx/superchat.ogg" }
+      }
+    },
+    "final": {
+      "root": "assets/packs/final/",
+      "inherit": "placeholder",
+      "entries": {
+        "bg.shop": { "type": "image", "file": "bg/shop.png" }
+      }
+    }
+  }
+}
