@@ -46,3 +46,8 @@
 **배운 것**: 화면의 대기 상태도 `waitingSince`와 액션 `dt`만으로 모델링하면 프레임레이트와 무관하게 테스트할 수 있다.
 
 <!-- 이하 모듈마다 반복 -->
+## D1 8/21 · M05 office contract and shelf core
+
+**Project**: Replaced the OFFICE/PICK_STAR placeholder with real combat stats and a meaningful claimed ceiling; added contract accept/reject and shelf-sale resolution.
+**Deliverables**: `systems/office.ts`, reducer integration, `tests/office.spec.ts`.
+**Validation**: `npm run typecheck` and `npm test` passed (5 files, 16 tests). Contract fees, honesty propagation, permanent rejection, relic leak, gold, and HP/ATK/DEF updates are covered.
