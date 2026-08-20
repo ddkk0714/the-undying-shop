@@ -16,6 +16,8 @@ export interface Balance {
   degrade: { statMul: number[] };
   income: { superchat: { witness: number[] } };
   opinion: { leakPerWitnessRevive: Record<string, number> };
+  recruit: { baseSlots: number; lossPerFailures: number };
+  roster: { inheritFandomLoss: number; inheritSuspicion: number };
 }
 
 export interface CombatBalance {
@@ -172,6 +174,9 @@ export function loadContent(): Content {
   assertShape(Array.isArray(balanceJson.degrade.statMul) && balanceJson.degrade.statMul.length > 0, 'balance.degrade.statMul missing');
   assertShape(isRecord(balanceJson.income.superchat) && Array.isArray(balanceJson.income.superchat.witness), 'balance.income.superchat.witness missing');
   assertShape(isRecord(balanceJson.opinion) && isRecord(balanceJson.opinion.leakPerWitnessRevive), 'balance.opinion.leakPerWitnessRevive missing');
+  assertShape(isRecord(balanceJson.recruit) && isRecord(balanceJson.roster), 'balance.recruit/roster missing');
+  for (const key of ['baseSlots', 'lossPerFailures'] as const) assertNumber(balanceJson.recruit[key], `balance.recruit.${key}`);
+  for (const key of ['inheritFandomLoss', 'inheritSuspicion'] as const) assertNumber(balanceJson.roster[key], `balance.roster.${key}`);
   assertShape(isRecord(radioJson) && isRecord(chatJson) && isRecord(narrativeJson), 'localized content must be objects');
   return {
     balance: balanceJson as Balance,

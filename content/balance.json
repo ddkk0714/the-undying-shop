@@ -69,5 +69,6 @@
     "onFailureAnnounce": -5,
     "grades": [[0, "F"], [20, "D"], [40, "C"], [55, "B"], [70, "A"], [85, "S"]]
   },
-  "recruit": { "baseSlots": 2, "lossPerFailures": 2 }
+  "recruit": { "baseSlots": 2, "lossPerFailures": 2 },
+  "roster": { "inheritFandomLoss": 0.15, "inheritSuspicion": 35 }
 }

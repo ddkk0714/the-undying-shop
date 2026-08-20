@@ -57,3 +57,8 @@
 **Project**: Added balance-driven revive quotes and connected payment to the reducer without touching the RevivePhase UI.
 **Deliverables**: `systems/economy.ts`, balance validation, revive payment integration, and `tests/economy.spec.ts`.
 **Validation**: The 12F/24F/31F reference costs, one-day decay, affordability, single-payment, and witness warning are covered by tests.
+
+## D1 8/21 · M03 roster inheritance core
+
+**Project**: Added pure persona inheritance and recruit-capacity rules without touching portrait or phase UI code.
+**Validation**: Persona fandom/generation/lineage/FX and four-false-announcement capacity exhaustion are covered by tests.
