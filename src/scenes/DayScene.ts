@@ -18,9 +18,8 @@ import type { GameState, PhaseId } from '../core/types';
 
 const PHASE_LABEL: Record<PhaseId, string> = {
   REVIVE: '소생실',
-  CASTING: '캐스팅',
-  SHOP: '진열',
-  DIVE: '하강',
+  OFFICE: '편성실',
+  LIVE: '생방송',
   DEATH: '사망',
   AUTOPSY: '검시',
   ANNOUNCE: '발표',
@@ -72,7 +71,7 @@ export class DayScene extends Phaser.Scene {
     new Button(this, {
       x: 84, y: L.actions.y + 8, w: 132, h: 24,
       label: '다음 단계', hotkey: '1',
-      onClick: () => this.store.dispatch({ type: 'PHASE/TIMEOUT' }),
+      onClick: () => this.advancePhase(),
     });
     new Button(this, {
       x: 264, y: L.actions.y + 8, w: 132, h: 24,
@@ -86,6 +85,20 @@ export class DayScene extends Phaser.Scene {
       this.unsubscribe?.();
       this.unsubscribe = null;
     });
+  }
+
+  /**
+   * v3 에는 PHASE/TIMEOUT 이 없다 (CCR-001). 단계 씬이 아직 없으므로,
+   * 편성실에서 출연자가 안 정해졌으면 첫 생존자로 자리만 채우고 다음 단계로 보낸다.
+   * 규칙이 아니라 셸의 기본 선택이다 — 단계 씬이 오면 이 분기는 사라진다.
+   */
+  private advancePhase(): void {
+    const s = this.store.getState();
+    if (s.phase === 'OFFICE' && s.today === null) {
+      const star = s.stars.find((x) => x.status === 'ALIVE');
+      if (star !== undefined) this.store.dispatch({ type: 'OFFICE/PICK_STAR', starId: star.id });
+    }
+    this.store.dispatch({ type: 'PHASE/ADVANCE' });
   }
 
   /** M02 §6 — pendingFx 를 매 프레임 확인하고 소비한다. */

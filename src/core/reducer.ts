@@ -4,7 +4,11 @@ import { createInitialState } from './state';
 import type { Action } from './actions';
 import type { Corpse, GameState, PhaseId, Star, TodayRun } from './types';
 
-const phaseOrder: PhaseId[] = ['REVIVE', 'CASTING', 'SHOP', 'DIVE', 'DEATH', 'AUTOPSY', 'ANNOUNCE'];
+/**
+ * v3(CCR-001) 최소 이식 — 계약 갱신으로 컴파일이 깨진 자리만 기계적으로 옮겼다.
+ * 전투·계약서·지체 페널티의 실제 규칙은 아직 없다. M02/M05 로 Codex 가 다시 쓴다 (HO-002).
+ */
+const phaseOrder: PhaseId[] = ['REVIVE', 'OFFICE', 'LIVE', 'DEATH', 'AUTOPSY', 'ANNOUNCE'];
 
 function nextPhase(phase: PhaseId): PhaseId {
   return phaseOrder[(phaseOrder.indexOf(phase) + 1) % phaseOrder.length] ?? 'REVIVE';
@@ -18,30 +22,22 @@ function aliveStars(state: GameState): Star[] {
   return state.stars.filter((star) => star.status === 'ALIVE');
 }
 
-function popularStar(state: GameState): Star | undefined {
-  return aliveStars(state).sort((left, right) => {
-    const leftFandom = state.personas.find((persona) => persona.id === left.personaId)?.fandom ?? 0;
-    const rightFandom = state.personas.find((persona) => persona.id === right.personaId)?.fandom ?? 0;
-    return rightFandom - leftFandom || left.id.localeCompare(right.id);
-  })[0];
-}
-
 function latestTodayCorpse(state: GameState): Corpse | undefined {
   return state.today === null ? undefined : state.corpses.find((corpse) => corpse.starId === state.today?.starId && corpse.diedDay === state.day);
 }
 
-function startDive(state: GameState): GameState {
+function startLive(state: GameState): GameState {
   if (state.today === null) return state;
   const star = state.stars.find((candidate) => candidate.id === state.today?.starId);
   if (star === undefined) return state;
-  const itemDepth = state.shelf.reduce((sum, id) => sum + (content.items.find((item) => item.id === id)?.depth ?? 0), 0);
-  const targetCeiling = Math.max(1, Math.round(content.balance.dive.baseFloorConst + star.stats.grit * content.balance.dive.gritMul + star.stats.luck * content.balance.dive.luckMul + itemDepth));
-  return withPhase({ ...state, today: { ...state.today, targetCeiling } }, 'DIVE');
+  // v3: 아이템은 depth 가 아니라 hp/atk/def 를 준다. 전투 산식이 오기 전까지는 층수만 잡는다.
+  const claimedCeiling = Math.max(1, Math.round(content.balance.dive.baseFloorConst + star.stats.grit * content.balance.dive.gritMul + star.stats.luck * content.balance.dive.luckMul));
+  return withPhase({ ...state, today: { ...state.today, claimedCeiling } }, 'LIVE');
 }
 
-function finishDive(state: GameState): GameState {
+function finishLive(state: GameState): GameState {
   if (state.today === null || state.today.diedFloor !== null) return withPhase(state, 'DEATH');
-  const diedFloor = Math.max(1, state.today.currentFloor, state.today.targetCeiling);
+  const diedFloor = Math.max(1, state.today.currentFloor, state.today.claimedCeiling);
   const star = state.stars.find((candidate) => candidate.id === state.today?.starId);
   if (star === undefined) return withPhase(state, 'DEATH');
   const corpse: Corpse = { starId: star.id, diedFloor, diedDay: state.day, grade: 'INTACT', announced: null, loot: [] };
@@ -54,15 +50,15 @@ function finishDive(state: GameState): GameState {
     corpses: [...state.corpses, corpse],
     today: { ...state.today, currentFloor: diedFloor, diedFloor, deathCause: '하강 중 사망' },
     maxFloor,
-    pendingFx: [...state.pendingFx, { kind: 'DEATH_FLASH' }, ...(diedFloor > state.maxFloor ? [{ kind: 'RECORD_BREAK' as const }] : [])],
+    pendingFx: [...state.pendingFx, { kind: 'SIGNAL_LOST' }, ...(diedFloor > state.maxFloor ? [{ kind: 'RECORD_BREAK' as const }] : [])],
     stats: { ...state.stats, deepestFloor: Math.max(state.stats.deepestFloor, diedFloor) },
   };
 }
 
 function advance(state: GameState): GameState {
   if (state.isOver) return state;
-  if (state.phase === 'SHOP') return startDive(state);
-  if (state.phase === 'DIVE') return finishDive(state);
+  if (state.phase === 'OFFICE') return startLive(state);
+  if (state.phase === 'LIVE') return finishLive(state);
   if (state.phase === 'ANNOUNCE') {
     if (state.day >= content.balance.start.days) {
       return { ...state, isOver: true, ending: state.maxFloor >= content.balance.start.targetFloor ? 'A_OPEN' : state.leak >= 70 ? 'B_REVEAL' : 'B_CONTINUE', today: null };
@@ -72,27 +68,11 @@ function advance(state: GameState): GameState {
   return withPhase(state, nextPhase(state.phase));
 }
 
-function timeout(state: GameState): GameState {
-  switch (state.phase) {
-    case 'REVIVE': return advance(state);
-    case 'CASTING': {
-      const star = popularStar(state);
-      return star === undefined ? advance(state) : reducer(state, { type: 'CASTING/PICK', starId: star.id });
-    }
-    case 'SHOP': return reducer(state, { type: 'SHOP/CONFIRM' });
-    case 'DIVE': return advance(state);
-    case 'AUTOPSY': return reducer(state, { type: 'AUTOPSY/DECIDE', grade: 'INTACT' });
-    case 'ANNOUNCE': return reducer(state, { type: 'ANNOUNCE/DECLARE', as: 'SUCCESS' });
-    case 'DEATH': return advance(state);
-  }
-}
-
 export function reducer(state: GameState, action: Action): GameState {
   switch (action.type) {
     case 'GAME/NEW': return createInitialState(action.seed);
     case 'GAME/LOAD': return structuredClone(action.state);
     case 'PHASE/ADVANCE': return advance(state);
-    case 'PHASE/TIMEOUT': return timeout(state);
     case 'REVIVE/PAY': {
       if (state.phase !== 'REVIVE') return state;
       const corpse = state.corpses.find((candidate) => candidate.starId === action.starId && candidate.grade === 'INTACT');
@@ -105,28 +85,32 @@ export function reducer(state: GameState, action: Action): GameState {
     }
     case 'REVIVE/SKIP': return state;
     case 'REVIVE/INHERIT': return state;
-    case 'CASTING/PICK': {
-      if (state.phase !== 'CASTING') return state;
+    case 'OFFICE/CONTRACT_ACCEPT': return state;   // v3 미구현 — M05 · Codex
+    case 'OFFICE/CONTRACT_REJECT': return state;   // v3 미구현 — M05 · Codex
+    case 'OFFICE/PICK_STAR': {
+      if (state.phase !== 'OFFICE') return state;
       const star = aliveStars(state).find((candidate) => candidate.id === action.starId);
       if (star === undefined) return state;
-      const today: TodayRun = { starId: star.id, personaId: star.personaId, currentFloor: 1, targetCeiling: 1, forks: [], superchat: 0, fansDelta: 0, chatQueue: [], deletedCount: 0, diedFloor: null, deathCause: null };
-      return { ...state, today, phase: 'SHOP' };
+      // hero / encounter 는 전투 산식이 오기 전까지 자리만 잡아 둔다 (HO-002).
+      const today: TodayRun = { starId: star.id, personaId: star.personaId, currentFloor: 1, hero: { hp: 1, maxHp: 1, atk: 1, def: 1 }, encounter: null, appealCount: 0, claimedCeiling: 1, forks: [], superchat: 0, fansDelta: 0, chatQueue: [], deletedCount: 0, diedFloor: null, deathCause: null };
+      return { ...state, today };
     }
-    case 'SHOP/PLACE': {
-      if (state.phase !== 'SHOP' || action.slot < 0 || action.slot >= state.shelf.length) return state;
+    case 'OFFICE/PLACE': {
+      if (state.phase !== 'OFFICE' || action.slot < 0 || action.slot >= state.shelf.length) return state;
       const shelf = [...state.shelf];
       shelf[action.slot] = action.itemId;
       return { ...state, shelf };
     }
-    case 'SHOP/CONFIRM': return state.phase === 'SHOP' ? startDive(state) : state;
-    case 'DIVE/TICK': {
-      if (state.phase !== 'DIVE' || state.today === null || action.dt <= 0) return state;
+    case 'OFFICE/CONFIRM': return state.phase === 'OFFICE' ? startLive(state) : state;
+    case 'LIVE/TICK': {
+      if (state.phase !== 'LIVE' || state.today === null || action.dt <= 0) return state;
       const floorSteps = Math.max(1, Math.floor(action.dt / content.balance.dive.floorSeconds));
-      const currentFloor = Math.min(state.today.targetCeiling, state.today.currentFloor + floorSteps);
+      const currentFloor = Math.min(state.today.claimedCeiling, state.today.currentFloor + floorSteps);
       const progressed = { ...state, today: { ...state.today, currentFloor } };
       const [, advancedRng] = draw(progressed);
-      return currentFloor >= progressed.today.targetCeiling ? finishDive(advancedRng) : advancedRng;
+      return currentFloor >= progressed.today.claimedCeiling ? finishLive(advancedRng) : advancedRng;
     }
+    case 'COMBAT/CHOOSE': return state;            // v3 미구현 — M06 · Codex
     case 'RADIO/ANSWER': return state;
     case 'CHAT/SPAWN': return state;
     case 'CHAT/DELETE': return state;

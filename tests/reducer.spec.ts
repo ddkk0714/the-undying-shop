@@ -11,9 +11,9 @@ describe('reducer', () => {
   it('is deterministic for the same seed and action sequence', () => {
     const actions: Action[] = [
       { type: 'PHASE/ADVANCE' },
-      { type: 'CASTING/PICK', starId: 'body_karin' },
-      { type: 'SHOP/CONFIRM' },
-      { type: 'DIVE/TICK', dt: 30 },
+      { type: 'OFFICE/PICK_STAR', starId: 'body_karin' },
+      { type: 'OFFICE/CONFIRM' },
+      { type: 'LIVE/TICK', dt: 30 },
       { type: 'PHASE/ADVANCE' },
       { type: 'AUTOPSY/DECIDE', grade: 'INTACT' },
       { type: 'ANNOUNCE/DECLARE', as: 'SUCCESS' },
@@ -21,15 +21,15 @@ describe('reducer', () => {
     expect(JSON.stringify(replay(77, actions))).toBe(JSON.stringify(replay(77, actions)));
   });
 
-  it('advances through the seven phases and serializes without loss', () => {
+  it('advances through the six phases and serializes without loss', () => {
     const state = replay(5, [
-      { type: 'PHASE/TIMEOUT' },
-      { type: 'PHASE/TIMEOUT' },
-      { type: 'SHOP/CONFIRM' },
-      { type: 'DIVE/TICK', dt: 30 },
       { type: 'PHASE/ADVANCE' },
-      { type: 'PHASE/TIMEOUT' },
-      { type: 'PHASE/TIMEOUT' },
+      { type: 'OFFICE/PICK_STAR', starId: 'body_karin' },
+      { type: 'OFFICE/CONFIRM' },
+      { type: 'LIVE/TICK', dt: 30 },
+      { type: 'PHASE/ADVANCE' },
+      { type: 'AUTOPSY/DECIDE', grade: 'INTACT' },
+      { type: 'ANNOUNCE/DECLARE', as: 'SUCCESS' },
     ]);
     expect(state.day).toBe(2);
     expect(state.phase).toBe('REVIVE');

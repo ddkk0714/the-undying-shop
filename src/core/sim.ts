@@ -11,14 +11,14 @@ export const randomPolicy: Policy = (state) => {
   const roll = mulberry32(state.seed + state.rngCursor + state.day)();
   if (state.phase === 'REVIVE') {
     const corpse = state.corpses.find((candidate) => candidate.grade === 'INTACT' && state.stars.some((star) => star.id === candidate.starId && star.status === 'DEAD'));
-    return corpse === undefined || roll < 0.2 ? { type: 'PHASE/TIMEOUT' } : { type: 'REVIVE/PAY', starId: corpse.starId };
+    return corpse === undefined || roll < 0.2 ? { type: 'PHASE/ADVANCE' } : { type: 'REVIVE/PAY', starId: corpse.starId };
   }
-  if (state.phase === 'CASTING') {
+  if (state.phase === 'OFFICE') {
     const choices = state.stars.filter((star) => star.status === 'ALIVE');
-    return choices.length === 0 ? { type: 'PHASE/TIMEOUT' } : { type: 'CASTING/PICK', starId: choices[Math.floor(roll * choices.length)]?.id ?? choices[0]!.id };
+    if (state.today !== null || choices.length === 0) return { type: 'OFFICE/CONFIRM' };
+    return { type: 'OFFICE/PICK_STAR', starId: choices[Math.floor(roll * choices.length)]?.id ?? choices[0]!.id };
   }
-  if (state.phase === 'SHOP') return { type: 'SHOP/CONFIRM' };
-  if (state.phase === 'DIVE') return { type: 'DIVE/TICK', dt: 30 };
+  if (state.phase === 'LIVE') return { type: 'LIVE/TICK', dt: 30 };
   if (state.phase === 'AUTOPSY') return { type: 'AUTOPSY/DECIDE', grade: 'INTACT' };
   if (state.phase === 'ANNOUNCE') return { type: 'ANNOUNCE/DECLARE', as: 'SUCCESS' };
   return { type: 'PHASE/ADVANCE' };

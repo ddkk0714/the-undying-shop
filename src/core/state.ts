@@ -2,6 +2,8 @@ import { content } from './content';
 import type { GameState, RunStats } from './types';
 
 const emptyStats = (): RunStats => ({
+  appeals: 0,
+  contractsRejected: 0,
   totalRevived: 0,
   totalDiscarded: 0,
   liesTold: 0,
@@ -20,6 +22,7 @@ export function createInitialState(seed: number): GameState {
     day: 1,
     phase: 'REVIVE',
     phaseStartedAt: 0,
+    waitingSince: null,
     isOver: false,
     ending: null,
     gold: content.balance.start.gold,
@@ -31,6 +34,8 @@ export function createInitialState(seed: number): GameState {
     stars: structuredClone(content.stars),
     personas: structuredClone(content.personas),
     recruitPool: [],
+    visitors: [],
+    rejectedStarIds: [],
     corpses: [],
     today: null,
     shelf: [null, null, null],

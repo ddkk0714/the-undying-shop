@@ -22,34 +22,76 @@
 **내가 하지 않은 이유**: `src/scenes/`는 Claude Code 소유
 **상태**: [x] 예시 항목 (처리 불필요)
 
+## HO-002  (from: Claude Code → to: Codex)  D1 04:00
+**필요한 것**: v3 계약 반영으로 컴파일이 깨진 `src/core/` 와 `tests/` 를 **기계적으로만** 살려 뒀다.
+아래는 전부 자리만 채운 것이므로 M02/M05/M06 에서 진짜 규칙으로 다시 써야 한다.
+
+- `reducer.ts` — 단계열 6단계(`REVIVE→OFFICE→LIVE→DEATH→AUTOPSY→ANNOUNCE`), `timeout()` 삭제.
+  `CASTING/PICK`→`OFFICE/PICK_STAR`(이제 phase 를 바꾸지 않는다), `SHOP/*`→`OFFICE/*`, `DIVE/TICK`→`LIVE/TICK`.
+  `startLive()` 의 도달층 산식에서 **아이템 항(depth)을 뺐다** — `ItemDef.depth` 가 사라졌기 때문.
+  `OFFICE/CONTRACT_ACCEPT` `OFFICE/CONTRACT_REJECT` `COMBAT/CHOOSE` 는 `return state` 스텁.
+  `TodayRun.hero` 는 `{hp:1,maxHp:1,atk:1,def:1}` 자리표시자, `encounter` 는 항상 `null`.
+  `DEATH_FLASH` 는 `SIGNAL_LOST` 로 바꿔 뒀다.
+- `state.ts` — `waitingSince:null` `visitors:[]` `rejectedStarIds:[]` `stats.appeals` `stats.contractsRejected` 추가.
+- `content.ts` — `Star.honesty` 는 `stars.json` 에 필드가 없어 기본 1.0.
+  `ItemDef` 의 `hp/atk/def` 는 `items.json` 이 아직 v2(depth) 라 **전부 0 으로 읽힌다.**
+  → **M05 에서 `items.json` 12종을 hp/atk/def 로 재작성하면 그때 `assertNumber` 로 다시 조여라.**
+  `content.forks` 는 아직 `left/right` 키다. `ForkRecord.truth` 는 `a/b` 로 바뀌었으니 `floors.json` 과 함께 정리 필요.
+- `tests/reducer.spec.ts` — 액션 이름만 v3 로 바꾸고 `PHASE/TIMEOUT` 시퀀스를 명시 액션으로 폈다.
+- `sim.ts` — `randomPolicy` 를 6단계에 맞춰 바꿨다. 1000회 시뮬은 통과한다.
+
+**이유**: 계약 파일만 바꾸면 `main` 이 빨간 빌드로 올라가 Codex 쪽 `npm test` 가 통째로 막힌다.
+**내가 하지 않은 이유**: 규칙·수식은 Codex 소유다. 그래서 **이름만 옮기고 값은 스텁으로 뒀다.**
+**상태**: [ ] 미처리
+
+
 ---
 
-## HO-002  (from: Claude Code → to: Codex)  8/20
-**필요한 것**: `PHASE/TIMEOUT`이 살아있는 스타가 0명일 때 `SHOP`에서 영구히 멈춘다. 막다른 길이 없도록 고쳐달라.
+# CCR — 계약 변경 요청 대장
 
-**재현** (브라우저 `?seed=12345`, DayScene에서 `다음 단계`만 계속 누름 = `PHASE/TIMEOUT` 반복):
+계약 파일(`src/core/types.ts`, `src/core/actions.ts`)은 사람 승인 없이 고칠 수 없다.
+승인된 변경만 아래에 기록되고, **Claude Code가** 계약 파일에 반영한 뒤 즉시 push 한다.
+
+## CCR-001 · v3 기획 변경  ✅ 승인됨 (D0)
+
+기획자 결정으로 코어 루프가 바뀌었다. **승인 완료. 즉시 반영한다.**
+
+### 1) 하루 사이클 7단계 → **6단계**
+```ts
+// before
+type PhaseId = 'REVIVE'|'CASTING'|'SHOP'|'DIVE'|'DEATH'|'AUTOPSY'|'ANNOUNCE';
+// after
+type PhaseId = 'REVIVE'|'OFFICE'|'LIVE'|'DEATH'|'AUTOPSY'|'ANNOUNCE';
 ```
-step 35  day 6  REVIVE    alive 0  dead 5  today null
-step 36  day 6  CASTING   alive 0  dead 5  today null
-step 37  day 6  SHOP      alive 0  dead 5  today null   ← 여기서 무한 정지
-```
+`CASTING`+`SHOP` → `OFFICE`(편성실, 계약심사 포함). `DIVE` → `LIVE`.
 
-**원인** (`src/core/reducer.ts`):
-1. `timeout()`의 `CASTING` 분기 → `popularStar()`가 `undefined` (ALIVE 0명) → `advance()`
-2. `advance()`는 `nextPhase`로 `SHOP` 진입. 이때 `today`는 여전히 `null`
-3. `timeout()`의 `SHOP` 분기 → `SHOP/CONFIRM` → `startDive()`의 첫 줄
-   `if (state.today === null) return state;` → **상태가 바뀌지 않는다**
-4. 다음 `PHASE/TIMEOUT`도 같은 경로 → 영원히 `SHOP`
+### 2) 제한시간 전면 삭제
+- `PHASE/TIMEOUT` 액션 **삭제**
+- `GameState.waitingSince: number | null` **추가** (생방송 지체 페널티용)
+- `ui/TimerBar.ts` 삭제
 
-**왜 테스트에 안 잡혔나**: `sim.ts`의 `randomPolicy`는 `REVIVE/PAY`를 확률적으로 섞어서 ALIVE를 되살린다.
-그런데 M02 §5의 소프트 타이머 기본값 표는 `REVIVE = 가장 싼 선택(소생 안 함)`이라,
-**심사자가 아무것도 안 하고 타이머만 흘려보내면 결정적으로 이 막다른 길에 빠진다.** P0 위험이다.
+### 3) 1인칭 턴제 전투 추가
+- `CombatChoice`, `Combatant`, `Encounter` 타입 신규
+- `COMBAT/CHOOSE` 액션 신규
+- `TodayRun`에 `hero`, `encounter`, `appealCount` 추가
+- `TodayRun.targetCeiling` → `claimedCeiling` 으로 의미 변경 (계약서상 자기 신고값)
 
-**제안** (택1, 판단은 Codex):
-- `startDive()`가 `today === null`이면 그 날을 스킵하고 `ANNOUNCE`/다음 날로 흘려보낸다
-- 또는 `timeout()`의 `REVIVE` 기본값을 "ALIVE가 0명이면 가장 싼 시체 1구 소생"으로 바꾼다
-- 또는 `advance()`가 `SHOP`에서 `today === null`이면 하루를 공치고 `day+1`
+### 4) 계약서 추가
+- `Contract` 타입 신규, `GameState.visitors: Contract[]`, `rejectedStarIds: StarId[]`
+- `Star.honesty: number` 추가 — **UI 노출 절대 금지**
+- `OFFICE/CONTRACT_ACCEPT` `OFFICE/CONTRACT_REJECT` 액션 신규
 
-**내가 하지 않은 이유**: `src/core/**`는 Codex 소유 (07-PARALLEL-DEV §3). 게임 규칙 판단이라 씬에서 우회하지 않았다.
+### 5) 아이템이 `depth` → `hp`/`atk`/`def`
+- `ItemDef.depth` **삭제**, `hp`/`atk`/`def` 추가
+- `content/items.json` 12종 전부 재작성 (M05 표 참조)
 
-**상태**: [ ] 미처리
+### 6) 기타
+- `ForkRecord.truth` 의 `left/right` → `a/b` (좌우는 시드로 스왑되므로)
+- `FxEvent.kind` 에 `SIGNAL_LOST` `HIT` `GUARD` `APPEAL_POSE` `CONTRACT_SIGN` 추가, `DEATH_FLASH` 삭제
+- `RunStats` 에 `appeals`, `contractsRejected` 추가
+
+**정본은 `Project_docs/02-DATA-SCHEMA.md` 다.** 반영 후 이 항목을 `[x]` 로 바꿔라.
+
+**상태**: [x] 반영됨 (D1, Claude Code) — `types.ts` `actions.ts` 갱신, `ui/layout.ts` 에 `L.live`/`L.office` 추가.
+`ui/TimerBar.ts` 는 애초에 생성된 적이 없어 삭제할 것이 없었다.
+계약 갱신으로 깨진 `core`/`tests` 의 최소 이식 내역은 **HO-002** 참조.

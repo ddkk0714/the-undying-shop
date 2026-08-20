@@ -36,6 +36,10 @@ function assertNumber(value: unknown, path: string): asserts value is number {
   assertShape(typeof value === 'number' && Number.isFinite(value), `${path} must be a finite number`);
 }
 
+function numberOr(value: unknown, fallback = 0): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+}
+
 function makeStars(raw: unknown): Star[] {
   assertShape(Array.isArray(raw), 'stars must be an array');
   return raw.map((value, index) => {
@@ -49,6 +53,8 @@ function makeStars(raw: unknown): Star[] {
       bodyName: value.name,
       portraitKey: `star.portrait.${value.id.replace('body_', '')}`,
       stats: { grit: value.grit, charisma: value.cha, luck: value.luck },
+      // v3(CCR-001): honesty 는 계약서에서 확정된다. stars.json 이 아직 v2 라 기본 1.0.
+      honesty: numberOr(value.honesty, 1),
       reviveCount: 0,
       personaId: typeof value.startPersonaId === 'string' ? value.startPersonaId : null,
       status: 'ALIVE',
@@ -88,10 +94,11 @@ function makeItems(raw: unknown): ItemDef[] {
   return raw.map((value, index) => {
     assertShape(isRecord(value), `items[${index}] must be an object`);
     assertShape(typeof value.id === 'string' && typeof value.name === 'string', `items[${index}] id/name missing`);
-    assertNumber(value.depth, `items[${index}].depth`);
     assertNumber(value.price, `items[${index}].price`);
     assertShape(typeof value.tier === 'string' && typeof value.isRelic === 'boolean', `items[${index}] tier/relic missing`);
-    return { id: value.id, name: value.name, iconKey: `item.${value.id}`, depth: value.depth, price: value.price, tier: value.tier as ItemDef['tier'], isRelic: value.isRelic };
+    // v3(CCR-001): depth 삭제, hp/atk/def 신설. items.json 12종 재작성은 M05 · Codex 몫이라
+    // 아직 v2 파일이 들어온다. 필드가 없으면 0 으로 읽는다 (HANDOFF HO-002).
+    return { id: value.id, name: value.name, iconKey: `item.${value.id}`, hp: numberOr(value.hp), atk: numberOr(value.atk), def: numberOr(value.def), price: value.price, tier: value.tier as ItemDef['tier'], isRelic: value.isRelic };
   });
 }
 
