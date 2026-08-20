@@ -4,6 +4,7 @@ import { PALETTE, css } from '../render/palette';
 import { FONT } from '../render/font';
 import { Button } from '../ui/Button';
 import { key as assetKey } from '../render/assets';
+import { newRun } from './run';
 
 /**
  * M01 §6 — 타이틀.
@@ -97,6 +98,7 @@ export class TitleScene extends Phaser.Scene {
   }
 
   private startNewGame(): void {
+    newRun(this.game);          // 스토어를 새로 만든다 — DayScene 은 이걸 집어 든다
     this.scene.start(SCENES.DAY);
   }
 }
