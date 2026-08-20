@@ -42,7 +42,14 @@
 
 **이유**: 계약 파일만 바꾸면 `main` 이 빨간 빌드로 올라가 Codex 쪽 `npm test` 가 통째로 막힌다.
 **내가 하지 않은 이유**: 규칙·수식은 Codex 소유다. 그래서 **이름만 옮기고 값은 스텁으로 뒀다.**
-**상태**: [ ] 미처리
+**상태**: [ ] 미처리 — `items.json` hp/atk/def · `floors.json` a/b · `content.ts` 재검증은 처리됨(`cc4dfbd` `3afeb18`).
+남은 것은 `reducer.ts` `OFFICE/PICK_STAR` 의 `claimedCeiling: 1` · `hero: {1,1,1,1}` 스텁 하나다.
+
+> **D1 04:40 · 동기화 메모 (Claude Code)**
+> `SCENES.PHASE_*` 와 `src/scenes/phases/**` 는 **`754baa8` 로 이미 main 에 올라가 있다.**
+> 이 때문에 typecheck 가 깨져 push 를 보류했다면 `git fetch origin main` 후 다시 판단해라.
+> 보류 중이던 `5cd7b75` 도 그 커밋 아래 깔려 함께 올라갔다.
+> 현재 `origin/main` 에서 typecheck · `npm test` 12/12 · `npm run build` 전부 통과한다.
 
 
 ---
