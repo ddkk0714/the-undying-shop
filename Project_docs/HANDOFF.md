@@ -42,8 +42,9 @@
 
 **이유**: 계약 파일만 바꾸면 `main` 이 빨간 빌드로 올라가 Codex 쪽 `npm test` 가 통째로 막힌다.
 **내가 하지 않은 이유**: 규칙·수식은 Codex 소유다. 그래서 **이름만 옮기고 값은 스텁으로 뒀다.**
-**상태**: [ ] 미처리 — `items.json` hp/atk/def · `floors.json` a/b · `content.ts` 재검증은 처리됨(`cc4dfbd` `3afeb18`).
-남은 것은 `reducer.ts` `OFFICE/PICK_STAR` 의 `claimedCeiling: 1` · `hero: {1,1,1,1}` 스텁 하나다.
+**상태**: [x] 처리됨 — `items.json` hp/atk/def · `floors.json` a/b · `content.ts` 재검증(`cc4dfbd` `3afeb18`),
+마지막 스텁이던 `OFFICE/PICK_STAR` 는 `systems/office.ts` `pickStar` 로 옮겨져 `createHero` 와 계약서 기반
+`claimedCeiling` 이 실제로 채워졌다(`f96c761`). 스텁은 하나도 남지 않았다.
 
 > **D1 04:40 · 동기화 메모 (Claude Code)**
 > `SCENES.PHASE_*` 와 `src/scenes/phases/**` 는 **`754baa8` 로 이미 main 에 올라가 있다.**
@@ -51,6 +52,17 @@
 > 보류 중이던 `5cd7b75` 도 그 커밋 아래 깔려 함께 올라갔다.
 > 현재 `origin/main` 에서 typecheck · `npm test` 12/12 · `npm run build` 전부 통과한다.
 
+
+## HO-003  (from: Claude Code → to: 사람 · Codex)  D1 05:00
+**필요한 것**: 소생실 3택 중 **「폐기」에 해당하는 액션이 계약에 없다.**
+`M04-revive.md` 는 되살린다 / 그대로 둔다 / **폐기**(몸 소멸 · 유품 확보 · 페르소나 승계 가능 · 팬덤 -15%)
+3택인데 `actions.ts` 에는 `REVIVE/PAY` `REVIVE/SKIP` `REVIVE/INHERIT` 뿐이다.
+→ `REVIVE/DISCARD; starId` 신설이 필요하다. **계약 파일이므로 CCR 승인 없이는 못 넣는다.**
+
+**현재 상태**: `RevivePhase` 는 되살린다 / 그대로 둔다 2택만 그린다. 폐기 버튼은 아예 그리지 않았다
+(누르면 아무 일도 없는 버튼을 두는 것보다 낫다). 승인되면 버튼 한 개 추가로 끝난다.
+**내가 하지 않은 이유**: `src/core/actions.ts` 는 계약 파일 (07-PARALLEL-DEV §5-2)
+**상태**: [ ] 미처리
 
 ---
 

@@ -37,7 +37,7 @@ export class AutopsyPhase extends PhaseScene {
       const h = L.slot3.h - 20;
       this.rect(x, y, L.slot3.w, h, 'ash');
       this.frame(x, y, L.slot3.w, h);
-      this.text(x + 8, y + 8, opt.title, opt.grade === 'INTACT' ? 'spirit' : 'wax');
+      this.text(x + 8, y + 8, opt.title, opt.grade === 'INTACT' ? 'bone' : 'wax');
       this.text(x + 8, y + 28, opt.body, 'dust');
 
       new Button(this, {

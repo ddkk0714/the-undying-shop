@@ -153,7 +153,7 @@ export class LivePhase extends PhaseScene {
     }
 
     this.text(v.x + 8, v.y + v.h - 42, `${run.hero.hp} / ${run.hero.maxHp}`, 'bone');
-    this.bar(v.x + 8, v.y + v.h - 22, v.w - 16, run.hero.hp, run.hero.maxHp, 'spirit');
+    this.bar(v.x + 8, v.y + v.h - 22, v.w - 16, run.hero.hp, run.hero.maxHp, 'bone');
     this.textRight(v.x + v.w - 8, v.y + v.h - 42, `공 ${run.hero.atk} 방 ${run.hero.def}`, 'dust');
   }
 
@@ -208,7 +208,7 @@ export class LivePhase extends PhaseScene {
   }
 
   /** 값 게이지 — 1px 테두리 안을 채운다 */
-  private bar(x: number, y: number, w: number, value: number, max: number, color: 'wax' | 'spirit'): void {
+  private bar(x: number, y: number, w: number, value: number, max: number, color: 'wax' | 'bone'): void {
     this.rect(x, y, w, 6, 'soot');
     this.frame(x, y, w, 6);
     const ratio = max <= 0 ? 0 : Math.max(0, Math.min(1, value / max));
