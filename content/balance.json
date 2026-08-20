@@ -1,0 +1,70 @@
+{
+  "start": {
+    "gold": 12840,
+    "fans": 84200,
+    "reputation": 62,
+    "maxFloor": 26,
+    "days": 8,
+    "targetFloor": 40
+  },
+  "revive": {
+    "base": 400,
+    "floorExp": 1.055,
+    "gradeMul": { "INTACT": 1.0, "DAMAGED": 1.5 },
+    "degradeExp": 1.4,
+    "decayPerDay": 1.08,
+    "roundTo": 10
+  },
+  "degrade": {
+    "statMul": [1.0, 0.94, 0.87, 0.78, 0.67, 0.55]
+  },
+  "dive": {
+    "baseFloorConst": 10,
+    "gritMul": 1.2,
+    "luckMul": 0.5,
+    "riskBase": 0.04,
+    "riskPerFloorAbove20": 0.012,
+    "gritRiskReduce": 0.06,
+    "overCeilingMul": 3.0,
+    "forcedDeathOffset": 3,
+    "floorSeconds": 0.35,
+    "forkWaitSeconds": 5
+  },
+  "fans": {
+    "base": 800,
+    "depthPivot": 15,
+    "depthMul": 0.08,
+    "recordBonus": 1.5,
+    "shallowLiePenalty": -0.4,
+    "unusedDecayPerDay": 0.03,
+    "inheritLoss": 0.15
+  },
+  "income": {
+    "goodsPerFan": 0.02,
+    "superchat": {
+      "poolPerFan": 0.004,
+      "fork": [40, 120],
+      "record": [200, 400],
+      "death": [80, 250],
+      "witness": [150, 350],
+      "charismaMul": 0.05,
+      "depletedMul": 0.2
+    }
+  },
+  "opinion": {
+    "leakPerWitnessRevive": { "18": 15, "23": 20, "28": 30 },
+    "leakPerIgnoredChat": 1,
+    "leakPerTruthRelicSale": 10,
+    "leakPerFakeSuccess": 8,
+    "leakEndingThreshold": 70,
+    "moderationFreeCount": 5,
+    "moderationRepPenalty": 1,
+    "viewerFatigueOn28F": 25
+  },
+  "reputation": {
+    "onSuccessAnnounce": 2,
+    "onFailureAnnounce": -5,
+    "grades": [[0, "F"], [20, "D"], [40, "C"], [55, "B"], [70, "A"], [85, "S"]]
+  },
+  "recruit": { "baseSlots": 2, "lossPerFailures": 2 }
+}

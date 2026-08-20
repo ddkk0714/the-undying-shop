@@ -1,0 +1,24 @@
+[
+  {
+    "id": "persona_rion",
+    "displayName": "불꽃의 리온",
+    "fandom": 12400,
+    "recognition": "A",
+    "goodsPerDay": 8200,
+    "generation": 3,
+    "lineage": [
+      { "starId": "body_mir", "diedFloor": 9 },
+      { "starId": "body_sela", "diedFloor": 17 },
+      { "starId": "body_karin", "diedFloor": null }
+    ]
+  },
+  {
+    "id": "persona_noname",
+    "displayName": "무명",
+    "fandom": 900,
+    "recognition": "C",
+    "goodsPerDay": 300,
+    "generation": 1,
+    "lineage": []
+  }
+]

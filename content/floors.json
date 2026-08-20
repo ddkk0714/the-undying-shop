@@ -1,0 +1,24 @@
+{
+  "forks": [
+    {
+      "atFloor": 14,
+      "left": { "label": "안전 · 15F에서 막힘", "reachDelta": 1, "risk": 0.05, "hazard": "NONE" },
+      "right": { "label": "화염 구역 · 22F까지 뚫림", "reachDelta": 8, "risk": 0.35, "hazard": "FLAME" }
+    },
+    {
+      "atFloor": 22,
+      "left": { "label": "붕괴 위험 · 26F", "reachDelta": 4, "risk": 0.4, "hazard": "COLLAPSE" },
+      "right": { "label": "짐승 소굴 · 31F까지", "reachDelta": 9, "risk": 0.3, "hazard": "BEAST" }
+    },
+    {
+      "atFloor": 28,
+      "left": { "label": "물소리가 난다 · 34F", "reachDelta": 6, "risk": 0.25, "hazard": "NONE" },
+      "right": { "label": "막다른 길 · 29F", "reachDelta": 1, "risk": 0.1, "hazard": "NONE" }
+    },
+    {
+      "atFloor": 34,
+      "left": { "label": "문지기 · 40F까지", "reachDelta": 6, "risk": 0.55, "hazard": "GATEKEEPER" },
+      "right": { "label": "우회로 · 36F", "reachDelta": 2, "risk": 0.15, "hazard": "NONE" }
+    }
+  ]
+}

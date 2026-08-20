@@ -1,0 +1,14 @@
+[
+  { "id": "lantern_old", "name": "낡은 랜턴", "depth": 2, "price": 280, "tier": "C", "isRelic": false },
+  { "id": "dagger_crack", "name": "균열난 단검", "depth": 4, "price": 620, "tier": "B", "isRelic": false },
+  { "id": "rope_hemp", "name": "삼줄", "depth": 3, "price": 410, "tier": "C", "isRelic": false },
+  { "id": "cloak_ash", "name": "재의 망토", "depth": 7, "price": 1340, "tier": "A", "isRelic": false },
+  { "id": "blade_tallow", "name": "촛농검", "depth": 9, "price": 2180, "tier": "A", "isRelic": false },
+  { "id": "charm_seal", "name": "봉랍 부적", "depth": 5, "price": 900, "tier": "B", "isRelic": false },
+  { "id": "boots_quiet", "name": "죽은 자의 신발", "depth": 6, "price": 1050, "tier": "B", "isRelic": true },
+  { "id": "mask_bone", "name": "뼈가면", "depth": 8, "price": 1760, "tier": "A", "isRelic": true },
+  { "id": "tooth_gate", "name": "문지기의 이빨", "depth": 9, "price": 3100, "tier": "S", "isRelic": true },
+  { "id": "soil_deep", "name": "아래의 흙 한 줌", "depth": 3, "price": 4400, "tier": "S", "isRelic": true },
+  { "id": "ring_rust", "name": "녹슨 반지", "depth": 1, "price": 150, "tier": "F", "isRelic": true },
+  { "id": "page_torn", "name": "찢어진 낱장", "depth": 0, "price": 2600, "tier": "S", "isRelic": true }
+]

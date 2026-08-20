@@ -1,0 +1,7 @@
+[
+  { "id": "body_karin", "name": "카린", "grit": 7, "cha": 6, "luck": 5, "startPersonaId": "persona_rion", "availableDay": 1 },
+  { "id": "body_juno", "name": "주노", "grit": 5, "cha": 8, "luck": 4, "startPersonaId": "persona_noname", "availableDay": 1 },
+  { "id": "body_sela", "name": "세라", "grit": 8, "cha": 4, "luck": 6, "availableDay": 3 },
+  { "id": "body_ilan", "name": "일란", "grit": 4, "cha": 9, "luck": 3, "availableDay": 5 },
+  { "id": "body_mor", "name": "모르", "grit": 6, "cha": 5, "luck": 8, "availableDay": null }
+]
