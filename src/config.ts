@@ -1,6 +1,9 @@
-/** 01-ARCHITECTURE §4 — 픽셀 퍼펙트 기준 해상도. 이 두 값은 바꾸지 않는다. */
-export const BASE_W = 480;
-export const BASE_H = 270;
+/**
+ * 01-ARCHITECTURE §4 — 기준 해상도.
+ * v3.1 아트 개편으로 480x270 → **1920x1080**. 아트가 고해상도 1비트 디더로 바뀌었다.
+ */
+export const BASE_W = 1920;
+export const BASE_H = 1080;
 
 /** M01 인터페이스 — 씬 키는 문자열 리터럴을 흩뿌리지 않고 여기서만 관리한다. */
 export const SCENES = {

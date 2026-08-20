@@ -2,27 +2,31 @@ import Phaser from 'phaser';
 import { BASE_W, BASE_H } from '../config';
 
 /**
- * 01-ARCHITECTURE §4-1 + M01 §3 — 정수배 스케일만 허용한다.
- * FIT 모드는 반픽셀을 만들어 픽셀 폰트를 뭉갠다. 절대 쓰지 않는다.
+ * 01-ARCHITECTURE §4-1 (v3.1) — **배율은 정수 n 또는 1/n 만** 허용한다.
+ *
+ * 기준이 1920x1080 이 되면서 대부분의 창은 기준보다 작다. 확대만 정수로 묶으면 화면이 잘린다.
+ * 1/2·1/3 축소는 디더 격자가 정확히 2px·3px 로 병합되므로 모아레가 생기지 않는다.
+ * 그 사이의 실수 배율(=`Phaser.Scale.FIT`)은 여전히 금지다.
  *
  * 추가 요구 (M01 §3):
  *  - resize 는 100ms 디바운스 (창 드래그 중 렉 방지)
  *  - 모바일 세로 화면이면 "가로로 돌려주세요" 오버레이
- *
- * 뷰포트가 480x270 보다 작으면 정수배(최소 1배)로도 캔버스가 잘린다.
- * 흐리게 줄이는 것(=FIT)은 금지이므로, 잘린 화면을 보여주는 대신
- * 세로 폰과 같은 방식으로 오버레이를 덮는다. 창을 키우면 즉시 복귀한다.
  */
 
 const NOTICE_ID = 'viewport-notice';
 
+/** 최소 배율 1/4 — 480x270. 이보다 작으면 글자를 읽을 수 없다 */
+const MIN_DIVISOR = 4;
+
 export function computeZoom(vw: number, vh: number): number {
-  return Math.max(1, Math.floor(Math.min(vw / BASE_W, vh / BASE_H)));
+  const raw = Math.min(vw / BASE_W, vh / BASE_H);
+  if (raw >= 1) return Math.floor(raw);
+  return 1 / Math.min(MIN_DIVISOR, Math.max(1, Math.ceil(1 / raw)));
 }
 
-/** 1배조차 다 못 담는 창인가 */
+/** 최소 배율로도 다 못 담는 창인가 */
 export function isTooSmall(vw: number, vh: number): boolean {
-  return vw < BASE_W || vh < BASE_H;
+  return vw < BASE_W / MIN_DIVISOR || vh < BASE_H / MIN_DIVISOR;
 }
 
 /** 세로로 든 폰인가 — 데스크톱 세로 창은 제외한다 */
@@ -55,7 +59,7 @@ export function applyIntegerScale(game: Phaser.Game): () => void {
       el.style.display = 'grid';
     } else if (isTooSmall(window.innerWidth, window.innerHeight)) {
       el.textContent = `창이 너무 작습니다
-${BASE_W}x${BASE_H} 이상으로 키워주세요`;
+${BASE_W / MIN_DIVISOR}x${BASE_H / MIN_DIVISOR} 이상으로 키워주세요`;
       el.style.whiteSpace = 'pre-line';
       el.style.display = 'grid';
     } else {

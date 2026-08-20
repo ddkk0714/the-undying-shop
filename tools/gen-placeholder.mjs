@@ -8,7 +8,7 @@
  * 더미 파일을 public/assets/packs/placeholder/ 아래에 만든다.
  * 손으로 그리지 않는다. 새 의존성도 쓰지 않는다 (node:zlib 만 사용).
  *
- * 더미는 팔레트 9색(+완전투명) 밖의 색을 절대 쓰지 않는다. 끝에서 실제 픽셀을 검사한다.
+ * 더미는 팔레트 5토큰(+완전투명) 밖의 색을 절대 쓰지 않는다. 끝에서 실제 픽셀을 검사한다.
  */
 import { deflateSync } from 'node:zlib';
 import { mkdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
@@ -18,17 +18,14 @@ import { fileURLToPath } from 'node:url';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = join(ROOT, 'public');
 
-/* ── 00-OVERVIEW §7-1 팔레트 9색 ───────────────────────────── */
+/* ── 00-OVERVIEW §7-1 팔레트 5토큰 (v3.1) ───────────────────────────── */
 const P = {
-  soot: 0x12100e,
-  ash: 0x1e1a17,
-  clay: 0x2c2622,
-  line: 0x3d342e,
-  bone: 0xe6dcc8,
-  dust: 0x8a8073,
+  // 00-OVERVIEW §7-1 (v3.1) — 지정 3색 + 파생 dust + 강조 wax
+  ink: 0x0f1f17,
+  mid: 0x3a3c31,
+  bone: 0xc2c8a5,
+  dust: 0x68735e,
   wax: 0xc0392f,
-  tallow: 0xe0a63c,
-  spirit: 0x5f8c7b,
 };
 const ALLOWED = new Set(Object.values(P));
 
@@ -175,37 +172,38 @@ class Img {
   }
 }
 
-/** 96×120 실루엣 한 칸 (머리 + 어깨) */
+/** 384×480 실루엣 한 칸 (머리 + 어깨) — 03-ASSET-MODULES §4 (v3.1) */
 function silhouette(img, ox, label) {
-  img.rect(ox, 0, 96, 120, P.ash);
-  img.frame(ox, 0, 96, 120, P.line);
-  img.disc(ox + 48, 40, 19, P.dust); // 머리
-  for (let j = 0; j < 46; j++) {
+  img.rect(ox, 0, 384, 480, P.ink);
+  img.frame(ox, 0, 384, 480, P.dust);
+  img.disc(ox + 192, 160, 76, P.mid); // 머리
+  for (let j = 0; j < 184; j++) {
     // 어깨
-    const w = 28 + j;
-    img.rect(ox + 48 - (w >> 1), 64 + j, w, 1, P.dust);
+    const w = 112 + j;
+    img.rect(ox + 192 - (w >> 1), 256 + j, w, 1, P.mid);
   }
-  if (label) img.text(ox + 48 - String(label).length * 6, 102, label, P.bone, 2);
+  if (label) img.text(ox + 192 - String(label).length * 24, 408, label, P.bone, 8);
 }
 
 /* ── 타입별 더미 ───────────────────────────────────────────── */
 function makeImage(key) {
   if (key.startsWith('bg.')) {
-    // §4 표: 480×244 단색 clay + 좌상단에 키 이름
-    const img = new Img(480, 244, P.clay);
-    img.text(6, 6, key, P.dust, 2);
+    // §4 표(v3.1): 1920×936 ink 바탕 + 50% 디더 + 좌상단 키 이름
+    const img = new Img(1920, 936, P.ink);
+    for (let y = 0; y < 936; y += 8) for (let x = (y / 8) % 2 ? 4 : 0; x < 1920; x += 8) img.rect(x, y, 4, 4, P.mid);
+    img.text(24, 24, key, P.dust, 8);
     return img;
   }
   if (key.startsWith('star.portrait.')) {
-    // §4 표: 96×120 dust 실루엣 + 이니셜
-    const img = new Img(96, 120);
+    // §4 표(v3.1): 384×480 mid 실루엣 + 이니셜
+    const img = new Img(384, 480);
     const name = key.split('.').pop() ?? '';
     silhouette(img, 0, name.slice(0, 2));
     return img;
   }
-  const img = new Img(64, 64, P.clay);
-  img.frame(0, 0, 64, 64, P.line);
-  img.text(3, 3, key.split('.').pop() ?? key, P.dust, 1);
+  const img = new Img(256, 256, P.mid);
+  img.frame(0, 0, 256, 256, P.dust);
+  img.text(12, 12, key.split('.').pop() ?? key, P.dust, 4);
   return img;
 }
 
@@ -213,9 +211,9 @@ function makeNineslice(key, entry) {
   // §4 표: ash 채움 + line 1px 테두리
   const s = entry.slice ?? [4, 4, 4, 4];
   const size = Math.max(16, 2 * Math.max(...s) + 2);
-  const fill = key.includes('button') ? P.clay : P.ash; // 04-UI-KIT §2-2 raised/sunken
+  const fill = key.includes('button') ? P.mid : P.ink; // 04-UI-KIT §2-2 raised/sunken
   const img = new Img(size, size, fill);
-  img.frame(0, 0, size, size, P.line);
+  img.frame(0, 0, size, size, P.dust);
   return img;
 }
 
@@ -231,7 +229,7 @@ function makeSpritesheet(key, entry) {
       // 봉랍 도장: 프레임마다 커지는 wax 원
       const r = Math.round((fh / 2 - 2) * ((f + 1) / SHEET_FRAMES));
       img.disc(ox + fw / 2, fh / 2, r, P.wax);
-      if (r > 5) img.disc(ox + fw / 2, fh / 2, r - 3, P.soot);
+      if (r > 5) img.disc(ox + fw / 2, fh / 2, r - 3, P.ink);
       if (r > 7) img.disc(ox + fw / 2, fh / 2, r - 5, P.wax);
     } else {
       silhouette(img, ox, f + 1);
@@ -359,4 +357,4 @@ if (missing.placeholder.length > 0) {
   console.error('\nplaceholder 팩에 누락 키가 있다.');
   process.exit(1);
 }
-console.log('\nOK — placeholder 팩 누락 0개, 팔레트 9색 준수.');
+console.log('\nOK — placeholder 팩 누락 0개, 팔레트 5토큰 준수.');

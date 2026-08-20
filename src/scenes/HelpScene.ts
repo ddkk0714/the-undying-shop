@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { BASE_W, BASE_H, SCENES } from '../config';
 import { PALETTE, css } from '../render/palette';
-import { FONT } from '../render/font';
+import { FONT, FONT_TITLE } from '../render/font';
 import { Button } from '../ui/Button';
 import { panel } from '../ui/Panel';
 import { L } from '../ui/layout';
@@ -21,10 +21,10 @@ const LINES: [string, string][] = [
 
 /** 패널 안쪽 좌표. 설명 열은 x=152 에서 시작해 패널 우변(456)까지 304px 을 쓴다.
  *  16px 한글 1자 = 16px 이므로 설명은 공백 포함 19자 폭을 넘지 않는다. */
-const PANEL = { x: 24, y: 16, w: BASE_W - 48, h: BASE_H - 62 } as const;
-const COL_KEY = 40;
-const COL_DESC = 152;
-const ROW_H = 22;
+const PANEL = { x: 96, y: 64, w: BASE_W - 192, h: BASE_H - 248 } as const;
+const COL_KEY = 160;
+const COL_DESC = 608;
+const ROW_H = 88;
 
 export class HelpScene extends Phaser.Scene {
   constructor() {
@@ -32,15 +32,15 @@ export class HelpScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.cameras.main.setBackgroundColor(PALETTE.soot);
+    this.cameras.main.setBackgroundColor(PALETTE.ink);
     panel(this, PANEL.x, PANEL.y, PANEL.w, PANEL.h, 'sunken');
 
-    this.add.text(COL_KEY, 26, '조작 안내', { ...FONT, color: css('bone') });
+    this.add.text(COL_KEY, 104, '조작 안내', { ...FONT_TITLE, color: css('bone') });
 
     const right = PANEL.x + PANEL.w - L.pad;
     let y = 54;
     for (const [k, desc] of LINES) {
-      this.add.text(COL_KEY, y, k, { ...FONT, color: css('tallow') });
+      this.add.text(COL_KEY, y, k, { ...FONT, color: css('bone') });
       const t = this.add.text(COL_DESC, y, desc, { ...FONT, color: css('dust') });
       // 픽셀 폰트라 글자폭이 고정이다. 넘치면 조용히 잘리는 대신 개발 중에 잡는다.
       if (import.meta.env.DEV && Math.ceil(t.x + t.width) > right) {
@@ -49,10 +49,10 @@ export class HelpScene extends Phaser.Scene {
       y += ROW_H;
     }
 
-    this.add.text(COL_KEY, y + 4, '타이머는 옵션에서 끌 수 있다.', { ...FONT, color: css('dust') });
+    this.add.text(COL_KEY, y + 16, 'v3 에는 제한시간이 없다. 얼마든지 생각해도 된다.', { ...FONT, color: css('dust') });
 
     new Button(this, {
-      x: BASE_W / 2 - 66, y: BASE_H - 34, w: 132, h: 24,
+      x: BASE_W / 2 - 264, y: BASE_H - 136, w: 528, h: 96,
       label: '돌아가기', hotkey: '1',
       onClick: () => this.scene.start(SCENES.TITLE),
     });

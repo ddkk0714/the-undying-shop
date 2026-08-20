@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { BASE_W, BASE_H, SCENES } from '../config';
 import { PALETTE, css } from '../render/palette';
-import { FONT } from '../render/font';
+import { FONT, FONT_TITLE } from '../render/font';
 import { Button } from '../ui/Button';
 import { panel } from '../ui/Panel';
 
@@ -20,16 +20,16 @@ export class OptionsScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.cameras.main.setBackgroundColor(PALETTE.soot);
+    this.cameras.main.setBackgroundColor(PALETTE.ink);
     panel(this, 24, 16, BASE_W - 48, BASE_H - 62, 'sunken');
-    this.add.text(40, 26, '옵션', { ...FONT, color: css('bone') });
+    this.add.text(160, 104, '옵션', { ...FONT_TITLE, color: css('bone') });
 
     const timerOn = (this.registry.get('opt.softTimer') as boolean | undefined) ?? OPTION_DEFAULTS.softTimer;
     const speed = (this.registry.get('opt.speed') as number | undefined) ?? OPTION_DEFAULTS.speed;
 
-    this.add.text(40, 66, '소프트 타이머', { ...FONT, color: css('dust') });
+    this.add.text(160, 264, '연출 감소', { ...FONT, color: css('dust') });
     new Button(this, {
-      x: 240, y: 62, w: 100, h: 24,
+      x: 960, y: 248, w: 400, h: 96,
       label: timerOn ? '켜짐' : '꺼짐', hotkey: '1',
       onClick: () => {
         this.registry.set('opt.softTimer', !timerOn);
@@ -37,9 +37,9 @@ export class OptionsScene extends Phaser.Scene {
       },
     });
 
-    this.add.text(40, 104, '진행 속도', { ...FONT, color: css('dust') });
+    this.add.text(160, 416, '진행 속도', { ...FONT, color: css('dust') });
     new Button(this, {
-      x: 240, y: 100, w: 100, h: 24,
+      x: 960, y: 400, w: 400, h: 96,
       label: `x${speed}`, hotkey: '2',
       onClick: () => {
         const next = speed >= 3 ? 1 : speed + 1;
@@ -48,11 +48,11 @@ export class OptionsScene extends Phaser.Scene {
       },
     });
 
-    this.add.text(40, 146, '타이머를 끄면 시간 제한 없이', { ...FONT, color: css('dust') });
-    this.add.text(40, 166, '원하는 만큼 보고 고를 수 있다.', { ...FONT, color: css('dust') });
+    this.add.text(160, 584, 'v3 에는 제한시간이 없다.', { ...FONT, color: css('dust') });
+    this.add.text(160, 664, '연출 감소를 켜면 생방송 지체 페널티도 꺼진다.', { ...FONT, color: css('dust') });
 
     new Button(this, {
-      x: BASE_W / 2 - 66, y: BASE_H - 34, w: 132, h: 24,
+      x: BASE_W / 2 - 264, y: BASE_H - 136, w: 528, h: 96,
       label: '돌아가기', hotkey: '3',
       onClick: () => this.scene.start(SCENES.TITLE),
     });

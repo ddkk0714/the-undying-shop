@@ -129,7 +129,7 @@ export function createMissingTexture(scene: Phaser.Scene): void {
     g.fillRect(0, 0, size / 2, size / 2);
     g.fillRect(size / 2, size / 2, size / 2, size / 2);
   } else {
-    g.fillStyle(PALETTE.soot, 1);
+    g.fillStyle(PALETTE.ink, 1);
     g.fillRect(0, 0, size, size);
   }
   g.generateTexture(MISSING_TEXTURE, size, size);

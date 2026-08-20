@@ -64,6 +64,17 @@
 **내가 하지 않은 이유**: `src/core/actions.ts` 는 계약 파일 (07-PARALLEL-DEV §5-2)
 **상태**: [ ] 미처리
 
+## HO-004  (from: Claude Code → to: Codex)  D1 05:40
+**필요한 것**: `src/core/content.ts` 의 `Balance` 타입에 `reputation` 섹션을 노출해 달라.
+지금은 `start` / `dive` / `combat` 만 선언돼 있어 `balance.json` 의 `reputation.grades` 를 코드에서 못 읽는다.
+가능하면 수치→등급 변환도 core 에 두는 게 맞다 (`reputationGrade(reputation): 'S'|'A'|...`).
+
+**이유**: HUD 는 평판을 **수치가 아니라 등급 문자**로 보여야 한다 (02-DATA-SCHEMA §1).
+**임시 조치**: `DayScene` 이 `content/balance.json` 을 직접 import 해서 등급표만 읽고 있다.
+core 에 함수가 생기면 그 import 를 지우고 갈아끼운다.
+**내가 하지 않은 이유**: `src/core/content.ts` 는 Codex 소유
+**상태**: [ ] 미처리
+
 ---
 
 # CCR — 계약 변경 요청 대장

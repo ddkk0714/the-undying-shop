@@ -14,7 +14,7 @@ export class BootScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.cameras.main.setBackgroundColor(PALETTE.soot);
+    this.cameras.main.setBackgroundColor(PALETTE.ink);
     createMissingTexture(this);
 
     void waitForFont(3000).then((ok) => {

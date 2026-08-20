@@ -3,7 +3,7 @@
 프로젝트: **죽지 않는 가게 (undying-shop)** · Phaser 3.90.0 + TS + Vite · 마감 2026-08-26
 
 > ⚠️ **이 프로젝트는 Claude Code와 Codex가 동시에 개발한다.**
-> 작업 시작 전 `Project_Project_docs/07-PARALLEL-DEV.md`를 반드시 읽어라. 소유권을 어기면 머지 충돌로 반나절이 날아간다.
+> 작업 시작 전 `Project_docs/07-PARALLEL-DEV.md`를 반드시 읽어라. 소유권을 어기면 머지 충돌로 반나절이 날아간다.
 
 ---
 
@@ -41,12 +41,12 @@ src/core/actions.ts   ← D1 오전에 Project_docs/modules/M02 에서 옮겨 �
 
 ## 1. 시작 전 반드시 읽을 것
 
-1. `Project_Project_docs/00-OVERVIEW.md`
-2. **`Project_Project_docs/07-PARALLEL-DEV.md`** — 소유권과 병렬 규약
-3. `Project_Project_docs/05-PRIORITY.md` — **오늘 날짜의 계획**
-4. `Project_Project_docs/04-UI-KIT.md` — 레이아웃 상수 `L`, 컴포넌트, 연출 프리셋
-5. `Project_Project_docs/modules/M**.md` — **「담당」행의 "Claude Code 파트"만 구현한다**
-6. `Project_Project_docs/HANDOFF.md` — Codex가 너에게 요청한 게 있는지
+1. `Project_docs/00-OVERVIEW.md`
+2. **`Project_docs/07-PARALLEL-DEV.md`** — 소유권과 병렬 규약
+3. `Project_docs/05-PRIORITY.md` — **오늘 날짜의 계획**
+4. `Project_docs/04-UI-KIT.md` — 레이아웃 상수 `L`, 컴포넌트, 연출 프리셋
+5. `Project_docs/modules/M**.md` — **「담당」행의 "Claude Code 파트"만 구현한다**
+6. `Project_docs/HANDOFF.md` — Codex가 너에게 요청한 게 있는지
 
 문서와 코드가 다르면 **문서가 맞다.**
 
@@ -58,7 +58,7 @@ src/core/actions.ts   ← D1 오전에 Project_docs/modules/M02 에서 옮겨 �
 2. **게임 규칙·수식을 `scenes/`나 `ui/`에 구현하지 않는다.** 전부 `core`로 보낸다 → HANDOFF
 3. **밸런스 숫자를 씬에 하드코딩하지 않는다.** `content/balance.json`에서 읽는다
 4. **에셋은 `Assets.key()`로만 참조한다.** 파일 경로 직접 참조 금지
-5. **팔레트 9색(`src/render/palette.ts`) 밖의 색을 쓰지 않는다.** `spirit`은 소생실 전용
+5. **팔레트 5토큰(`src/render/palette.ts` — ink·mid·bone·dust·wax) 밖의 색을 쓰지 않는다.** 중간 계조는 디더링으로 만든다
 6. **좌표는 정수.** 레이아웃은 `src/ui/layout.ts`의 `L` 상수만 사용
 7. **새 npm 의존성을 추가하지 않는다**
 8. **P0 완료 전 P1 금지**
@@ -115,7 +115,7 @@ export const fakeStore: Store = {
 
 ## 6. 상대 영역이 필요할 때 — HANDOFF
 
-`core`나 `content/*.json` 변경이 필요하면 직접 고치지 말고 `Project_Project_docs/HANDOFF.md`에 적어라.
+`core`나 `content/*.json` 변경이 필요하면 직접 고치지 말고 `Project_docs/HANDOFF.md`에 적어라.
 
 ```md
 ## HO-00N  (from: Claude Code → to: Codex)  D3 14:00
@@ -140,7 +140,7 @@ export const fakeStore: Store = {
 - 요청하지 않은 파일 정리·이름 변경·포맷팅 일괄 적용
 - README 자동 생성
 - 문서에 없는 기능 추가
-- P3 목록(`Project_Project_docs/05-PRIORITY.md`)에 있는 것
+- P3 목록(`Project_docs/05-PRIORITY.md`)에 있는 것
 - Codex 소유 파일 수정 — **막히면 HANDOFF, 직접 고치지 마라**
 
 ---

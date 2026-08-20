@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { PALETTE, css, type PaletteName } from '../../render/palette';
-import { FONT } from '../../render/font';
+import { FONT, FONT_LABEL, FONT_TITLE } from '../../render/font';
 import { L } from '../../ui/layout';
 import { currentRun, newRun } from '../run';
 import type { Store } from '../../core/store';
@@ -15,6 +15,8 @@ import type { GameState } from '../../core/types';
  * state 가 바뀌면 통째로 다시 그린다. 오브젝트가 수십 개 수준이라 부분 갱신보다 안전하다.
  * 다시 그리는 시점은 dispatch 직후가 아니라 다음 프레임이다 — 버튼이 자기 콜백 안에서
  * 파괴되면 Phaser 의 입력 디스패치 중간에 죽는다.
+ *
+ * v3.1 — 기준 1920x1080, 팔레트 5토큰, 폰트 16/32/48 (04-UI-KIT §1·§3).
  */
 export abstract class PhaseScene extends Phaser.Scene {
   protected store!: Store;
@@ -52,7 +54,7 @@ export abstract class PhaseScene extends Phaser.Scene {
 
   /** 단계 본문 영역(L.stage)을 덮는 배경. HUD 는 DayScene 이 계속 소유한다. */
   protected stageBackdrop(): void {
-    this.rect(L.stage.x, L.stage.y, L.stage.w, L.stage.h, 'soot');
+    this.rect(L.stage.x, L.stage.y, L.stage.w, L.stage.h, 'ink');
   }
 
   protected rect(x: number, y: number, w: number, h: number, color: PaletteName): void {
@@ -61,18 +63,42 @@ export abstract class PhaseScene extends Phaser.Scene {
     g.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
   }
 
-  /** 04-UI-KIT §2-2 — 1px 하드 엣지. panel() 과 같은 규칙, 씬 안에서 쓰기 편한 형태 */
-  protected frame(x: number, y: number, w: number, h: number, color: PaletteName = 'line'): void {
+  /** 04-UI-KIT §2-2 — 2px 하드 엣지. 라운딩 0, 그림자 없음 */
+  protected frame(x: number, y: number, w: number, h: number, color: PaletteName = 'dust'): void {
     const g = this.add.graphics();
     g.fillStyle(PALETTE[color], 1);
     const X = Math.round(x);
     const Y = Math.round(y);
-    g.fillRect(X, Y, w, 1);
-    g.fillRect(X, Y + h - 1, w, 1);
-    g.fillRect(X, Y, 1, h);
-    g.fillRect(X + w - 1, Y, 1, h);
+    const t = L.line;
+    g.fillRect(X, Y, w, t);
+    g.fillRect(X, Y + h - t, w, t);
+    g.fillRect(X, Y, t, h);
+    g.fillRect(X + w - t, Y, t, h);
   }
 
+  /** HUD 용 이중선 액자 — 바깥 bone, 안쪽 dust (레퍼런스 상단 박스) */
+  protected doubleFrame(x: number, y: number, w: number, h: number): void {
+    this.frame(x, y, w, h, 'bone');
+    this.frame(x + 6, y + 6, w - 12, h - 12, 'dust');
+  }
+
+  /**
+   * 00-OVERVIEW §7-1 — 중간 계조는 색이 아니라 디더로 만든다.
+   * Bayer 격자를 화면 좌표에 정렬해 찍는다 (에셋마다 위상이 어긋나지 않게).
+   */
+  protected dither(x: number, y: number, w: number, h: number, color: PaletteName, step = 4): void {
+    const g = this.add.graphics();
+    g.fillStyle(PALETTE[color], 1);
+    const x0 = Math.round(x);
+    const y0 = Math.round(y);
+    for (let py = y0; py < y0 + h; py += step) {
+      for (let px = x0 + ((py / step) % 2 === 0 ? 0 : step / 2); px < x0 + w; px += step) {
+        g.fillRect(px, py, step / 2, step / 2);
+      }
+    }
+  }
+
+  /** 본문 32px */
   protected text(x: number, y: number, s: string, color: PaletteName = 'bone'): Phaser.GameObjects.Text {
     return this.add.text(Math.round(x), Math.round(y), s, { ...FONT, color: css(color) });
   }
@@ -81,16 +107,27 @@ export abstract class PhaseScene extends Phaser.Scene {
     return this.text(x, y, s, color).setOrigin(1, 0);
   }
 
+  /** 라벨 16px — GOLD / FANS 같은 머리글 전용 */
+  protected label(x: number, y: number, s: string, color: PaletteName = 'dust'): Phaser.GameObjects.Text {
+    return this.add.text(Math.round(x), Math.round(y), s, { ...FONT_LABEL, color: css(color) });
+  }
+
+  /** 제목·대사 48px */
+  protected title(x: number, y: number, s: string, color: PaletteName = 'bone'): Phaser.GameObjects.Text {
+    return this.add.text(Math.round(x), Math.round(y), s, { ...FONT_TITLE, color: css(color) });
+  }
+
   /**
-   * 04-UI-KIT §3 — 16px 단일 폰트. 한글 1자 = 16px, 그 외 = 8px 로 세어
+   * 04-UI-KIT §3 — 본문 32px 기준. 한글 1자 = 32px, 반각 = 16px 로 세어
    * 주어진 폭(px) 안에 들어가도록 자른다. 넘치면 마지막 자리에 · 를 남긴다.
    *
    * Phaser 의 wordWrap 은 공백 기준이라 한글에서 어긋난다. 그래서 글자 수로 센다.
    */
-  protected clip(s: string, px: number): string {
+  protected clip(s: string, px: number, size: 'label' | 'body' | 'title' = 'body'): string {
+    const unit = size === 'label' ? 8 : size === 'title' ? 24 : 16;
     let used = 0;
     for (let i = 0; i < s.length; i += 1) {
-      const w = charWidth(s[i]!);
+      const w = charWidth(s[i]!) * unit;
       if (used + w > px) return s.slice(0, Math.max(0, i - 1)) + '·';
       used += w;
     }
@@ -99,11 +136,11 @@ export abstract class PhaseScene extends Phaser.Scene {
 
   /** 단계 제목 — 본문 좌상단 고정 위치 */
   protected heading(s: string, color: PaletteName = 'bone'): void {
-    this.text(L.pad + 2, L.stage.y + L.pad, s, color);
+    this.title(L.pad, L.stage.y + L.pad, s, color);
   }
 }
 
-/** 전각(한글·기호) 16px, 반각 8px */
+/** 전각(한글·기호) 2단위, 반각 1단위 */
 function charWidth(ch: string): number {
-  return ch.charCodeAt(0) > 0x2000 ? 16 : 8;
+  return ch.charCodeAt(0) > 0x2000 ? 2 : 1;
 }

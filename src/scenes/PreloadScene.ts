@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { BASE_W, BASE_H, SCENES } from '../config';
 import { PALETTE, css } from '../render/palette';
-import { FONT } from '../render/font';
+import { FONT_TITLE } from '../render/font';
 import { queuePack, swallowLoadErrors, allKeys } from '../render/assets';
 
 /** content/*.json 을 번들에 포함시킨다. 런타임 fetch 가 아니라 빌드 타임 인라인이라 404 가 없다. */
@@ -26,7 +26,7 @@ export class PreloadScene extends Phaser.Scene {
 
   preload(): void {
     this.startedAt = this.time.now;
-    this.cameras.main.setBackgroundColor(PALETTE.soot);
+    this.cameras.main.setBackgroundColor(PALETTE.ink);
     this.drawChrome();
 
     this.failed = swallowLoadErrors(this);
@@ -69,15 +69,15 @@ export class PreloadScene extends Phaser.Scene {
 
   private drawChrome(): void {
     this.add
-      .text(BASE_W / 2, BASE_H / 2 - 24, '죽지 않는 가게', { ...FONT, color: css('bone') })
+      .text(BASE_W / 2, BASE_H / 2 - 96, '죽지 않는 가게', { ...FONT_TITLE, color: css('bone') })
       .setOrigin(0.5);
 
     // 봉랍이 차오르는 틀
     const g = this.add.graphics();
-    g.fillStyle(PALETTE.line, 1);
-    g.fillRect(BASE_W / 2 - 61, BASE_H / 2 + 7, 122, 10);
-    g.fillStyle(PALETTE.ash, 1);
-    g.fillRect(BASE_W / 2 - 60, BASE_H / 2 + 8, 120, 8);
+    g.fillStyle(PALETTE.dust, 1);
+    g.fillRect(BASE_W / 2 - 244, BASE_H / 2 + 28, 488, 40);
+    g.fillStyle(PALETTE.ink, 1);
+    g.fillRect(BASE_W / 2 - 240, BASE_H / 2 + 32, 480, 32);
 
     this.bar = this.add.graphics();
   }
@@ -85,6 +85,6 @@ export class PreloadScene extends Phaser.Scene {
   private drawBar(p: number): void {
     this.bar.clear();
     this.bar.fillStyle(PALETTE.wax, 1);
-    this.bar.fillRect(BASE_W / 2 - 60, BASE_H / 2 + 8, Math.round(120 * p), 8);
+    this.bar.fillRect(BASE_W / 2 - 240, BASE_H / 2 + 32, Math.round(480 * p), 32);
   }
 }

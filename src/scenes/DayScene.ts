@@ -1,10 +1,11 @@
 import Phaser from 'phaser';
 import { BASE_W, SCENES } from '../config';
 import { PALETTE, css } from '../render/palette';
-import { FONT } from '../render/font';
+import { FONT, FONT_LABEL } from '../render/font';
 import { L } from '../ui/layout';
 import { Button } from '../ui/Button';
 import { content } from '../core/content';
+import balanceJson from '../../content/balance.json';
 import { currentRun, newRun } from './run';
 import type { Store } from '../core/store';
 import type { GameState, PhaseId } from '../core/types';
@@ -36,10 +37,19 @@ const PHASE_SCENE: Partial<Record<PhaseId, string>> = {
   ANNOUNCE: SCENES.PHASE_ANNOUNCE,
 };
 
+/** HUD 자원 칸 — 레퍼런스의 세로 구분선 3분할 */
+const COLS = [
+  { label: 'GOLD', x: 232 },
+  { label: 'FANS', x: 456 },
+  { label: 'REPUTATION', x: 616 },
+] as const;
+
 export class DayScene extends Phaser.Scene {
   private store!: Store;
   private hudLeft!: Phaser.GameObjects.Text;
   private hudRight!: Phaser.GameObjects.Text;
+  private hudFloor!: Phaser.GameObjects.Text;
+  private hudValues: Phaser.GameObjects.Text[] = [];
   private body!: Phaser.GameObjects.Text;
   private fxLine!: Phaser.GameObjects.Text;
   private unsubscribe: (() => void) | null = null;
@@ -54,39 +64,54 @@ export class DayScene extends Phaser.Scene {
     // TitleScene 의 '새로 시작' 이 이미 만들어 뒀다. 씬을 직접 열었으면 여기서 만든다.
     this.store = currentRun(this.game) ?? newRun(this.game);
 
-    this.cameras.main.setBackgroundColor(PALETTE.soot);
+    this.cameras.main.setBackgroundColor(PALETTE.ink);
 
-    // HUD (L.hud) — 상단 26px
+    // HUD (L.hud) — 상단 144px. 액자 박스 2개 (00-OVERVIEW §8-1)
     const g = this.add.graphics();
-    g.fillStyle(PALETTE.ash, 1);
+    g.fillStyle(PALETTE.ink, 1);
     g.fillRect(L.hud.x, L.hud.y, L.hud.w, L.hud.h);
-    g.fillStyle(PALETTE.line, 1);
-    g.fillRect(L.hud.x, L.hud.y + L.hud.h - 1, L.hud.w, 1);
+    this.drawFrame(g, L.hudStatus.x, L.hudStatus.y, L.hudStatus.w, L.hudStatus.h);
+    this.drawFrame(g, L.hudTools.x, L.hudTools.y, L.hudTools.w, L.hudTools.h);
 
-    this.hudLeft = this.add.text(L.pad, 5, '', { ...FONT, color: css('bone') });
+    // 자원 라벨 3종 — 값은 render() 가 같은 x 에 채운다 (레퍼런스 배치)
+    COLS.forEach((col, i) => {
+      this.add.text(L.hudStatus.x + col.x, L.hudStatus.y + 18, col.label, {
+        ...FONT_LABEL, color: css('dust'),
+      });
+      this.hudValues[i] = this.add.text(L.hudStatus.x + col.x, L.hudStatus.y + 52, '', {
+        ...FONT, color: css(col.label === 'REPUTATION' ? 'wax' : 'bone'),
+      });
+      if (i > 0) {
+        g.fillStyle(PALETTE.dust, 1);
+        g.fillRect(L.hudStatus.x + col.x - 24, L.hudStatus.y + 16, L.line, L.hudStatus.h - 32);
+      }
+    });
+
+    this.hudLeft = this.add.text(L.hudStatus.x + 24, L.hudStatus.y + 30, '', { ...FONT, color: css('bone') });
     this.hudRight = this.add
-      .text(L.hud.w - L.pad, 5, '', { ...FONT, color: css('tallow') })
+      .text(L.hudTools.x + L.hudTools.w - 24, L.hudTools.y + 52, '', { ...FONT, color: css('bone') })
       .setOrigin(1, 0);
+    this.hudFloor = this.add.text(L.hudTools.x + 24, L.hudTools.y + 52, '', { ...FONT, color: css('bone') });
 
     // 본문 (L.stage) — 단계 씬이 들어올 자리
     this.body = this.add
-      .text(BASE_W / 2, 96, '', { ...FONT, color: css('dust'), align: 'center' })
+      .text(BASE_W / 2, L.stage.y + 200, '', { ...FONT, color: css('dust'), align: 'center' })
       .setOrigin(0.5, 0);
 
     this.fxLine = this.add
-      .text(BASE_W / 2, 196, '', { ...FONT, color: css('dust') })
+      .text(BASE_W / 2, L.stage.y + 600, '', { ...FONT, color: css('dust') })
       .setOrigin(0.5, 0);
 
     // 폴백 조작 — 단계 씬이 붙어 있는 동안에는 숨긴다.
     // 숨기기만 하면 핫키가 남아 단계 씬의 1/2 와 겹치므로 setActive(false) 까지 한다.
     this.fallback = [
       new Button(this, {
-        x: 84, y: L.actions.y + 8, w: 132, h: 24,
+        x: 336, y: L.actionsFull.y + L.pad, w: 528, h: 96,
         label: '다음 단계', hotkey: '1',
         onClick: () => this.advancePhase(),
       }),
       new Button(this, {
-        x: 264, y: L.actions.y + 8, w: 132, h: 24,
+        x: 1056, y: L.actionsFull.y + L.pad, w: 528, h: 96,
         label: '타이틀로', hotkey: '2', variant: 'ghost',
         onClick: () => this.scene.start(SCENES.TITLE),
       }),
@@ -123,10 +148,24 @@ export class DayScene extends Phaser.Scene {
     this.store.dispatch({ type: 'FX/CONSUME' });
   }
 
+  /** 04-UI-KIT §2-2 — HUD 이중선 액자 (바깥 bone 2px + 안쪽 dust 2px) */
+  private drawFrame(g: Phaser.GameObjects.Graphics, x: number, y: number, w: number, h: number): void {
+    const t = L.line;
+    for (const [color, ox] of [[PALETTE.bone, 0], [PALETTE.dust, 6]] as const) {
+      g.fillStyle(color, 1);
+      g.fillRect(x + ox, y + ox, w - ox * 2, t);
+      g.fillRect(x + ox, y + h - ox - t, w - ox * 2, t);
+      g.fillRect(x + ox, y + ox, t, h - ox * 2);
+      g.fillRect(x + w - ox - t, y + ox, t, h - ox * 2);
+    }
+  }
+
   private render(s: Readonly<GameState>): void {
-    this.hudLeft.setText(
-      `DAY ${s.day}/${content.balance.start.days}   ${fmtGold(s.gold)}G   팬 ${fmtFans(s.fans)}   최고 ${s.maxFloor}/${content.balance.start.targetFloor}F`,
-    );
+    this.hudLeft.setText(`DAY ${s.day}\n/${content.balance.start.days}`);
+    this.hudValues[0]?.setText(`${fmtGold(s.gold)} G`);
+    this.hudValues[1]?.setText(fmtFans(s.fans));
+    this.hudValues[2]?.setText(gradeOf(s.reputation));
+    this.hudFloor.setText(`${s.maxFloor} / ${content.balance.start.targetFloor} F`);
     this.hudRight.setText(s.isOver ? '종료' : PHASE_LABEL[s.phase]);
 
     this.syncPhaseScene(s);
@@ -170,4 +209,16 @@ function fmtFans(n: number): string {
 
 function fmtGold(n: number): string {
   return n.toLocaleString('en-US');
+}
+
+/**
+ * 평판은 수치가 아니라 등급 문자로 보여준다 (02-DATA-SCHEMA §1). 임계값은 balance.json.
+ * `core/content.ts` 의 `Balance` 타입이 아직 reputation 을 노출하지 않아 원본을 직접 읽는다 (HO-004).
+ */
+const GRADES = balanceJson.reputation.grades as unknown as [number, string][];
+
+function gradeOf(reputation: number): string {
+  let out = GRADES[0]?.[1] ?? 'F';
+  for (const [min, name] of GRADES) if (reputation >= min) out = name;
+  return out;
 }

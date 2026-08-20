@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { PALETTE, css } from '../render/palette';
 import { FONT } from '../render/font';
+import { L } from './layout';
 
 export type ButtonVariant = 'default' | 'danger' | 'ghost';
 
@@ -77,35 +78,37 @@ export class Button extends Phaser.GameObjects.Container {
     g.clear();
 
     if (this.visual === 'disabled') {
-      g.fillStyle(PALETTE.ash, 1);
+      g.fillStyle(PALETTE.ink, 1);
       g.fillRect(0, 0, w, h);
-      g.fillStyle(PALETTE.line, 1);
+      g.fillStyle(PALETTE.dust, 1);
       strokeRect(g, 0, 0, w, h);
       this.txt.setColor(css('dust'));
       return;
     }
 
     const ghost = variant === 'ghost';
-    const fill = this.visual === 'press' ? PALETTE.ash : ghost ? PALETTE.soot : PALETTE.clay;
+    const fill = this.visual === 'press' ? PALETTE.ink : ghost ? PALETTE.ink : PALETTE.mid;
     const border =
-      variant === 'danger' ? PALETTE.wax : this.visual === 'hover' ? PALETTE.bone : PALETTE.line;
+      variant === 'danger' ? PALETTE.wax : this.visual === 'hover' ? PALETTE.bone : PALETTE.dust;
 
     g.fillStyle(fill, 1);
     g.fillRect(0, 0, w, h);
     g.fillStyle(border, 1);
     strokeRect(g, 0, 0, w, h);
 
-    // press 시 1px 내려앉는다 — 그림자 없이 눌린 느낌을 만드는 방법
-    this.txt.setY(Math.round(h / 2) + (this.visual === 'press' ? 1 : 0));
+    // press 시 2px 내려앉는다 — 그림자 없이 눌린 느낌을 만드는 방법
+    this.txt.setY(Math.round(h / 2) + (this.visual === 'press' ? 2 : 0));
     this.txt.setColor(css(this.visual === 'hover' ? 'bone' : variant === 'danger' ? 'wax' : 'bone'));
   }
 }
 
+/** 04-UI-KIT §2-2 (v3.1) — 테두리는 2px */
 function strokeRect(g: Phaser.GameObjects.Graphics, x: number, y: number, w: number, h: number): void {
-  g.fillRect(x, y, w, 1);
-  g.fillRect(x, y + h - 1, w, 1);
-  g.fillRect(x, y, 1, h);
-  g.fillRect(x + w - 1, y, 1, h);
+  const t = L.line;
+  g.fillRect(x, y, w, t);
+  g.fillRect(x, y + h - t, w, t);
+  g.fillRect(x, y, t, h);
+  g.fillRect(x + w - t, y, t, h);
 }
 
 /** '1' → 'ONE' 등 Phaser 키 이벤트 이름으로 변환 */

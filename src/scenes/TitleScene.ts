@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { BASE_W, BASE_H, SCENES } from '../config';
 import { PALETTE, css } from '../render/palette';
-import { FONT } from '../render/font';
+import { FONT, FONT_TITLE } from '../render/font';
 import { Button } from '../ui/Button';
 import { key as assetKey } from '../render/assets';
 import { newRun } from './run';
@@ -23,20 +23,20 @@ export class TitleScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.cameras.main.setBackgroundColor(PALETTE.soot);
+    this.cameras.main.setBackgroundColor(PALETTE.ink);
 
     // 배경: 어두운 가게 내부 1컷
-    this.add.image(0, 26, assetKey('bg.shop')).setOrigin(0).setAlpha(0.55);
+    this.add.image(0, 0, assetKey('bg.shop')).setOrigin(0).setDisplaySize(BASE_W, BASE_H).setAlpha(0.55);
 
     // 촛불 깜빡임 2프레임 루프 — tallow 점 하나의 밝기만 바꾼다
     const candle = this.add.graphics();
     let lit = true;
     const paintCandle = () => {
       candle.clear();
-      candle.fillStyle(PALETTE.tallow, lit ? 1 : 0.45);
-      candle.fillRect(41, 132, 2, 3);
+      candle.fillStyle(PALETTE.bone, lit ? 1 : 0.45);
+      candle.fillRect(164, 528, 8, 12);
       candle.fillStyle(PALETTE.wax, lit ? 0.35 : 0.15);
-      candle.fillRect(39, 130, 6, 7);
+      candle.fillRect(156, 520, 24, 28);
     };
     paintCandle();
     this.time.addEvent({
@@ -50,18 +50,18 @@ export class TitleScene extends Phaser.Scene {
 
     // 제목 — 자간을 벌려 간판처럼
     this.add
-      .text(BASE_W / 2, 52, '죽 지  않 는  가 게', { ...FONT, color: css('bone') })
+      .text(BASE_W / 2, 208, '죽 지  않 는  가 게', { ...FONT_TITLE, color: css('bone') })
       .setOrigin(0.5);
     this.add
-      .text(BASE_W / 2, 74, 'THE UNDYING SHOP', { ...FONT, color: css('dust') })
+      .text(BASE_W / 2, 296, 'THE UNDYING SHOP', { ...FONT, color: css('dust') })
       .setOrigin(0.5);
 
     // 버튼 2×2
-    const bw = 132;
-    const bh = 24;
-    const gap = 12;
+    const bw = 528;
+    const bh = 96;
+    const gap = 48;
     const left = Math.round((BASE_W - bw * 2 - gap) / 2);
-    const top = 116;
+    const top = 464;
 
     new Button(this, {
       x: left, y: top, w: bw, h: bh,
@@ -86,13 +86,13 @@ export class TitleScene extends Phaser.Scene {
     });
 
     this.add
-      .text(BASE_W / 2, 212, '당신은 한 세계를 속이고 있다.', { ...FONT, color: css('dust') })
+      .text(BASE_W / 2, 848, '당신은 한 세계를 속이고 있다.', { ...FONT, color: css('dust') })
       .setOrigin(0.5);
 
     // 폰트 폴백 여부를 화면에 남긴다 (수용 기준 4 확인용)
     if (this.registry.get('fontOk') !== true) {
       this.add
-        .text(BASE_W / 2, BASE_H - 14, '폰트 폴백 모드 (monospace)', { ...FONT, color: css('tallow') })
+        .text(BASE_W / 2, BASE_H - 56, '폰트 폴백 모드 (monospace)', { ...FONT, color: css('bone') })
         .setOrigin(0.5);
     }
   }

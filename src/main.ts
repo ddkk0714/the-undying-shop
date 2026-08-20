@@ -20,7 +20,7 @@ const game = new Phaser.Game({
   width: BASE_W,
   height: BASE_H,
   parent: 'game',
-  backgroundColor: PALETTE.soot,
+  backgroundColor: PALETTE.ink,
   pixelArt: true, // antialias off + roundPixels 유도
   roundPixels: true,
   scale: {

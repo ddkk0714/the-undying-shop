@@ -138,12 +138,15 @@ export interface Store {
 
 ---
 
-## 4. Phaser 설정 — 픽셀 퍼펙트 480×270
+## 4. Phaser 설정 — **1920×1080** (v3.1 아트 개편)
+
+> **왜 바뀌었나**: 아트가 「저해상도 도트」에서 **「고해상도 1비트 디더」** 로 바뀌었다.
+> 디더 격자가 1~2px 단위라 480×270 캔버스에는 담기지 않는다. 캔버스를 아트 해상도에 맞춘다.
 
 ```ts
 // src/config.ts
-export const BASE_W = 480;
-export const BASE_H = 270;
+export const BASE_W = 1920;
+export const BASE_H = 1080;
 
 // src/main.ts
 new Phaser.Game({
@@ -163,23 +166,31 @@ new Phaser.Game({
 });
 ```
 
-### 4-1. 정수배 스케일러
+### 4-1. 스케일러 — 확대는 정수배, **축소는 1/n 단계**
+
+기준이 1920×1080이 되면서 **대부분의 창은 기준보다 작다.** 확대만 정수로 묶으면 화면이 잘린다.
+그래서 규칙을 한 줄 넓힌다: **배율은 정수 n 또는 1/n 만 허용한다.** 그 사이 값은 쓰지 않는다.
 
 ```ts
 // src/render/scaler.ts
 export function applyIntegerScale(game: Phaser.Game) {
   const fit = () => {
-    const z = Math.max(1, Math.floor(Math.min(
-      window.innerWidth  / BASE_W,
-      window.innerHeight / BASE_H
-    )));
+    const raw = Math.min(window.innerWidth / BASE_W, window.innerHeight / BASE_H);
+    // raw >= 1 → 정수 확대(1,2,3...) / raw < 1 → 1/n 축소(1/2, 1/3...)
+    const z = raw >= 1 ? Math.floor(raw) : 1 / Math.ceil(1 / raw);
     game.scale.setZoom(z);
     game.scale.refresh();
   };
   fit();
-  window.addEventListener('resize', fit);
+  window.addEventListener('resize', fit);  // 100ms 디바운스
 }
 ```
+
+1/2·1/3 축소는 디더 격자가 **정확히 2px·3px 단위로 병합**되므로 모아레가 생기지 않는다.
+`Phaser.Scale.FIT`(임의 실수 배율)은 여전히 금지다.
+
+**주의**: 1920×1080 창(브라우저 크롬 포함)에서는 세로가 모자라 zoom=1/2(960×540)가 된다.
+전체화면(F11)이면 zoom=1로 붙는다. 여백은 `#0A0908` 액자로 둔다.
 
 CSS 보강 (index.html):
 ```css
@@ -204,10 +215,17 @@ Phaser `BitmapText`는 BMFont(`.fnt` + png)를 요구한다. **한글 2,350자 �
 2. `index.html`에 `@font-face` 선언 + `document.fonts.ready`를 `BootScene`에서 await
 3. Phaser Text 스타일 고정:
 ```ts
+// v3.1 — 캔버스가 1920 이 되면서 3단계. 전부 네오둥근모 native 16px 의 정수배다.
+export const FONT_PX = { label: 16, body: 32, title: 48 } as const;
 export const FONT = {
-  base: { fontFamily: 'NeoDunggeunmo', fontSize: '16px', resolution: 1, padding: {x:0,y:2} },
+  body:  { fontFamily: 'NeoDunggeunmo', fontSize: '32px', resolution: 1, padding: {x:0,y:4} },
+  label: { fontFamily: 'NeoDunggeunmo', fontSize: '16px', resolution: 1, padding: {x:0,y:2} },
+  title: { fontFamily: 'NeoDunggeunmo', fontSize: '48px', resolution: 1, padding: {x:0,y:6} },
 };
 ```
+
+**정수배 외 크기를 쓰지 않는다.** 24px·40px 같은 값은 픽셀 폰트를 뭉갠다.
+위계는 크기 3단계 + 색(`bone`/`dust`)으로만 만든다.
 4. **fontSize는 폰트의 네이티브 픽셀 크기의 정수배만 사용한다.** 네오둥근모는 16px 기준. → 16px만 쓴다. 작은 글씨가 필요하면 폰트를 바꾸는 게 아니라 **정보를 줄인다.**
 5. `resolution: 1` 필수. 기본값(devicePixelRatio)이면 흐려진다.
 
