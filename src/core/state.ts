@@ -1,0 +1,44 @@
+import { content } from './content';
+import type { GameState, RunStats } from './types';
+
+const emptyStats = (): RunStats => ({
+  totalRevived: 0,
+  totalDiscarded: 0,
+  liesTold: 0,
+  chatsDeleted: 0,
+  falseAnnouncements: 0,
+  goldEarned: 0,
+  goldSpentOnRevive: 0,
+  deepestFloor: content.balance.start.maxFloor,
+});
+
+export function createInitialState(seed: number): GameState {
+  return {
+    version: 1,
+    seed,
+    rngCursor: 0,
+    day: 1,
+    phase: 'REVIVE',
+    phaseStartedAt: 0,
+    isOver: false,
+    ending: null,
+    gold: content.balance.start.gold,
+    fans: content.balance.start.fans,
+    reputation: content.balance.start.reputation,
+    maxFloor: content.balance.start.maxFloor,
+    leak: 0,
+    viewerFatigue: 0,
+    stars: structuredClone(content.stars),
+    personas: structuredClone(content.personas),
+    recruitPool: [],
+    corpses: [],
+    today: null,
+    shelf: [null, null, null],
+    inventory: [],
+    seenWitnessFloors: [],
+    witnessLog: [],
+    flags: {},
+    pendingFx: [],
+    stats: emptyStats(),
+  };
+}

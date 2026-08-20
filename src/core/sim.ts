@@ -1,0 +1,38 @@
+import { createStore } from './store';
+import { reducer } from './reducer';
+import { createInitialState } from './state';
+import { mulberry32 } from './rng';
+import type { Action } from './actions';
+import type { GameState, RunStats } from './types';
+
+export type Policy = (state: Readonly<GameState>) => Action;
+
+export const randomPolicy: Policy = (state) => {
+  const roll = mulberry32(state.seed + state.rngCursor + state.day)();
+  if (state.phase === 'REVIVE') {
+    const corpse = state.corpses.find((candidate) => candidate.grade === 'INTACT' && state.stars.some((star) => star.id === candidate.starId && star.status === 'DEAD'));
+    return corpse === undefined || roll < 0.2 ? { type: 'PHASE/TIMEOUT' } : { type: 'REVIVE/PAY', starId: corpse.starId };
+  }
+  if (state.phase === 'CASTING') {
+    const choices = state.stars.filter((star) => star.status === 'ALIVE');
+    return choices.length === 0 ? { type: 'PHASE/TIMEOUT' } : { type: 'CASTING/PICK', starId: choices[Math.floor(roll * choices.length)]?.id ?? choices[0]!.id };
+  }
+  if (state.phase === 'SHOP') return { type: 'SHOP/CONFIRM' };
+  if (state.phase === 'DIVE') return { type: 'DIVE/TICK', dt: 30 };
+  if (state.phase === 'AUTOPSY') return { type: 'AUTOPSY/DECIDE', grade: 'INTACT' };
+  if (state.phase === 'ANNOUNCE') return { type: 'ANNOUNCE/DECLARE', as: 'SUCCESS' };
+  return { type: 'PHASE/ADVANCE' };
+};
+
+export function simulateState(seed: number, policy: Policy): GameState {
+  const store = createStore(createInitialState(seed), reducer);
+  const maxSteps = 1000;
+  for (let step = 0; step < maxSteps && !store.getState().isOver; step += 1) store.dispatch(policy(store.getState()));
+  const state = store.getState();
+  if (!state.isOver) throw new Error(`[sim] seed ${seed} did not finish within ${maxSteps} steps`);
+  return structuredClone(state);
+}
+
+export function simulate(seed: number, policy: Policy): RunStats {
+  return simulateState(seed, policy).stats;
+}
