@@ -199,6 +199,7 @@ export function loadContent(): Content {
     assertShape(isRecord(tier), `balance.contract.claimedTiers[${index}] invalid`);
     assertNumber(tier.floor, `balance.contract.claimedTiers[${index}].floor`);
     assertNumber(tier.rate, `balance.contract.claimedTiers[${index}].rate`);
+  });
   assertShape(isRecord(radioJson) && isRecord(chatJson) && isRecord(narrativeJson), 'localized content must be objects');
   return {
     balance: balanceJson as unknown as Balance,

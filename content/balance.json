@@ -40,6 +40,7 @@
     "recordBonus": 1.5,
     "shallowLiePenalty": -0.4,
     "unusedDecayPerDay": 0.03,
+    "appealMul": 0.06,
     "inheritLoss": 0.15
   },
   "income": {
