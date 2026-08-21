@@ -10,14 +10,19 @@
  *   PHASE/TIMEOUT 삭제 (제한시간 없음, M02 §5)
  *   CASTING/* + SHOP/* → OFFICE/*   ·   DIVE/TICK → LIVE/TICK
  *   COMBAT/CHOOSE 신설   ·   RADIO/ANSWER 는 A|B|UNKNOWN
+ *
+ * v3.1 반영 — CCR-002 (승인). PHASE/GOTO 신설.
+ *   상점 화면이 ①소생 / ②편성 두 단계를 한 화면의 모드로 보여주므로,
+ *   하단 4택에서 ②에서 ①로 되돌아갈 길이 필요하다. 임의 점프는 리듀서가 막는다.
  */
 
-import type { CombatChoice, CorpseGrade, GameState, ItemId, PersonaId, StarId } from './types';
+import type { CombatChoice, CorpseGrade, GameState, ItemId, PersonaId, PhaseId, StarId } from './types';
 
 export type Action =
   | { type: 'GAME/NEW'; seed: number }
   | { type: 'GAME/LOAD'; state: GameState }
   | { type: 'PHASE/ADVANCE' }                                   // 다음 단계로
+  | { type: 'PHASE/GOTO'; phase: PhaseId }                      // 상점 화면(①↔②) 안에서만 오간다
   | { type: 'REVIVE/PAY'; starId: StarId }
   | { type: 'REVIVE/SKIP'; starId: StarId }
   | { type: 'REVIVE/INHERIT'; personaId: PersonaId; toStarId: StarId }

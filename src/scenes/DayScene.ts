@@ -4,8 +4,7 @@ import { PALETTE, css } from '../render/palette';
 import { FONT, FONT_LABEL } from '../render/font';
 import { L } from '../ui/layout';
 import { Button } from '../ui/Button';
-import { content } from '../core/content';
-import balanceJson from '../../content/balance.json';
+import { content, reputationGrade } from '../core/content';
 import { currentRun, newRun } from './run';
 import type { Store } from '../core/store';
 import type { GameState, PhaseId } from '../core/types';
@@ -164,7 +163,7 @@ export class DayScene extends Phaser.Scene {
     this.hudLeft.setText(`DAY ${s.day}\n/${content.balance.start.days}`);
     this.hudValues[0]?.setText(`${fmtGold(s.gold)} G`);
     this.hudValues[1]?.setText(fmtFans(s.fans));
-    this.hudValues[2]?.setText(gradeOf(s.reputation));
+    this.hudValues[2]?.setText(reputationGrade(s.reputation));
     this.hudFloor.setText(`${s.maxFloor} / ${content.balance.start.targetFloor} F`);
     this.hudRight.setText(s.isOver ? '종료' : PHASE_LABEL[s.phase]);
 
@@ -211,14 +210,4 @@ function fmtGold(n: number): string {
   return n.toLocaleString('en-US');
 }
 
-/**
- * 평판은 수치가 아니라 등급 문자로 보여준다 (02-DATA-SCHEMA §1). 임계값은 balance.json.
- * `core/content.ts` 의 `Balance` 타입이 아직 reputation 을 노출하지 않아 원본을 직접 읽는다 (HO-004).
- */
-const GRADES = balanceJson.reputation.grades as unknown as [number, string][];
 
-function gradeOf(reputation: number): string {
-  let out = GRADES[0]?.[1] ?? 'F';
-  for (const [min, name] of GRADES) if (reputation >= min) out = name;
-  return out;
-}

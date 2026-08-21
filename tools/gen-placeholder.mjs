@@ -120,6 +120,14 @@ const GLYPH = {
   ' ': [0, 0, 0, 0, 0, 0, 0],
 };
 
+/** Bayer 4x4 임계 행렬 — 1비트 계조의 유일한 수단 (00-OVERVIEW §7-1) */
+const BAYER4 = [
+  [0, 8, 2, 10],
+  [12, 4, 14, 6],
+  [3, 11, 1, 9],
+  [15, 7, 13, 5],
+];
+
 /* ── 그리기 헬퍼 ───────────────────────────────────────────── */
 class Img {
   constructor(w, h, fill) {
@@ -160,6 +168,32 @@ class Img {
       for (let i = -r; i <= r; i++) if (i * i + j * j <= r * r) this.px(cx + i, cy + j, c);
   }
 
+  /**
+   * 03-ASSET-MODULES §4-1 — 오더드 디더(Bayer 4x4).
+   * level 0..16. 격자는 이미지 좌표에 정렬한다 (에셋마다 위상이 어긋나면 안 된다).
+   */
+  dither(x, y, w, h, c, level) {
+    for (let j = 0; j < h; j++)
+      for (let i = 0; i < w; i++) {
+        const px = x + i;
+        const py = y + j;
+        if (BAYER4[py & 3][px & 3] < level) this.px(px, py, c);
+      }
+  }
+
+  /** 광원 — 중심에서 멀어질수록 디더 밀도가 떨어진다 */
+  glow(cx, cy, r, c, peak = 15) {
+    for (let j = -r; j <= r; j++)
+      for (let i = -r; i <= r; i++) {
+        const d = Math.sqrt(i * i + j * j);
+        if (d > r) continue;
+        const level = Math.round(peak * (1 - d / r));
+        const px = cx + i;
+        const py = cy + j;
+        if (level > 0 && BAYER4[py & 3][px & 3] < level) this.px(px, py, c);
+      }
+  }
+
   text(x, y, str, c, s = 1) {
     let cx = x;
     for (const ch of String(str).toUpperCase()) {
@@ -185,8 +219,141 @@ function silhouette(img, ox, label) {
   if (label) img.text(ox + 192 - String(label).length * 24, 408, label, P.bone, 8);
 }
 
+/* ── 상점 배경 · 소품 (v3.1 레퍼런스) ───────────────────────
+   전부 ink/bone/mid 3색 + Bayer 디더로만 그린다. 색을 늘리지 않는다.
+   본 아트가 오면 같은 크기의 PNG 로 교체하면 끝이다 (좌표는 04-UI-KIT §1). */
+
+/** 좌측 방 752×792 — 벽 · 바닥 · 나무 상자. 광원은 위에서 떨어진다 */
+function shopRoom() {
+  const w = 752;
+  const h = 792;
+  const img = new Img(w, h, P.ink);
+  img.glow(Math.round(w / 2), -80, 640, P.mid, 14);      // 천장 채광
+  const floorY = Math.round(h * 0.72);
+  img.dither(0, floorY, w, h - floorY, P.mid, 6);        // 바닥
+  img.rect(0, floorY, w, 2, P.dust);                     // 벽/바닥 경계
+  for (let i = 1; i < 5; i++) img.rect(Math.round((w / 5) * i), 0, 2, floorY, P.ink); // 벽 기둥 홈
+  // 나무 상자 2개 (좌하단)
+  for (const [bx, by, bw] of [[40, floorY - 150, 150], [24, floorY - 74, 190]]) {
+    img.rect(bx, by, bw, 148, P.ink);
+    img.dither(bx, by, bw, 148, P.mid, 8);
+    img.frame(bx, by, bw, 148, P.bone);
+    img.rect(bx, by + 72, bw, 2, P.bone);
+  }
+  // 문틀 (우측)
+  img.frame(w - 220, floorY - 420, 180, 420, P.dust);
+  return img;
+}
+
+/** 우측 작업대 1152×792 — 상판 · 램프 광원 · 긁힌 자국 */
+function shopBench() {
+  const w = 1152;
+  const h = 792;
+  const img = new Img(w, h, P.ink);
+  img.glow(210, 190, 620, P.mid, 15);   // 램프 자리에서 퍼지는 빛
+  img.glow(210, 190, 300, P.bone, 6);
+  // 상판 긁힘 — 가로로 얕게
+  for (const [sx, sy, sw] of [[520, 470, 300], [700, 600, 180], [180, 690, 240], [860, 300, 140]]) {
+    img.rect(sx, sy, sw, 2, P.mid);
+    img.rect(sx + 30, sy + 6, Math.round(sw * 0.4), 2, P.mid);
+  }
+  // 원형 얼룩 (컵 자국)
+  for (let a = 0; a < 360; a += 6) {
+    const r = 74 + (a % 24 === 0 ? 3 : 0);
+    img.px(Math.round(880 + r * Math.cos((a * Math.PI) / 180)), Math.round(660 + r * Math.sin((a * Math.PI) / 180)), P.mid);
+  }
+  return img;
+}
+
+/** 램프 224×352 */
+function propLamp() {
+  const img = new Img(224, 352);
+  img.rect(64, 300, 96, 20, P.bone);          // 받침
+  img.rect(78, 268, 68, 34, P.ink);
+  img.frame(78, 268, 68, 34, P.bone);         // 기름통
+  for (let j = 0; j < 200; j++) {             // 유리 등피 (위로 좁아짐)
+    const t = j / 200;
+    const half = Math.round(52 - 22 * t);
+    img.rect(112 - half, 68 + j, half * 2, 1, P.ink);
+    img.px(112 - half, 68 + j, P.bone);
+    img.px(112 + half - 1, 68 + j, P.bone);
+  }
+  img.glow(112, 208, 46, P.bone, 12);         // 불꽃
+  img.disc(112, 214, 12, P.bone);
+  img.rect(60, 52, 104, 16, P.ink);
+  img.frame(60, 52, 104, 16, P.bone);         // 손잡이 고리
+  return img;
+}
+
+/** 펼친 장부 448×352 */
+function propLedger() {
+  const img = new Img(448, 352);
+  img.rect(0, 40, 448, 300, P.ink);
+  img.dither(0, 40, 448, 300, P.mid, 9);
+  img.frame(0, 40, 448, 300, P.bone);
+  img.rect(222, 40, 4, 300, P.bone);          // 책등
+  for (let i = 0; i < 7; i++) {               // 필기 줄
+    img.rect(24, 84 + i * 34, 170, 2, P.dust);
+    img.rect(246, 84 + i * 34, 170, 2, P.dust);
+  }
+  return img;
+}
+
+/** 봉랍 도장 160×256 */
+function propStamp() {
+  const img = new Img(160, 256);
+  img.disc(80, 52, 40, P.ink);
+  img.glow(80, 52, 40, P.bone, 13);           // 손잡이 구
+  img.frame(40, 12, 80, 80, P.bone);
+  img.rect(70, 92, 20, 84, P.bone);           // 축
+  img.rect(28, 176, 104, 56, P.ink);
+  img.dither(28, 176, 104, 56, P.mid, 10);
+  img.frame(28, 176, 104, 56, P.bone);        // 도장 몸통
+  return img;
+}
+
+/** 두루마리 256×96 */
+function propScroll() {
+  const img = new Img(256, 96);
+  img.rect(0, 20, 256, 56, P.ink);
+  img.dither(0, 20, 256, 56, P.mid, 8);
+  img.frame(0, 20, 256, 56, P.bone);
+  img.rect(0, 20, 20, 56, P.bone);
+  img.rect(236, 20, 20, 56, P.bone);          // 양쪽 마구리
+  return img;
+}
+
+/** 가격표 192×128 */
+function propTag() {
+  const img = new Img(192, 128);
+  for (let j = 0; j < 128; j++) {             // 왼쪽 모서리를 자른 사각
+    const cut = j < 64 ? 64 - j : j - 64;
+    img.rect(cut, j, 192 - cut, 1, P.ink);
+    img.px(cut, j, P.bone);
+  }
+  img.dither(40, 8, 148, 112, P.mid, 7);
+  img.rect(0, 0, 192, 2, P.bone);
+  img.rect(0, 126, 192, 2, P.bone);
+  img.rect(190, 0, 2, 128, P.bone);
+  img.disc(56, 64, 9, P.bone);                // 끈 구멍
+  img.disc(56, 64, 5, P.ink);
+  return img;
+}
+
+const SHOP_ART = {
+  'bg.shop.room': shopRoom,
+  'bg.shop.bench': shopBench,
+  'prop.lamp': propLamp,
+  'prop.ledger': propLedger,
+  'prop.stamp': propStamp,
+  'prop.scroll': propScroll,
+  'prop.tag': propTag,
+};
+
 /* ── 타입별 더미 ───────────────────────────────────────────── */
 function makeImage(key) {
+  const shopArt = SHOP_ART[key];
+  if (shopArt !== undefined) return shopArt();
   if (key.startsWith('bg.')) {
     // §4 표(v3.1): 1920×936 ink 바탕 + 50% 디더 + 좌상단 키 이름
     const img = new Img(1920, 936, P.ink);

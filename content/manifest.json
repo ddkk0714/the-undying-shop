@@ -12,6 +12,15 @@
         "bg.tower":            { "type": "image",       "file": "bg/tower.png" },
         "bg.autopsy":          { "type": "image",       "file": "bg/autopsy.png" },
         "bg.studio":           { "type": "image",       "file": "bg/studio.png" },
+
+        "bg.shop.room":        { "type": "image",       "file": "bg/shop_room.png" },
+        "bg.shop.bench":       { "type": "image",       "file": "bg/shop_bench.png" },
+        "prop.lamp":           { "type": "image",       "file": "prop/lamp.png" },
+        "prop.ledger":         { "type": "image",       "file": "prop/ledger.png" },
+        "prop.stamp":          { "type": "image",       "file": "prop/stamp.png" },
+        "prop.scroll":         { "type": "image",       "file": "prop/scroll.png" },
+        "prop.tag":            { "type": "image",       "file": "prop/tag.png" },
+
         "star.portrait.karin": { "type": "image",       "file": "star/karin.png" },
         "star.silhouette":     { "type": "spritesheet", "file": "star/silhouette.png", "frameWidth": 384, "frameHeight": 480 },
         "sfx.stamp":           { "type": "audio",       "file": "sfx/stamp.wav" },

@@ -11,6 +11,17 @@ const phaseOrder: PhaseId[] = ['REVIVE', 'OFFICE', 'LIVE', 'DEATH', 'AUTOPSY', '
 const nextPhase = (phase: PhaseId): PhaseId => phaseOrder[(phaseOrder.indexOf(phase) + 1) % phaseOrder.length] ?? 'REVIVE';
 const withPhase = (state: GameState, phase: PhaseId): GameState => ({ ...state, phase });
 
+/**
+ * v3.1(CCR-002) — 상점 화면은 ①소생 / ②편성을 한 화면의 모드로 보여준다.
+ * 그래서 이 두 단계 사이만 자유롭게 오갈 수 있다. 그 밖의 점프는 하루 사이클을 깨므로 막는다.
+ */
+const SHOP_PHASES: PhaseId[] = ['REVIVE', 'OFFICE'];
+function gotoPhase(state: GameState, phase: PhaseId): GameState {
+  if (state.isOver) return state;
+  if (!SHOP_PHASES.includes(state.phase) || !SHOP_PHASES.includes(phase)) return state;
+  return withPhase(state, phase);
+}
+
 function latestTodayCorpse(state: GameState): Corpse | undefined {
   return state.today === null ? undefined : state.corpses.find((corpse) => corpse.starId === state.today?.starId && corpse.diedDay === state.day);
 }
@@ -49,6 +60,7 @@ export function reducer(state: GameState, action: Action): GameState {
     case 'GAME/NEW': return createInitialState(action.seed);
     case 'GAME/LOAD': return structuredClone(action.state);
     case 'PHASE/ADVANCE': return advance(state);
+    case 'PHASE/GOTO': return gotoPhase(state, action.phase);
     case 'REVIVE/PAY': {
       if (state.phase !== 'REVIVE') return state;
       const corpse = state.corpses.find((candidate) => candidate.starId === action.starId);

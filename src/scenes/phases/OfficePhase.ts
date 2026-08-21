@@ -40,8 +40,7 @@ export class OfficePhase extends PhaseScene {
   private buildGuest(s: Readonly<GameState>): void {
     const g = L.guest;
     this.rect(g.x, g.y, g.w, g.h, 'ink');
-    // 방 안쪽 벽 — 광원이 위에서 떨어지는 느낌을 디더로만 만든다
-    this.dither(g.x, g.y, g.w, Math.round(g.h * 0.45), 'mid', 8);
+    this.sprite(g.x, g.y, 'bg.shop.room', g.w, g.h);
     this.frame(g.x, g.y, g.w, g.h, 'dust');
 
     const visitor = s.visitors[0];
@@ -78,10 +77,16 @@ export class OfficePhase extends PhaseScene {
   private buildBenchBackdrop(): void {
     const b = L.bench;
     this.rect(b.x, b.y, b.w, b.h, 'ink');
-    // 램프 광원 — 좌상단에서 방사형으로 밝다. 디더 3단으로 감쇠시킨다
-    this.dither(b.x + 40, b.y + 40, 420, 360, 'mid', 4);
-    this.dither(b.x + 40, b.y + 40, 260, 220, 'dust', 4);
-    this.rect(b.x + 120, b.y + 96, 48, 96, 'bone'); // 램프 몸통 자리표시
+    this.sprite(b.x, b.y, 'bg.shop.bench', b.w, b.h);
+    // 소품 — 작업대를 세 구역으로 나눠 놓는다.
+    //   좌: 램프(진열 왼쪽) · 장부(아래)   우: 도장·두루마리(진열 오른쪽 세로 띠)
+    //   가운데 아래(local 380~1130 / 400~570)는 출연자 줄이 쓰므로 비워 둔다.
+    this.sprite(b.x + 24, b.y + 30, 'prop.lamp');
+    this.sprite(b.x + 24, b.y + 470, 'prop.ledger', 336, 264);
+    this.sprite(b.x + 980, b.y + 120, 'prop.stamp', 128, 205);
+    this.sprite(b.x + 960, b.y + 350, 'prop.scroll', 176, 66);
+    this.sprite(b.x + 400, b.y + 640, 'prop.tag', 154, 102);
+    this.sprite(b.x + 880, b.y + 660, 'prop.tag', 154, 102);
     this.frame(b.x, b.y, b.w, b.h, 'dust');
   }
 
@@ -146,17 +151,18 @@ export class OfficePhase extends PhaseScene {
       this.text(ix, y + 200, `${def.price.toLocaleString('en-US')} G`);
     }
 
-    // 오늘의 출연자 — 작업대 아래쪽 장부 자리
-    const by = L.slot3.y + L.slot3.h + 48;
-    this.label(L.bench.x + L.pad * 2, by, '오늘의 출연자', 'dust');
+    // 오늘의 출연자 — 램프와 장부 사이. 소품 자리를 침범하지 않는다
+    const by = L.slot3.y + L.slot3.h + 40;
+    const colW = 240;
+    this.label(L.bench.x + 380, by, '오늘의 출연자', 'dust');
     alive.slice(0, 3).forEach((star, i) => {
       const picked = s.today?.starId === star.id;
-      const x = L.bench.x + L.pad * 2 + i * 368;
+      const x = L.bench.x + 380 + i * (colW + 16);
       const persona = s.personas.find((p) => p.id === star.personaId);
-      this.text(x, by + 32, this.clip(persona?.displayName ?? '무명', 340), picked ? 'wax' : 'bone');
-      this.text(x, by + 72, this.clip(`${star.bodyName} · ${star.reviveCount}회`, 340), 'dust');
+      this.text(x, by + 28, this.clip(persona?.displayName ?? '무명', colW), picked ? 'wax' : 'bone');
+      this.text(x, by + 68, this.clip(`${star.bodyName} · ${star.reviveCount}회`, colW), 'dust');
       new Button(this, {
-        x, y: by + 116, w: 340, h: 56,
+        x, y: by + 112, w: colW, h: 56,
         label: picked ? '출연 확정' : '이 사람으로',
         variant: picked ? 'ghost' : 'default',
         enabled: !picked,
@@ -174,11 +180,15 @@ export class OfficePhase extends PhaseScene {
     const h = a.h - L.pad * 2;
     const visitor = s.visitors[0];
 
+    // 蘇生 — 소생실로 되돌아간다 (CCR-002). 되살릴 시체가 없으면 잠근다.
+    const hasCorpse = s.corpses.some((c) =>
+      s.stars.some((st) => st.id === c.starId && (st.status === 'DEAD' || st.status === 'HIDDEN')),
+    );
     new Button(this, {
       x: actionX(0), y, w: ACTION_W, h,
       label: '蘇生 소생', hotkey: '1', variant: 'danger',
-      onClick: () => this.store.dispatch({ type: 'PHASE/ADVANCE' }), // 소생은 ① 단계에서
-      enabled: false,
+      enabled: hasCorpse,
+      onClick: () => this.store.dispatch({ type: 'PHASE/GOTO', phase: 'REVIVE' }),
     });
     new Button(this, {
       x: actionX(1), y, w: ACTION_W, h,

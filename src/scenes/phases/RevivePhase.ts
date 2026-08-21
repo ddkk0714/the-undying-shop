@@ -43,7 +43,7 @@ export class RevivePhase extends PhaseScene {
   private buildGuest(s: Readonly<GameState>, star: Star | undefined, count: number): void {
     const g = L.guest;
     this.rect(g.x, g.y, g.w, g.h, 'ink');
-    this.dither(g.x, g.y, g.w, Math.round(g.h * 0.4), 'mid', 8);
+    this.sprite(g.x, g.y, 'bg.shop.room', g.w, g.h);
     this.frame(g.x, g.y, g.w, g.h, 'dust');
 
     this.title(g.x + L.pad, g.y + L.pad, '소생실');
@@ -84,8 +84,10 @@ export class RevivePhase extends PhaseScene {
   private buildBench(s: Readonly<GameState>, corpse: Corpse | undefined, star: Star | undefined): void {
     const b = L.bench;
     this.rect(b.x, b.y, b.w, b.h, 'ink');
-    // 램프 광원 — 글자 뒤가 아니라 작업대 아래쪽을 비춘다
-    this.dither(b.x + 48, b.y + b.h - 360, 360, 300, 'mid', 8);
+    this.sprite(b.x, b.y, 'bg.shop.bench', b.w, b.h);
+    // 소생실에서는 작업대에 장부와 도장만 올려 둔다 (진열은 편성실 몫)
+    this.sprite(b.x + 24, b.y + 470, 'prop.ledger', 336, 264);
+    this.sprite(b.x + 980, b.y + 120, 'prop.stamp', 128, 205);
     this.frame(b.x, b.y, b.w, b.h, 'dust');
 
     if (corpse === undefined || star === undefined) return;

@@ -70,10 +70,10 @@
 가능하면 수치→등급 변환도 core 에 두는 게 맞다 (`reputationGrade(reputation): 'S'|'A'|...`).
 
 **이유**: HUD 는 평판을 **수치가 아니라 등급 문자**로 보여야 한다 (02-DATA-SCHEMA §1).
-**임시 조치**: `DayScene` 이 `content/balance.json` 을 직접 import 해서 등급표만 읽고 있다.
-core 에 함수가 생기면 그 import 를 지우고 갈아끼운다.
+**임시 조치**: `DayScene` 이 `content/balance.json` 을 직접 import 해서 등급표만 읽고 있었다.
 **내가 하지 않은 이유**: `src/core/content.ts` 는 Codex 소유
-**상태**: [ ] 미처리
+**상태**: [x] 처리됨 (`15dd319`) — `Balance.reputation` 노출 + `reputationGrade()` 헬퍼.
+`DayScene` 의 임시 import 는 제거하고 헬퍼로 갈아끼웠다.
 
 ---
 
@@ -125,3 +125,20 @@ type PhaseId = 'REVIVE'|'OFFICE'|'LIVE'|'DEATH'|'AUTOPSY'|'ANNOUNCE';
 **상태**: [x] 반영됨 (D1, Claude Code) — `types.ts` `actions.ts` 갱신, `ui/layout.ts` 에 `L.live`/`L.office` 추가.
 `ui/TimerBar.ts` 는 애초에 생성된 적이 없어 삭제할 것이 없었다.
 계약 갱신으로 깨진 `core`/`tests` 의 최소 이식 내역은 **HO-002** 참조.
+
+## CCR-002 · 상점 화면 4택에서 ①소생으로 되돌아가기  ✅ 승인됨 (D1)
+
+v3.1 아트 개편으로 ①소생과 ②편성이 **한 화면(상점)의 모드**가 됐다 (`00-OVERVIEW §8-2`).
+그런데 리듀서의 단계는 여전히 단방향이라, 하단 4택의 `蘇生` 버튼에서 ①로 돌아갈 액션이 없었다.
+
+```ts
+// src/core/actions.ts 추가
+| { type: 'PHASE/GOTO'; phase: PhaseId }   // 상점 화면(①↔②) 안에서만 오간다
+```
+
+**리듀서 제약** — `gotoPhase()` 가 `REVIVE ↔ OFFICE` 두 단계 사이만 허용한다.
+그 밖의 점프(예: ANNOUNCE → LIVE)는 하루 사이클을 깨므로 `state` 를 그대로 돌려준다.
+`PhaseId` 자체는 바뀌지 않았다. **6단계 구조는 그대로다.**
+
+**상태**: [x] 반영됨 (D1, Claude Code) — `actions.ts` + `reducer.ts` `gotoPhase()` + `OfficePhase` 蘇生 버튼.
+`reducer.ts` 는 Codex 소유라 **가드 한 함수만** 넣었다. 규칙을 바꾸고 싶으면 그쪽에서 다시 써라.

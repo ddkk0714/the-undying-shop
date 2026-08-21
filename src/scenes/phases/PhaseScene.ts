@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { PALETTE, css, type PaletteName } from '../../render/palette';
 import { FONT, FONT_LABEL, FONT_TITLE } from '../../render/font';
+import { key, MISSING_TEXTURE } from '../../render/assets';
 import { L } from '../../ui/layout';
 import { currentRun, newRun } from '../run';
 import type { Store } from '../../core/store';
@@ -96,6 +97,17 @@ export abstract class PhaseScene extends Phaser.Scene {
         g.fillRect(px, py, step / 2, step / 2);
       }
     }
+  }
+
+  /**
+   * 03-ASSET-MODULES §3 — 에셋은 논리 키로만 참조한다.
+   * 키가 없으면 조용히 건너뛴다. 아트 하나 빠졌다고 화면이 죽지 않는다.
+   */
+  protected sprite(x: number, y: number, assetKey: string, w?: number, h?: number, frame = 0): void {
+    const textureKey = key(assetKey);
+    if (textureKey === MISSING_TEXTURE) return;
+    const img = this.add.image(Math.round(x), Math.round(y), textureKey, frame).setOrigin(0, 0);
+    if (w !== undefined && h !== undefined) img.setDisplaySize(Math.round(w), Math.round(h));
   }
 
   /** 본문 32px */

@@ -14,7 +14,7 @@
 ## 할 일
 
 ### 1. 타입 이식
-`Project_Project_docs/02-DATA-SCHEMA.md`의 타입을 `src/core/types.ts`에 **그대로** 옮긴다. 임의로 필드를 추가하지 않는다.
+`Project_docs/02-DATA-SCHEMA.md`의 타입을 `src/core/types.ts`에 **그대로** 옮긴다. 임의로 필드를 추가하지 않는다.
 
 ### 2. 액션 정의
 ```ts
@@ -22,15 +22,18 @@ export type Action =
   | { type: 'GAME/NEW'; seed: number }
   | { type: 'GAME/LOAD'; state: GameState }
   | { type: 'PHASE/ADVANCE' }                                   // 다음 단계로
-  | { type: 'PHASE/TIMEOUT' }                                   // 소프트 타이머 만료 → 기본 선택 적용
+  | { type: 'PHASE/GOTO'; phase: PhaseId }                      // v3.1(CCR-002) 상점 화면 ①↔② 만
   | { type: 'REVIVE/PAY'; starId: StarId }
   | { type: 'REVIVE/SKIP'; starId: StarId }
   | { type: 'REVIVE/INHERIT'; personaId: PersonaId; toStarId: StarId }
-  | { type: 'CASTING/PICK'; starId: StarId }
-  | { type: 'SHOP/PLACE'; slot: number; itemId: ItemId | null }
-  | { type: 'SHOP/CONFIRM' }
-  | { type: 'DIVE/TICK'; dt: number }
-  | { type: 'RADIO/ANSWER'; dir: 'LEFT' | 'RIGHT' | 'UNKNOWN' }
+  | { type: 'OFFICE/CONTRACT_ACCEPT'; starId: StarId }
+  | { type: 'OFFICE/CONTRACT_REJECT'; starId: StarId }
+  | { type: 'OFFICE/PICK_STAR'; starId: StarId }
+  | { type: 'OFFICE/PLACE'; slot: number; itemId: ItemId | null }
+  | { type: 'OFFICE/CONFIRM' }
+  | { type: 'LIVE/TICK'; dt: number }
+  | { type: 'COMBAT/CHOOSE'; choice: 'ATTACK' | 'DEFEND' | 'APPEAL' }
+  | { type: 'RADIO/ANSWER'; dir: 'A' | 'B' | 'UNKNOWN' }
   | { type: 'CHAT/SPAWN' }
   | { type: 'CHAT/DELETE'; id: string }
   | { type: 'CHAT/BAN'; id: string }
@@ -52,23 +55,23 @@ function draw(s: GameState): [number, GameState] {
 ```
 - 각 단계별 리듀서를 `reducer/phase*.ts`로 분리하되, 진입점은 `reducer.ts` 하나
 
-### 4. 단계 전이 규칙
+### 4. 단계 전이 규칙 (v3 — 6단계)
 ```
-REVIVE → CASTING → SHOP → DIVE → DEATH → AUTOPSY → ANNOUNCE → (day+1) REVIVE
+REVIVE → OFFICE → LIVE → DEATH → AUTOPSY → ANNOUNCE → (day+1) REVIVE
 ```
+v2의 `CASTING`+`SHOP`은 `OFFICE`(편성실)로 합쳐졌고, `DIVE`는 `LIVE`로 이름이 바뀌었다.
 - `ANNOUNCE` 종료 시 `day === 8` 이면 → `isOver = true`, `ending` 계산 (M11)
 - `maxFloor >= 40`에 도달하는 즉시 → 남은 단계를 마치고 엔딩 A로 강제 분기
 
-### 5. 소프트 타이머 기본값
-`PHASE/TIMEOUT` 수신 시 단계별 기본 선택:
-| 단계 | 기본 |
-|---|---|
-| REVIVE | 가장 싼 선택(소생 안 함) |
-| CASTING | 인기 1위 스타 |
-| SHOP | 현재 진열 상태 그대로 확정 |
-| DIVE(무전) | `UNKNOWN` |
-| AUTOPSY | `INTACT` |
-| ANNOUNCE | `SUCCESS` |
+### 5. 타이머 없음 (v3)
+`PHASE/TIMEOUT` 액션을 **삭제한다.** 어떤 단계에도 제한시간이 없다.
+
+대신 `LIVE` 단계에서만 **지체 페널티**를 리듀서가 계산한다:
+```
+LIVE/TICK 수신 시, 선택 대기 시간이 3초를 넘으면
+  fans -= fans * 0.0015 * dtSec      (한 선택당 누적 최대 -8%)
+```
+`state.options.reduceFx === true` 면 이 페널티를 적용하지 않는다.
 
 ### 6. DayScene (Phaser 측)
 - HUD 소유, 하위 Phase 씬을 `scene.launch/stop`으로 교체
@@ -92,4 +95,4 @@ export function simulate(seed: number, policy: Policy): RunStats;
 - [ ] `JSON.parse(JSON.stringify(state))`가 손실 없이 왕복
 
 ## Codex 프롬프트 시드
-> `Project_Project_docs/02-DATA-SCHEMA.md`와 `Project_Project_docs/modules/M02-core-state.md`를 읽고 `src/core/`를 구현해라. **`phaser`를 import 하면 안 된다.** 리듀서는 순수 함수여야 하고 난수는 `state.rngCursor`를 통해서만 소비한다. 마지막에 `src/core/sim.ts`와 `tests/sim.spec.ts`를 만들어 1000회 시뮬이 통과하는 것을 보여라.
+> `Project_docs/02-DATA-SCHEMA.md`와 `Project_docs/modules/M02-core-state.md`를 읽고 `src/core/`를 구현해라. **`phaser`를 import 하면 안 된다.** 리듀서는 순수 함수여야 하고 난수는 `state.rngCursor`를 통해서만 소비한다. 마지막에 `src/core/sim.ts`와 `tests/sim.spec.ts`를 만들어 1000회 시뮬이 통과하는 것을 보여라.
