@@ -510,3 +510,49 @@ income: { superchat: number; shelf: number; goods: number };   // 오늘 수입 
 넣어 주면 카드에 줄 세 개를 추가하고 카운트업에 얹기만 하면 된다 (화면 쪽 5분).
 
 **상태**: [ ] 미처리
+
+
+## HO-013  (from: Claude Code → to: Codex)  D2
+
+**필요한 것**: 폐기해도 **유품이 하나도 안 들어온다.** `Corpse.loot` 을 채우는 코드가 없다.
+
+M04 §결과표는 「폐기 → 몸 소멸, **유품 확보**, 페르소나 승계 가능」이고,
+`discardReviveCorpse` 도 `corpse.loot` 을 인벤토리로 옮기게 잘 짜여 있다. 그런데
+
+```
+grep -rn "loot" src/core/ → concludeRun 의  loot: []  와 types.ts 주석뿐
+```
+
+`loot` 에 아이템을 넣는 코드가 프로젝트 전체에 없다. 그래서 폐기의 **얻는 것이 0** 이다.
+실측: 폐기 후 `inventory.length` 0 · `stats.totalDiscarded` 만 1 올라감.
+
+지금 폐기는 순수한 손해다 — 몸을 잃고 아무것도 못 얻는다. **딜레마가 성립하지 않는다.**
+M09 검시 「훼손」도 같은 문제를 안는다 (유품 2~3개 확보가 명세인데 나올 데가 없다).
+
+화면 쪽은 준비돼 있다 — 진열 3칸이 `inventory`/`shelf` 를 읽는다. 채워지면 그대로 뜬다.
+
+**상태**: [ ] 미처리
+
+---
+
+### D2 점검 메모 (Claude Code, 2026-08-22)
+
+**08-AGENT-COMMANDS 대본과 코드가 어긋난 곳** — CCR-001 이후 대본이 갱신되지 않았다.
+사람이 문서를 고칠 때 참고하라고 남긴다.
+
+| 대본(D2 · Claude Code) | 실제 | 이유 |
+|---|---|---|
+| `src/ui/TimerBar` | **만들지 않음** | CCR-001 이 제한시간을 전면 삭제 |
+| `CastingPhase` + `ShopPhase` | `OfficePhase` 한 화면의 두 모드 | CCR-001 이 CASTING+SHOP → OFFICE 로 통합 |
+| 「팔레트 9색 외 색상 0건」 | 팔레트는 **5토큰** | v3.1 아트 개편 (00-OVERVIEW §7-1) |
+
+**배포(D0-2)는 아직 미달성이다.** 레포가 private 이라 Pages 가 404 다.
+내 쪽 준비는 끝났다는 것을 클린 클론으로 확인했다:
+
+```
+git clone --depth 1 → npm ci → npm run build     전부 통과, dist/ 생성
+```
+
+`Settings → General → Change visibility → Public` 그리고
+`Settings → Pages → Source: GitHub Actions` 만 하면 다음 push 에서 워크플로가 돈다.
+**이건 레포 소유자만 할 수 있다.**

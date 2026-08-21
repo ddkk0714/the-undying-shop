@@ -88,7 +88,12 @@ for (const file of found) {
 
 target.entries = entries;
 manifest.activePack = 'final';
-writeFileSync(MANIFEST, JSON.stringify(manifest, null, 2) + '\n', 'utf8');
+
+// 내용이 같으면 쓰지 않는다. 매번 덮어쓰면 줄바꿈만 바뀐 채 git 이 「수정됨」으로 잡고,
+// 같은 폴더를 쓰는 상대 에이전트가 「미커밋 변경이 있다」고 오해한다. 실제로 한 번 겪었다.
+const nextText = JSON.stringify(manifest, null, 2) + '\n';
+const sameAsDisk = readFileSync(MANIFEST, 'utf8').split('\r\n').join('\n') === nextText;
+if (!sameAsDisk) writeFileSync(MANIFEST, nextText, 'utf8');
 
 /* ── 보고 ──────────────────────────────────────────────────── */
 const pad = (s, n) => String(s).padEnd(n);
