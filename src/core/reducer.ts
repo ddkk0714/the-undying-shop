@@ -5,6 +5,7 @@ import { damageAutopsyCorpse, discardReviveCorpse, reviveQuote } from './systems
 import { acceptContract, confirmOffice, pickStar, populateVisitors, rejectContract } from './systems/office';
 import { inherit } from './systems/roster';
 import { awardSuperchat, expireChats, moderateChat, spawnChat } from './systems/opinion';
+import { judgeEnding } from './systems/narrative';
 import type { Action } from './actions';
 import type { Corpse, GameState, PhaseId } from './types';
 
@@ -81,9 +82,8 @@ function advance(state: GameState): GameState {
   if (state.phase === 'REVIVE') return populateVisitors(withPhase(state, 'OFFICE'));
   if (state.phase === 'LIVE') return finishLive(state);
   if (state.phase === 'ANNOUNCE') {
-    if (state.day >= content.balance.start.days) {
-      return { ...state, isOver: true, ending: state.maxFloor >= content.balance.start.targetFloor ? 'A_OPEN' : state.leak >= 70 ? 'B_REVEAL' : 'B_CONTINUE', today: null };
-    }
+    const ending = judgeEnding(state);
+    if (ending !== null) return { ...state, isOver: true, ending, today: null };
     return { ...state, day: state.day + 1, phase: 'REVIVE', today: null, shelf: [null, null, null], visitors: [] };
   }
   return withPhase(state, nextPhase(state.phase));
