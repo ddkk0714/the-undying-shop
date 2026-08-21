@@ -29,6 +29,8 @@ export function newRun(game: Phaser.Game): Store {
     console.debug(`[run] 새 판 시작 · seed=${seed}`);
     // 디버깅/자동화용. 프로덕션 번들에는 들어가지 않는다.
     (window as unknown as { __store?: Store }).__store = store;
+    // 오브젝트 풀링 검증용 — 씬의 표시 목록을 세려면 게임 인스턴스가 필요하다 (M07 수용 기준)
+    (window as unknown as { __game?: Phaser.Game }).__game = game;
   }
   return store;
 }

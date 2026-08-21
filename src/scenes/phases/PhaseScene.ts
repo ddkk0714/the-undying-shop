@@ -42,10 +42,30 @@ export abstract class PhaseScene extends Phaser.Scene {
     this.redraw();
   }
 
+  /**
+   * 다시 그려도 **파괴하지 않을** 오브젝트. 풀링한 것을 여기에 등록한다.
+   * 채팅 티커처럼 매 프레임 갱신되는 것을 통째로 재생성하면 풀링이 무의미해진다.
+   */
+  private persistent: Phaser.GameObjects.GameObject[] = [];
+
+  protected keepAlive(...objects: Phaser.GameObjects.GameObject[]): void {
+    this.persistent.push(...objects);
+  }
+
+  /** 살려 두던 것을 놓아준다 (연출이 끝난 일회성 오브젝트) */
+  protected dropAlive(object: Phaser.GameObjects.GameObject): void {
+    const at = this.persistent.indexOf(object);
+    if (at >= 0) this.persistent.splice(at, 1);
+  }
+
   protected redraw(): void {
     this.input.keyboard?.removeAllListeners(); // Button 이 등록한 핫키까지 함께 정리한다
+    // 살려 둘 것은 목록에서 빼놓고, 나머지만 파괴한다
+    for (const obj of this.persistent) this.children.remove(obj);
     this.children.removeAll(true);
     this.build(this.store.getState());
+    // 다시 맨 위에 얹는다 — 패널 배경 위에 와야 한다
+    for (const obj of this.persistent) this.children.add(obj);
   }
 
   /** 각 단계가 자기 화면을 그린다. */

@@ -5,9 +5,10 @@ import { PALETTE } from '../../render/palette';
 import { starArt } from '../../render/assets';
 import { L } from '../../ui/layout';
 import { Button } from '../../ui/Button';
+import { Ticker } from '../../ui/Ticker';
 import { reducedMotion, speedMul } from '../../ui/options';
 import { PhaseScene } from './PhaseScene';
-import type { CombatChoice, ForkRecord, GameState } from '../../core/types';
+import type { ChatMessage, CombatChoice, ForkRecord, GameState } from '../../core/types';
 
 /**
  * M06 생방송 — 5분할 화면 (04-UI-KIT §1 의 `L.live`).
@@ -34,12 +35,24 @@ const DEATH_NOISE_END = 1200;
 /** DayScene 이 ④ 사망 단계로 넘어가는 것을 이만큼 늦춰 준다 */
 export const DEATH_CURTAIN_MS = 1800;
 
+/**
+ * 채팅을 얼마나 자주 청하는가. **밸런스가 아니라 표시 박자다** —
+ * 큐 상한(`balance.opinion.chatMaxVisible`)과 수명은 core 가 관리한다.
+ * M07 수용 기준 「30초에 40~60개」 → 0.6초에 하나 = 30초에 50개.
+ */
+const CHAT_SPAWN_MS = 600;
+
 /** M06 §9 — 목격 1.2초 정지, 28F 는 채팅이 3초 조용해진다 */
 const WITNESS_HOLD_MS = 1200;
 const CHAT_SILENCE_MS = 3000;
 
 export class LivePhase extends PhaseScene {
   private ticker: Phaser.Time.TimerEvent | null = null;
+  private chatPump: Phaser.Time.TimerEvent | null = null;
+  /** 04-UI-KIT — Text 12개를 미리 만들어 두고 내용만 갈아끼운다 */
+  private chat!: Ticker;
+  /** 이미 날려 보낸 슈퍼챗 — 같은 메시지로 두 번 연출하지 않는다 */
+  private flownSuperchats = new Set<string>();
 
   /** 연출 상태 — 화면을 다시 그려도 살아남아야 한다 */
   private reduced = false;
@@ -65,6 +78,7 @@ export class LivePhase extends PhaseScene {
    * ★ Phaser 씬 인스턴스는 stop/launch 를 거쳐도 **살아남는다.**
    * 어제 남긴 필드를 지우지 않으면 다음 날 화면이 어제 상태로 시작한다.
    */
+    this.flownSuperchats = new Set();
     this.seenWitness = null;
     this.witnessFloor = null;
     this.witnessUntil = 0;
@@ -73,12 +87,30 @@ export class LivePhase extends PhaseScene {
     this.lastFans = -1;
     this.fanDropUntil = 0;
 
+    this.chat = new Ticker(this, { x: L.live.chat.x + L.pad, y: L.live.chat.y + 56, w: L.live.chat.w - L.pad * 2, h: L.live.chat.h - 72 },
+      (id) => this.store.dispatch({ type: 'CHAT/DELETE', id }));
+    this.keepAlive(...this.chat.objects());
+
     super.create();
     const stepMs = Math.round((content.balance.dive.floorSeconds * 1000) / speedMul(this.registry));
     this.ticker = this.time.addEvent({ delay: stepMs, loop: true, callback: () => this.step() });
+
+    // 채팅은 core 에 청하기만 한다. 무슨 말이 나올지는 core 가 정한다 (M07)
+    this.chatPump = this.time.addEvent({
+      delay: CHAT_SPAWN_MS,
+      loop: true,
+      callback: () => {
+        if (this.store.getState().phase !== 'LIVE') return;
+        if (this.time.now < this.chatSilentUntil) return; // 28F 침묵
+        this.store.dispatch({ type: 'CHAT/SPAWN' });
+      },
+    });
+
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.ticker?.remove();
+      this.chatPump?.remove();
       this.ticker = null;
+      this.chatPump = null;
     });
   }
 
@@ -409,21 +441,50 @@ export class LivePhase extends PhaseScene {
 
     // 28F 를 지나면 3초간 완전히 조용해진다. 침묵이 가장 강한 연출이다 (M06 §9)
     if (this.time.now < this.chatSilentUntil) {
+      this.chat.hideAll();
       this.text(v.x + L.pad, v.y + 88, '· · ·', 'dust');
       return;
     }
-    const queue = s.today?.chatQueue.filter((m) => !m.removed) ?? [];
-    if (queue.length === 0) {
+    const queue = s.today?.chatQueue ?? [];
+    this.chat.render(queue);
+    if (queue.filter((m) => !m.removed).length === 0) {
       this.text(v.x + L.pad, v.y + 88, '채팅이 조용하다', 'dust');
-      return;
     }
-    queue.slice(-11).forEach((msg, i) => {
-      this.text(
-        v.x + L.pad, v.y + 56 + i * 48,
-        this.clip(`${msg.nick}: ${msg.text}`, v.w - L.pad * 2),
-        msg.tone === 'TRUTH' ? 'wax' : 'dust',
-      );
-    });
+    this.flySuperchats(queue);
+  }
+
+  /**
+   * M07 §슈퍼챗 연출 — 금액이 날아가 흡수된다.
+   *
+   * 명세는 「HUD GOLD 로」인데 **생방송 중에는 HUD 가 이 화면에 덮여 보이지 않는다**
+   * (M06 §2 의 5분할이 화면 전체를 쓴다). 그래서 초상 칸의 누적 슈퍼챗 표시로 날린다 —
+   * 지금 이 방송이 얼마를 벌었는지가 거기 적혀 있다.
+   */
+  private flySuperchats(queue: readonly ChatMessage[]): void {
+    if (this.reduced) return;
+    for (const msg of queue) {
+      if (msg.tone !== 'SUPERCHAT' || msg.amount === undefined) continue;
+      if (this.flownSuperchats.has(msg.id)) continue;
+      this.flownSuperchats.add(msg.id);
+
+      const from = { x: L.live.chat.x + L.pad, y: L.live.chat.y + L.live.chat.h - 120 };
+      const to = { x: L.live.portrait.x + L.pad, y: L.live.portrait.y + 252 };
+      const label = this.text(from.x, from.y, `+${msg.amount} G`, 'wax');
+      // 날아가는 동안 화면이 다시 그려지면 파괴된다. 도착할 때까지 살려 둔다
+      this.keepAlive(label);
+      this.tweens.add({
+        targets: label,
+        x: to.x,
+        y: to.y,
+        alpha: { from: 1, to: 0.2 },
+        duration: 700,
+        ease: 'Cubic.easeIn',
+        onComplete: () => {
+          this.dropAlive(label);
+          label.destroy();
+        },
+      });
+    }
   }
 
   /* ── 목격 이벤트 — 하강이 멈추고 유언이 뜬다 (M06 §9) ── */
