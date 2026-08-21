@@ -59,6 +59,8 @@ export class DayScene extends Phaser.Scene {
   /** M06 §8 — 생방송→사망 교체를 지지직이 끝날 때까지 붙잡는다. 0 이면 지연 없음 */
   private swapAt = 0;
   private skipCurtain = false;
+  /** 기록 갱신 연출용 — 정산이 끝나면 이전 최고층은 state 에서 사라진다 (M08) */
+  private lastMaxFloor = -1;
 
   constructor() {
     super(SCENES.DAY);
@@ -151,7 +153,8 @@ export class DayScene extends Phaser.Scene {
     }
     const fx = this.store.getState().pendingFx;
     if (fx.length === 0) return;
-    // 연출 모듈이 아직 없다. 지금은 무엇이 큐에 쌓였는지 화면에 남기고 비운다.
+    // 단계 씬이 소비할 수 있게 남겨 둔다 — 여기서 비우면 그쪽은 볼 기회가 없다 (M02 §6)
+    this.registry.set('fx.recent', { kinds: fx.map((e) => e.kind), at: this.time.now });
     this.fxLine.setText(fx.map((e) => e.kind).join('  '));
     this.store.dispatch({ type: 'FX/CONSUME' });
   }
@@ -169,6 +172,12 @@ export class DayScene extends Phaser.Scene {
   }
 
   private render(s: Readonly<GameState>): void {
+    // 최고층이 갱신되는 순간 직전 값을 넘겨 준다. DeathPhase 의 「이전 기록」 표시용
+    if (this.lastMaxFloor >= 0 && s.maxFloor !== this.lastMaxFloor) {
+      this.registry.set('record.prev', this.lastMaxFloor);
+    }
+    this.lastMaxFloor = s.maxFloor;
+
     this.hudLeft.setText(`DAY ${s.day}\n/${content.balance.start.days}`);
     this.hudValues[0]?.setText(`${fmtGold(s.gold)} G`);
     this.hudValues[1]?.setText(fmtFans(s.fans));

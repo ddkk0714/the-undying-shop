@@ -1,20 +1,91 @@
+import Phaser from 'phaser';
 import { SCENES } from '../../config';
 import { content } from '../../core/content';
+import { PALETTE } from '../../render/palette';
 import { L } from '../../ui/layout';
 import { Button } from '../../ui/Button';
+import { reducedMotion } from '../../ui/options';
 import { PhaseScene } from './PhaseScene';
 import type { GameState } from '../../core/types';
 
 /**
- * M08 사망 — 화면 골격.
- * 노이즈·기록 갱신 연출(`ui/Noise.ts`, RECORD_BREAK)은 M08 본구현에서 붙인다.
+ * M08 ④ 사망 & 기록 갱신.
+ *
+ * 지지직(t=0~1.2)은 앞 단계에서 끝났다 — `LivePhase` 가 그리고 `DayScene` 이 단계 교체를
+ * 1.8초 늦춰 준다. 이 씬은 그 다음을 받는다 (M08 §흐름의 t=1.80 지점).
+ *
+ *   0.0s  이름 · 층 · 사인
+ *   1.2s  ★ 기록 갱신이면 NEW RECORD (M08 「아끼지 마라」)
+ *   3.7s  일일 정산 — 숫자를 하나씩 세어 올린다
+ *
+ * **사망은 실패가 아니라 하이라이트다.** 그래서 시간을 쓴다. 아무 키·클릭으로 건너뛴다.
  */
+
+const STAGE_RECORD_MS = 1200;
+const STAGE_TALLY_MS = 3700;
+/** 숫자 하나가 다 세어 올라가는 데 걸리는 시간. 한 번에 뜨면 감흥이 없다 (M08) */
+const COUNT_MS = 300;
+
+interface Row {
+  label: string;
+  value: number;
+  suffix: string;
+  color: 'bone' | 'wax' | 'dust';
+  text?: Phaser.GameObjects.Text;
+}
+
 export class DeathPhase extends PhaseScene {
+  private stage = 0;
+  private reduced = false;
+  private isRecord = false;
+  private prevRecord: number | null = null;
+  private rows: Row[] = [];
+  private flashes = 0;
+
   constructor() {
     super(SCENES.PHASE_DEATH);
   }
 
+  override create(): void {
+    this.reduced = reducedMotion(this.registry);
+    this.prevRecord = (this.registry.get('record.prev') as number | undefined) ?? null;
+    super.create();
+
+    if (this.reduced) {
+      this.stage = 2;
+      this.redraw();
+    } else {
+      this.time.delayedCall(STAGE_RECORD_MS, () => this.toStage(1));
+      this.time.delayedCall(STAGE_TALLY_MS, () => this.toStage(2));
+    }
+
+    // 스킵 — 심사자가 기다릴 이유가 없다
+    this.input.keyboard?.on('keydown', () => this.toStage(2));
+    this.input.on('pointerdown', () => this.toStage(2));
+  }
+
+  private toStage(next: number): void {
+    if (next <= this.stage) return;
+    this.stage = next;
+    this.redraw();
+  }
+
+  override update(): void {
+    super.update();
+    if (this.stage < 2) return;
+    const elapsed = this.time.now - this.tallyStartedAt;
+    this.rows.forEach((row, i) => {
+      if (row.text === undefined) return;
+      const t = Math.max(0, Math.min(1, (elapsed - i * COUNT_MS) / COUNT_MS));
+      const shown = Math.round(row.value * t);
+      row.text.setText(fmt(shown) + row.suffix);
+    });
+  }
+
+  private tallyStartedAt = 0;
+
   protected build(s: Readonly<GameState>): void {
+    this.rows = [];
     this.stageBackdrop();
     this.spriteCover(L.stage, ['bg.death']);
     this.heading('신호 두절', 'wax');
@@ -23,24 +94,25 @@ export class DeathPhase extends PhaseScene {
     const star = s.stars.find((x) => x.id === run?.starId);
     const persona = s.personas.find((p) => p.id === run?.personaId);
     const floor = run?.diedFloor ?? run?.currentFloor ?? 0;
+    this.isRecord = recordBroken(this, floor, s.maxFloor);
 
-    // 지지직 — 가로줄 디더. 8프레임 애니메이션은 M08 에서.
-    for (let i = 0; i < 8; i += 1) {
-      this.rect(L.pad, L.stage.y + 120 + i * 28, L.W - L.pad * 2, L.line, i % 2 === 0 ? 'dust' : 'mid');
+    // 끊긴 화면의 잔상 — 가로줄이 위에서 아래로 옅어진다
+    for (let i = 0; i < 10; i += 1) {
+      this.rect(L.pad, L.stage.y + 96 + i * 26, L.W - L.pad * 2, L.line, i % 3 === 0 ? 'dust' : 'mid');
     }
 
     const ox = L.pad * 4;
-    let oy = L.stage.y + 400;
+    let oy = L.stage.y + 380;
     this.title(ox, oy, `${persona?.displayName ?? '무명'} · ${star?.bodyName ?? '-'}`);
     oy += 88;
     this.title(ox, oy, `${floor}F 에서 끊겼다`, 'wax');
     oy += 80;
     this.text(ox, oy, run?.deathCause ?? '원인 불명', 'dust');
+    oy += 64;
+    this.text(ox, oy, `최고 기록 ${s.maxFloor} / ${content.balance.start.targetFloor}F`, 'dust');
 
-    const record = floor >= s.maxFloor;
-    oy += 80;
-    this.text(ox, oy, `최고 기록 ${s.maxFloor} / ${content.balance.start.targetFloor}F`, record ? 'bone' : 'dust');
-    if (record) this.title(ox, oy + 48, '기록 갱신', 'wax');
+    if (this.stage >= 1 && this.isRecord) this.buildRecord(floor);
+    if (this.stage >= 2) this.buildTally(s, floor);
 
     new Button(this, {
       x: L.W / 2 - 264, y: L.actionsFull.y + L.pad, w: 528, h: 96,
@@ -48,4 +120,79 @@ export class DeathPhase extends PhaseScene {
       onClick: () => this.store.dispatch({ type: 'PHASE/ADVANCE' }),
     });
   }
+
+  /** M08 「이 연출이 데모 영상의 클라이맥스다. 아끼지 마라」 */
+  private buildRecord(floor: number): void {
+    const w = 880;
+    const h = 360;
+    const x = L.W - w - L.pad * 4;
+    const y = L.stage.y + 96;
+
+    this.rect(x, y, w, h, 'ink');
+    this.frame(x, y, w, h, 'bone');
+    this.frame(x + 8, y + 8, w - 16, h - 16, 'wax');
+
+    // 자간을 벌린다 — 간판처럼 읽혀야 한다
+    this.title(x + 64, y + 44, 'N E W   R E C O R D', 'bone');
+    this.add
+      .text(x + w / 2, y + 124, `${floor} F`, {
+        fontFamily: 'NeoDunggeunmo, monospace',
+        fontSize: '144px',
+        resolution: 1,
+        color: '#' + PALETTE.wax.toString(16).padStart(6, '0'),
+      })
+      .setOrigin(0.5, 0);
+    if (this.prevRecord !== null) this.text(x + 64, y + h - 60, `이전 기록 · ${this.prevRecord}F`, 'dust');
+
+    if (this.reduced || this.flashes > 0) return;
+    // 화면 전체 wax 플래시 3회 + 카메라 흔들림
+    this.flashes = 3;
+    const cam = this.cameras.main;
+    for (let i = 0; i < 3; i += 1) {
+      this.time.delayedCall(i * 220, () => cam.flash(140, 192, 57, 47, false));
+    }
+    cam.shake(400, 0.004);
+  }
+
+  /** 일일 정산 — 숫자는 하나씩 세어 올라간다 (M08) */
+  private buildTally(s: Readonly<GameState>, floor: number): void {
+    // 하단 액션 바(L.actionsFull.y = 936)를 넘지 않는다
+    const w = 880;
+    const h = 320;
+    const x = L.W - w - L.pad * 4;
+    const y = this.isRecord ? L.stage.y + 472 : L.stage.y + 96;
+
+    this.rect(x, y, w, h, 'ink');
+    this.frame(x, y, w, h, 'dust');
+    this.label(x + 48, y + 28, `DAY ${s.day} 종료`, 'dust');
+
+    // 화면은 계산하지 않는다 — core 가 today 에 적어 둔 값을 읽기만 한다
+    this.rows = [
+      { label: '도달', value: floor, suffix: 'F', color: this.isRecord ? 'wax' : 'bone' },
+      { label: '슈퍼챗', value: s.today?.superchat ?? 0, suffix: ' G', color: 'bone' },
+      { label: '어필', value: s.today?.appealCount ?? 0, suffix: '회', color: 'dust' },
+      { label: '팬', value: s.today?.fansDelta ?? 0, suffix: '', color: 'bone' },
+    ];
+    this.rows.forEach((row, i) => {
+      const ry = y + 76 + i * 58;
+      this.text(x + 48, ry, row.label, 'dust');
+      row.text = this.textRight(x + w - 48, ry, '0' + row.suffix, row.color);
+    });
+    this.tallyStartedAt = this.time.now;
+  }
+}
+
+/**
+ * 기록 갱신 판정. 정산이 끝나면 이전 최고층이 state 에 남지 않으므로,
+ * `DayScene` 이 registry 에 넘겨 준 값과 FX 큐를 함께 본다.
+ */
+function recordBroken(scene: Phaser.Scene, floor: number, maxFloor: number): boolean {
+  const fx = scene.registry.get('fx.recent') as { kinds: string[]; at: number } | undefined;
+  if (fx !== undefined && scene.time.now - fx.at < 8000 && fx.kinds.includes('RECORD_BREAK')) return true;
+  const prev = scene.registry.get('record.prev') as number | undefined;
+  return prev !== undefined && floor >= maxFloor && maxFloor > prev;
+}
+
+function fmt(n: number): string {
+  return n >= 1000 || n <= -1000 ? n.toLocaleString('en-US') : String(n);
 }
