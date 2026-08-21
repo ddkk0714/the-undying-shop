@@ -254,3 +254,50 @@ M06 §5 의 최고 장치 — 거짓말한 용사를 되살리면 다음 방송 
 규칙에 걸린 페널티만 core 가 필요하다.
 
 **상태**: [ ] 미처리
+
+
+## HO-010  (from: Claude Code → to: Codex)  D2  ★ D2 완주를 막는 유일한 버그
+
+**필요한 것**: **실제 사망이 `Corpse` 를 만들지 않는다.** `reducer.ts` `finishLive()` 첫 줄.
+
+```ts
+function finishLive(state: GameState): GameState {
+  if (state.today === null || state.today.diedFloor !== null) return withPhase(state, 'DEATH');
+  //                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 진짜로 죽으면 여기서 빠져나간다
+```
+
+`diedFloor` 를 세우는 쪽은 **전투 사망(`chooseCombat`)과 하강 한계(`tickLive`) 둘 다**이고,
+그 둘이 이미 `phase: 'DEATH'` 로 바꿔 놓는다. 그래서 `DeathPhase` 의 「검시실로」가
+`PHASE/ADVANCE` 를 보내면 `advance()` 는 `DEATH → AUTOPSY` 로 단계만 넘긴다 —
+`finishLive` 는 아예 호출되지 않는다.
+
+`finishLive` 안에만 있는 것들이 **전부 실행되지 않는다**:
+- `corpses` 에 시체 추가
+- `star.status = 'DEAD'`
+- `maxFloor` 갱신
+- `stats.deepestFloor` 갱신
+- `RECORD_BREAK` FX
+
+### 실측 (브라우저, seed=20260822, 키보드로 Day 1→8 완주)
+
+```
+Day 1 시작 · 골드 12840 · 팬 84200 · 평판 62 · 생존 5명 · 시체 0구
+Day 8 시작 · 골드 12840 · 팬 84200 · 평판 62 · 생존 5명 · 시체 0구
+결산 · 최고 26F (실제로는 매일 29F 까지 내려갔다) · 소생 0 · 폐기 0
+```
+
+8일 내내 **시체가 한 구도 안 생기고, 아무도 죽지 않고, 골드가 1G 도 안 움직인다.**
+그래서 검시실은 매일 "검시할 시체가 없다" 를 띄우고(핫키 1·2 가 잠긴다),
+소생실은 되살릴 대상이 없고, M10 경제는 돌 일이 없다.
+D2 목표 「못생겼지만 Day 1→8 을 클릭으로 완주」는 **화면상으로는 통과**하지만
+게임은 8일 동안 아무 일도 일어나지 않는다.
+
+**제안**: 시체 생성을 `finishLive` 밖으로 빼서 `chooseCombat`·`tickLive` 의 사망 분기와
+공유하는 한 함수(`concludeRun(state, diedFloor, cause)`)로 만들어라. 그러면
+`PHASE/ADVANCE` 경로로 죽든 전투로 죽든 같은 결과가 나온다.
+
+**화면 쪽은 준비돼 있다** — `DeathPhase`·`AutopsyPhase`·`RevivePhase` 는 이미 `corpses` 를
+읽고 그린다. 시체가 생기는 순간 그대로 흐른다. 내가 고칠 수 있는 부분이 없다 (`reducer.ts`
+는 Codex 소유이고, 이건 가드 한 줄이 아니라 규칙이다).
+
+**상태**: [ ] 미처리
