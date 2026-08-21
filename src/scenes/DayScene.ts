@@ -1,9 +1,10 @@
 import Phaser from 'phaser';
 import { BASE_W, SCENES } from '../config';
 import { PALETTE, css } from '../render/palette';
-import { FONT, FONT_LABEL } from '../render/font';
+import { FONT } from '../render/font';
 import { L } from '../ui/layout';
 import { Button } from '../ui/Button';
+import { label } from '../ui/Label';
 import { reducedMotion } from '../ui/options';
 import { DEATH_CURTAIN_MS } from './phases/LivePhase';
 import { content, reputationGrade } from '../core/content';
@@ -81,9 +82,7 @@ export class DayScene extends Phaser.Scene {
 
     // 자원 라벨 3종 — 값은 render() 가 같은 x 에 채운다 (레퍼런스 배치)
     COLS.forEach((col, i) => {
-      this.add.text(L.hudStatus.x + col.x, L.hudStatus.y + 18, col.label, {
-        ...FONT_LABEL, color: css('dust'),
-      });
+      label(this, L.hudStatus.x + col.x, L.hudStatus.y + 18, col.label);
       this.hudValues[i] = this.add.text(L.hudStatus.x + col.x, L.hudStatus.y + 52, '', {
         ...FONT, color: css(col.label === 'REPUTATION' ? 'wax' : 'bone'),
       });
