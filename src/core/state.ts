@@ -15,6 +15,8 @@ const emptyStats = (): RunStats => ({
 });
 
 export function createInitialState(seed: number): GameState {
+  const stars = structuredClone(content.stars.slice(0, 2));
+  const recruitPool = structuredClone(content.stars.slice(2)).map((star) => ({ ...star, status: 'HIDDEN' as const, personaId: null }));
   return {
     version: 1,
     seed,
@@ -31,9 +33,9 @@ export function createInitialState(seed: number): GameState {
     maxFloor: content.balance.start.maxFloor,
     leak: 0,
     viewerFatigue: 0,
-    stars: structuredClone(content.stars),
+    stars,
     personas: structuredClone(content.personas),
-    recruitPool: [],
+    recruitPool,
     visitors: [],
     rejectedStarIds: [],
     corpses: [],

@@ -70,5 +70,20 @@
     "grades": [[0, "F"], [20, "D"], [40, "C"], [55, "B"], [70, "A"], [85, "S"]]
   },
   "recruit": { "baseSlots": 2, "lossPerFailures": 2 },
+  "contract": {
+    "visitorsPerDay": 2,
+    "feeBase": 400,
+    "feePerFandomK": 60,
+    "feeHonestyBias": -300,
+    "honestyMin": 0.6,
+    "honestyMax": 1.3,
+    "fandomBase": 1000,
+    "fandomPerCharisma": 100,
+    "claimedTiers": [
+      { "floor": 18, "rate": 1 },
+      { "floor": 24, "rate": 0.6 },
+      { "floor": 30, "rate": 0.25 }
+    ]
+  },
   "roster": { "inheritFandomLoss": 0.15, "inheritSuspicion": 35 }
 }

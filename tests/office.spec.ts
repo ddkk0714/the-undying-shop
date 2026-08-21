@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { reducer } from '../src/core/reducer';
 import { createInitialState } from '../src/core/state';
+import { content } from '../src/core/content';
+import { randomPolicy } from '../src/core/sim';
 import type { Contract, GameState, Star } from '../src/core/types';
 
 function officeState(seed = 31): GameState {
@@ -20,6 +22,38 @@ function contractFor(star: Star): Contract {
 }
 
 describe('office', () => {
+  it('starts with two signed stars and three hidden applicants', () => {
+    const state = createInitialState(30);
+    expect(state.stars).toHaveLength(2);
+    expect(state.recruitPool).toHaveLength(3);
+    expect(state.recruitPool.every((star) => star.status === 'HIDDEN')).toBe(true);
+    expect(state.recruitPool.some((candidate) => state.stars.some((star) => star.id === candidate.id))).toBe(false);
+  });
+
+  it('offers a unique, affordable visitor when no living star remains', () => {
+    const initial = createInitialState(31);
+    const rejectedId = initial.recruitPool[0]!.id;
+    const blocked = {
+      ...initial,
+      stars: initial.stars.map((star) => ({ ...star, status: 'DEAD' as const })),
+      rejectedStarIds: [rejectedId],
+    };
+    const office = reducer(blocked, { type: 'PHASE/ADVANCE' });
+    expect(office.phase).toBe('OFFICE');
+    expect(office.visitors.length).toBeGreaterThanOrEqual(1);
+    expect(office.visitors.length).toBeLessThanOrEqual(content.balance.contract.visitorsPerDay);
+    expect(new Set(office.visitors.map((visitor) => visitor.starId)).size).toBe(office.visitors.length);
+    expect(office.visitors.some((visitor) => visitor.starId === rejectedId)).toBe(false);
+    expect(office.visitors[0]?.claimedTiers).toEqual(content.balance.contract.claimedTiers);
+    const visitor = office.visitors.find((candidate) => office.gold >= candidate.fee);
+    expect(visitor).toBeDefined();
+    expect(randomPolicy(office)).toMatchObject({ type: 'OFFICE/CONTRACT_ACCEPT' });
+    const accepted = reducer(office, { type: 'OFFICE/CONTRACT_ACCEPT', starId: visitor!.starId });
+    expect(accepted.stars.some((star) => star.id === visitor!.starId && star.status === 'ALIVE')).toBe(true);
+    const picked = reducer(accepted, { type: 'OFFICE/PICK_STAR', starId: visitor!.starId });
+    expect(picked.today?.claimedCeiling).toBe(Math.max(...content.balance.contract.claimedTiers.map((tier) => tier.floor)));
+  });
+
   it('creates a real combatant and a non-stub ceiling when a star is picked', () => {
     const state = reducer(officeState(), { type: 'OFFICE/PICK_STAR', starId: 'body_karin' });
     expect(state.today?.hero).toEqual({ hp: 82, maxHp: 82, atk: 13, def: 2 });
@@ -50,6 +84,8 @@ describe('office', () => {
     expect(rejected.recruitPool).toEqual([]);
     expect(rejected.rejectedStarIds).toEqual([applicant.id]);
     expect(rejected.stats.contractsRejected).toBe(1);
+    const followingDay = reducer({ ...rejected, day: 2, phase: 'REVIVE', visitors: [] }, { type: 'PHASE/ADVANCE' });
+    expect(followingDay.visitors.some((visitor) => visitor.starId === applicant.id)).toBe(false);
   });
 
   it('sells shelf equipment, updates live stats, and leaks truth relic sales', () => {

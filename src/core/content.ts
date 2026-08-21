@@ -18,6 +18,17 @@ export interface Balance {
   opinion: { leakPerWitnessRevive: Record<string, number> };
   reputation: { onSuccessAnnounce: number; onFailureAnnounce: number; grades: [number, string][] };
   recruit: { baseSlots: number; lossPerFailures: number };
+  contract: {
+    visitorsPerDay: number;
+    feeBase: number;
+    feePerFandomK: number;
+    feeHonestyBias: number;
+    honestyMin: number;
+    honestyMax: number;
+    fandomBase: number;
+    fandomPerCharisma: number;
+    claimedTiers: { floor: number; rate: number }[];
+  };
   roster: { inheritFandomLoss: number; inheritSuspicion: number };
 }
 
@@ -179,9 +190,15 @@ export function loadContent(): Content {
   assertNumber(balanceJson.reputation.onSuccessAnnounce, 'balance.reputation.onSuccessAnnounce');
   assertNumber(balanceJson.reputation.onFailureAnnounce, 'balance.reputation.onFailureAnnounce');
   assertShape(balanceJson.reputation.grades.every((grade) => Array.isArray(grade) && grade.length === 2 && typeof grade[0] === 'number' && typeof grade[1] === 'string'), 'balance.reputation.grades invalid');
-  assertShape(isRecord(balanceJson.recruit) && isRecord(balanceJson.roster), 'balance.recruit/roster missing');
+  assertShape(isRecord(balanceJson.recruit) && isRecord(balanceJson.roster) && isRecord(balanceJson.contract), 'balance.recruit/roster/contract missing');
   for (const key of ['baseSlots', 'lossPerFailures'] as const) assertNumber(balanceJson.recruit[key], `balance.recruit.${key}`);
   for (const key of ['inheritFandomLoss', 'inheritSuspicion'] as const) assertNumber(balanceJson.roster[key], `balance.roster.${key}`);
+  for (const key of ['visitorsPerDay', 'feeBase', 'feePerFandomK', 'feeHonestyBias', 'honestyMin', 'honestyMax', 'fandomBase', 'fandomPerCharisma'] as const) assertNumber(balanceJson.contract[key], `balance.contract.${key}`);
+  assertShape(Array.isArray(balanceJson.contract.claimedTiers) && balanceJson.contract.claimedTiers.length > 0, 'balance.contract.claimedTiers missing');
+  balanceJson.contract.claimedTiers.forEach((tier, index) => {
+    assertShape(isRecord(tier), `balance.contract.claimedTiers[${index}] invalid`);
+    assertNumber(tier.floor, `balance.contract.claimedTiers[${index}].floor`);
+    assertNumber(tier.rate, `balance.contract.claimedTiers[${index}].rate`);
   assertShape(isRecord(radioJson) && isRecord(chatJson) && isRecord(narrativeJson), 'localized content must be objects');
   return {
     balance: balanceJson as unknown as Balance,

@@ -1,6 +1,49 @@
 import { content } from '../content';
+import { draw } from '../rng';
 import { createHero } from './combat';
-import type { Combatant, GameState, ItemDef, Star, TodayRun } from '../types';
+import type { Combatant, Contract, GameState, ItemDef, Star, TodayRun } from '../types';
+
+function signedContractKey(starId: string): string {
+  return `contractSigned:${starId}`;
+}
+
+export function populateVisitors(state: GameState): GameState {
+  if (state.phase !== 'OFFICE' || state.visitors.length > 0 || state.recruitPool.length === 0) return state;
+  const candidates = state.recruitPool.filter((star) => !state.rejectedStarIds.includes(star.id));
+  if (candidates.length === 0) return state;
+
+  const rules = content.balance.contract;
+  const [countRoll, afterCount] = draw(state);
+  const requestedCount = Math.floor(countRoll * (rules.visitorsPerDay + 1));
+  const hasAliveStar = afterCount.stars.some((star) => star.status === 'ALIVE');
+  const count = Math.min(candidates.length, hasAliveStar ? requestedCount : Math.max(1, requestedCount));
+  const remaining = [...candidates];
+  const visitors: Contract[] = [];
+  let next = afterCount;
+
+  for (let index = 0; index < count; index += 1) {
+    const [candidateRoll, afterCandidate] = draw(next);
+    const candidateIndex = Math.floor(candidateRoll * remaining.length);
+    const [star] = remaining.splice(candidateIndex, 1);
+    if (star === undefined) break;
+    const [honestyRoll, afterHonesty] = draw(afterCandidate);
+    const honesty = rules.honestyMin + honestyRoll * (rules.honestyMax - rules.honestyMin);
+    const fandom = rules.fandomBase + star.stats.charisma * rules.fandomPerCharisma;
+    const fee = Math.max(0, Math.round(rules.feeBase + star.stats.charisma * rules.feePerFandomK + (1 - honesty) * rules.feeHonestyBias));
+    visitors.push({
+      starId: star.id,
+      displayName: star.bodyName,
+      recognition: 'C',
+      fandom,
+      claimedTiers: rules.claimedTiers.map((tier) => ({ ...tier })),
+      fee,
+      honesty,
+    });
+    next = afterHonesty;
+  }
+
+  return { ...next, visitors };
+}
 
 function equippedItems(state: GameState): ItemDef[] {
   return state.shelf.flatMap((id) => {
@@ -16,7 +59,8 @@ function degradationMultiplier(star: Star): number {
 
 function claimedCeiling(state: GameState, starId: string): number {
   const contract = state.visitors.find((visitor) => visitor.starId === starId);
-  const highestClaim = contract === undefined ? undefined : Math.max(...contract.claimedTiers.map((tier) => tier.floor));
+  const claimedTiers = contract?.claimedTiers ?? (state.flags[signedContractKey(starId)] === true ? content.balance.contract.claimedTiers : []);
+  const highestClaim = claimedTiers.length === 0 ? undefined : Math.max(...claimedTiers.map((tier) => tier.floor));
   return Math.max(1, highestClaim ?? state.maxFloor);
 }
 
@@ -49,6 +93,7 @@ export function acceptContract(state: GameState, starId: string): GameState {
     stars: [...state.stars, recruited],
     recruitPool: state.recruitPool.filter((star) => star.id !== starId),
     visitors: state.visitors.filter((visitor) => visitor.starId !== starId),
+    flags: { ...state.flags, [signedContractKey(starId)]: true },
     pendingFx: [...state.pendingFx, { kind: 'CONTRACT_SIGN', payload: { starId } }],
   };
 }

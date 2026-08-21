@@ -2,7 +2,7 @@ import { content } from './content';
 import { createInitialState } from './state';
 import { chooseCombat, startLive, tickLive } from './systems/dive';
 import { discardReviveCorpse, reviveQuote } from './systems/economy';
-import { acceptContract, confirmOffice, pickStar, rejectContract } from './systems/office';
+import { acceptContract, confirmOffice, pickStar, populateVisitors, rejectContract } from './systems/office';
 import { inherit } from './systems/roster';
 import type { Action } from './actions';
 import type { Corpse, GameState, PhaseId } from './types';
@@ -45,12 +45,13 @@ function finishLive(state: GameState): GameState {
 function advance(state: GameState): GameState {
   if (state.isOver) return state;
   if (state.phase === 'OFFICE') return startLive(confirmOffice(state));
+  if (state.phase === 'REVIVE') return populateVisitors(withPhase(state, 'OFFICE'));
   if (state.phase === 'LIVE') return finishLive(state);
   if (state.phase === 'ANNOUNCE') {
     if (state.day >= content.balance.start.days) {
       return { ...state, isOver: true, ending: state.maxFloor >= content.balance.start.targetFloor ? 'A_OPEN' : state.leak >= 70 ? 'B_REVEAL' : 'B_CONTINUE', today: null };
     }
-    return { ...state, day: state.day + 1, phase: 'REVIVE', today: null, shelf: [null, null, null] };
+    return { ...state, day: state.day + 1, phase: 'REVIVE', today: null, shelf: [null, null, null], visitors: [] };
   }
   return withPhase(state, nextPhase(state.phase));
 }
