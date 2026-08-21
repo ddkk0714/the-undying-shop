@@ -16,6 +16,7 @@ export class DeathPhase extends PhaseScene {
 
   protected build(s: Readonly<GameState>): void {
     this.stageBackdrop();
+    this.spriteCover(L.stage, ['bg.death']);
     this.heading('신호 두절', 'wax');
 
     const run = s.today;

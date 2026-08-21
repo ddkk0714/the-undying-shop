@@ -14,6 +14,7 @@ export class AnnouncePhase extends PhaseScene {
 
   protected build(s: Readonly<GameState>): void {
     this.stageBackdrop();
+    this.spriteCover(L.stage, ['bg.studio']);
     this.heading('발표');
 
     const corpse = s.corpses.find((c) => c.starId === s.today?.starId && c.diedDay === s.day) ?? s.corpses.at(-1);

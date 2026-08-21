@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { SCENES } from '../../config';
 import { content } from '../../core/content';
 import { PALETTE } from '../../render/palette';
+import { starArt } from '../../render/assets';
 import { L } from '../../ui/layout';
 import { Button } from '../../ui/Button';
 import { reducedMotion, speedMul } from '../../ui/options';
@@ -115,6 +116,7 @@ export class LivePhase extends PhaseScene {
 
     const v = L.live;
     this.rect(0, 0, L.W, L.H, 'ink');
+    this.spriteCover({ x: 0, y: 0, w: L.W, h: L.H }, ['bg.live']);
     this.buildBar(s);
     this.buildFloors(s);
     this.buildMap(s);
@@ -279,6 +281,7 @@ export class LivePhase extends PhaseScene {
   private buildCombat(s: Readonly<GameState>): void {
     const v = L.live.combat;
     this.rect(v.x, v.y, v.w, v.h, 'ink');
+    this.spriteCover(v, ['bg.tower']);
     const run = s.today ?? null;
     if (run === null) {
       this.text(v.x + L.pad, v.y + L.pad, '방송 준비 중', 'dust');
@@ -294,7 +297,10 @@ export class LivePhase extends PhaseScene {
     } else {
       this.label(v.x + L.pad, v.y + 16, `${enc.floor}F · ${enc.turn}턴`, 'dust');
       this.title(v.x + L.pad, v.y + 48, this.clip(enemyName(enc.enemyKey), inner, 'title'), 'bone');
-      this.enemyShape(v.x + 212, v.y + 130, 320, 300, enc.enemyKey);
+      // 적 CG 가 오면 그걸 쓰고, 없으면 키 해시로 만든 실루엣을 그린다
+      if (!this.spriteFit({ x: v.x + 212, y: v.y + 130, w: 320, h: 300 }, [enc.enemyKey])) {
+        this.enemyShape(v.x + 212, v.y + 130, 320, 300, enc.enemyKey);
+      }
       this.bar(v.x + L.pad, v.y + 452, inner, enc.enemy.hp, enc.enemy.maxHp, 'wax');
       this.label(v.x + L.pad, v.y + 486, `적 ${enc.enemy.hp} / ${enc.enemy.maxHp}`, 'dust');
       // 용사 대사는 core 가 `Encounter.line` 에 넣는다. 비어 있으면 지어내지 않는다 (HO-005)
@@ -348,12 +354,14 @@ export class LivePhase extends PhaseScene {
       : ratio >= 0.15 ? '피. 숨이 가쁘다'
       : '초점이 없다';
 
-    // 초상 자리 — 본 아트가 오면 같은 사각형에 그대로 들어간다
+    // 초상 자리 — 어필 중에는 어필 컷으로 갈아낀다 (M06 §7 "이 게임의 썸네일")
+    const art = starArt(star.id);
     const px = v.x + v.w - 248;
     const py = v.y + 16;
+    const box = { x: px, y: py, w: 232, h: v.h - 32 };
     const before = this.children.list.length;
-    this.dither(px, py, 232, v.h - 32, 'mid', appealing ? 4 : ratio < 0.15 ? 12 : 8);
-    this.sprite(px, py, star.portraitKey, 232, v.h - 32);
+    const keys = appealing ? [art.appeal, art.portrait] : [art.portrait];
+    if (!this.spriteFit(box, keys)) this.dither(px, py, 232, v.h - 32, 'mid', ratio < 0.15 ? 12 : 8);
     if (appealing) this.frame(px, py, 232, v.h - 32, 'wax');
 
     // 열화 3+ — 균열 오버레이. 위 모든 상태에 겹친다

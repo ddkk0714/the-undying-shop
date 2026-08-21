@@ -15,6 +15,7 @@ export class AutopsyPhase extends PhaseScene {
 
   protected build(s: Readonly<GameState>): void {
     this.stageBackdrop();
+    this.spriteCover(L.stage, ['bg.autopsy']);
     this.heading('검시실');
 
     const corpse = s.corpses.find((c) => c.starId === s.today?.starId && c.diedDay === s.day) ?? s.corpses.at(-1);

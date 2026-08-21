@@ -350,37 +350,107 @@ const SHOP_ART = {
   'prop.tag': propTag,
 };
 
-/* ── 타입별 더미 ───────────────────────────────────────────── */
-function makeImage(key) {
-  const shopArt = SHOP_ART[key];
-  if (shopArt !== undefined) return shopArt();
-  if (key.startsWith('bg.')) {
-    // §4 표(v3.1): 1920×936 ink 바탕 + 50% 디더 + 좌상단 키 이름
-    const img = new Img(1920, 936, P.ink);
-    for (let y = 0; y < 936; y += 8) for (let x = (y / 8) % 2 ? 4 : 0; x < 1920; x += 8) img.rect(x, y, 4, 4, P.mid);
-    img.text(24, 24, key, P.dust, 8);
-    return img;
+/** 전신 실루엣 — star.body.* (752×792). 상점 좌측 칸을 그대로 채운다 */
+function bodySilhouette(w, h, label) {
+  const img = new Img(w, h, P.ink);
+  img.frame(0, 0, w, h, P.dust);
+  const cx = Math.round(w / 2);
+  img.glow(cx, Math.round(h * 0.18), Math.round(w * 0.7), P.mid, 10);
+  img.disc(cx, Math.round(h * 0.18), Math.round(w * 0.14), P.mid);              // 머리
+  const top = Math.round(h * 0.3);
+  for (let j = 0; j < h - top; j++) {
+    const t = j / (h - top);
+    const bw = Math.round(w * (0.26 + t * 0.34));
+    img.rect(cx - (bw >> 1), top + j, bw, 1, P.mid);                            // 몸통 → 옷자락
   }
-  if (key.startsWith('star.portrait.')) {
-    // §4 표(v3.1): 384×480 mid 실루엣 + 이니셜
-    const img = new Img(384, 480);
-    const name = key.split('.').pop() ?? '';
-    silhouette(img, 0, name.slice(0, 2));
-    return img;
-  }
-  const img = new Img(256, 256, P.mid);
-  img.frame(0, 0, 256, 256, P.dust);
-  img.text(12, 12, key.split('.').pop() ?? key, P.dust, 4);
+  if (label) img.text(cx - String(label).length * 30, h - 96, label, P.bone, 10);
   return img;
 }
 
+/** 적 실루엣 — enemy.* (512×512). 블록을 쌓아 만든 1비트 덩어리 */
+function enemyBlob(w, h, name) {
+  const img = new Img(w, h);
+  let seed = 2166136261;
+  for (const ch of name) { seed ^= ch.charCodeAt(0); seed = Math.imul(seed, 16777619) >>> 0; }
+  const rand = (n) => {
+    let x = (Math.imul(seed, 0x27d4eb2d) ^ Math.imul(n | 0, 0x165667b1)) >>> 0;
+    x ^= x >>> 15; x = Math.imul(x, 0x2545f491) >>> 0; x ^= x >>> 13;
+    return (x >>> 0) / 4294967296;
+  };
+  const cols = 8;
+  const rows = 10;
+  const cw = Math.floor(w / cols);
+  const ch2 = Math.floor((h - 64) / rows);
+  for (let r = 0; r < rows; r++) {
+    const spread = 1 + Math.floor(rand(r) * (cols / 2));
+    for (let c = 0; c < cols; c++) {
+      if (Math.abs(c - (cols - 1) / 2) > spread) continue;
+      img.dither(c * cw, 32 + r * ch2, cw, ch2, rand(r * 31 + c) > 0.35 ? P.bone : P.mid, 8);
+    }
+  }
+  img.text(16, h - 40, name, P.dust, 4);
+  return img;
+}
+
+/* ── 타입별 더미 ───────────────────────────────────────────── */
+function makeImage(key, entry = {}) {
+  const shopArt = SHOP_ART[key];
+  if (shopArt !== undefined) return shopArt();
+
+  // 매니페스트의 size 가 정본이다. 본 아트도 이 크기로 그리면 좌표가 그대로 맞는다.
+  const [w, h] = entry.size ?? [256, 256];
+  const name = key.split('.').pop() ?? key;
+
+  if (key.startsWith('bg.')) {
+    const img = new Img(w, h, P.ink);
+    for (let y = 0; y < h; y += 8) for (let x = (y / 8) % 2 ? 4 : 0; x < w; x += 8) img.rect(x, y, 4, 4, P.mid);
+    img.frame(0, 0, w, h, P.dust);
+    img.text(24, 24, key, P.dust, 8);
+    img.text(24, 96, w + 'X' + h, P.dust, 5);
+    return img;
+  }
+  if (key.startsWith('star.body.')) return bodySilhouette(w, h, name.slice(0, 2));
+  if (key.startsWith('star.portrait.') || key.startsWith('star.appeal.')) {
+    const img = new Img(w, h);
+    silhouette(img, 0, name.slice(0, 2));
+    if (key.startsWith('star.appeal.')) img.frame(0, 0, w, h, P.wax);   // 어필 컷은 붉은 액자로 구분
+    return img;
+  }
+  if (key.startsWith('enemy.')) return enemyBlob(w, h, name);
+  if (key === 'ui.logo') {
+    const img = new Img(w, h, P.ink);
+    img.frame(0, 0, w, h, P.bone);
+    img.text(48, Math.round(h / 2) - 28, 'UNDYING SHOP', P.bone, 8);
+    return img;
+  }
+
+  const img = new Img(w, h, P.mid);
+  img.frame(0, 0, w, h, P.dust);
+  img.text(12, 12, name, P.dust, 4);
+  return img;
+}
+
+/**
+ * 04-UI-KIT §2-1·§2-2 — 상태마다 채움/테두리가 다르다.
+ * 플레이스홀더가 **현재 절차적 버튼과 같은 모습**이어야 본 아트로 갈아낄 때 충격이 없다.
+ */
+const NINE_STYLE = {
+  'ui.button.9s':        { fill: P.mid, border: P.dust },
+  'ui.button.hover.9s':  { fill: P.mid, border: P.bone },
+  'ui.button.danger.9s': { fill: P.mid, border: P.wax },
+  'ui.button.ghost.9s':  { fill: P.ink, border: P.dust },
+  'ui.panel.9s':         { fill: P.mid, border: P.bone },
+  'ui.panel.sunken.9s':  { fill: P.ink, border: P.dust },
+};
+
 function makeNineslice(key, entry) {
-  // §4 표: ash 채움 + line 1px 테두리
   const s = entry.slice ?? [4, 4, 4, 4];
   const size = Math.max(16, 2 * Math.max(...s) + 2);
-  const fill = key.includes('button') ? P.mid : P.ink; // 04-UI-KIT §2-2 raised/sunken
-  const img = new Img(size, size, fill);
-  img.frame(0, 0, size, size, P.dust);
+  const style = NINE_STYLE[key] ?? { fill: P.ink, border: P.dust };
+  const img = new Img(size, size, style.fill);
+  // 04-UI-KIT §2-2 (v3.1) — 테두리는 2px
+  img.frame(0, 0, size, size, style.border);
+  img.frame(1, 1, size - 2, size - 2, style.border);
   return img;
 }
 
@@ -454,6 +524,7 @@ function assertPalette(img, key) {
 const manifestPath = join(ROOT, 'content', 'manifest.json');
 const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
 const pack = manifest.packs.placeholder;
+if (pack === undefined) throw new Error('manifest 에 placeholder 팩이 없다');
 const written = [];
 
 for (const [key, entry] of Object.entries(pack.entries)) {
@@ -463,7 +534,7 @@ for (const [key, entry] of Object.entries(pack.entries)) {
     buf = makeSilentWav();
   } else {
     let img;
-    if (entry.type === 'image') img = makeImage(key);
+    if (entry.type === 'image') img = makeImage(key, entry);
     else if (entry.type === 'nineslice') img = makeNineslice(key, entry);
     else if (entry.type === 'spritesheet') img = makeSpritesheet(key, entry);
     else throw new Error(key + ': 알 수 없는 type "' + entry.type + '"');

@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { PALETTE, css, type PaletteName } from '../../render/palette';
 import { FONT, FONT_LABEL, FONT_TITLE } from '../../render/font';
-import { key, MISSING_TEXTURE } from '../../render/assets';
+import { key, firstTexture, hasTexture } from '../../render/assets';
 import { L } from '../../ui/layout';
 import { currentRun, newRun } from '../run';
 import type { Store } from '../../core/store';
@@ -101,13 +101,51 @@ export abstract class PhaseScene extends Phaser.Scene {
 
   /**
    * 03-ASSET-MODULES §3 — 에셋은 논리 키로만 참조한다.
-   * 키가 없으면 조용히 건너뛴다. 아트 하나 빠졌다고 화면이 죽지 않는다.
+   * 키가 없거나 파일이 아직 안 왔으면 조용히 건너뛴다. 아트 하나 빠졌다고 화면이 죽지 않는다.
    */
   protected sprite(x: number, y: number, assetKey: string, w?: number, h?: number, frame = 0): void {
-    const textureKey = key(assetKey);
-    if (textureKey === MISSING_TEXTURE) return;
-    const img = this.add.image(Math.round(x), Math.round(y), textureKey, frame).setOrigin(0, 0);
+    if (!hasTexture(this, assetKey)) return;
+    const img = this.add.image(Math.round(x), Math.round(y), key(assetKey), frame).setOrigin(0, 0);
     if (w !== undefined && h !== undefined) img.setDisplaySize(Math.round(w), Math.round(h));
+  }
+
+  /** 이 키의 그림이 실제로 로드돼 있는가 — 없으면 씬이 절차적으로 대신 그린다 */
+  protected hasArt(assetKey: string): boolean {
+    return hasTexture(this, assetKey);
+  }
+
+  /**
+   * 후보를 앞에서부터 훑어 **처음 있는 것**을 상자에 맞춰 그린다.
+   * 비율을 지키고 가운데 맞춤이라 규격이 어긋난 그림도 늘어나거나 찌그러지지 않는다.
+   * 하나도 없으면 false — 호출한 쪽이 절차적 대체 그림을 그리면 된다.
+   */
+  protected spriteFit(
+    box: { x: number; y: number; w: number; h: number },
+    assetKeys: string[],
+    frame = 0,
+  ): boolean {
+    const textureKey = firstTexture(this, ...assetKeys);
+    if (textureKey === null) return false;
+    const src = this.textures.get(textureKey).getSourceImage() as { width: number; height: number };
+    const scale = Math.min(box.w / src.width, box.h / src.height);
+    const w = Math.round(src.width * scale);
+    const h = Math.round(src.height * scale);
+    this.add
+      .image(Math.round(box.x + (box.w - w) / 2), Math.round(box.y + (box.h - h) / 2), textureKey, frame)
+      .setOrigin(0, 0)
+      .setDisplaySize(w, h);
+    return true;
+  }
+
+  /** 상자를 꽉 채운다 (배경 전용 — 잘려도 되는 그림). 없으면 false */
+  protected spriteCover(box: { x: number; y: number; w: number; h: number }, assetKeys: string[]): boolean {
+    const textureKey = firstTexture(this, ...assetKeys);
+    if (textureKey === null) return false;
+    this.add
+      .image(Math.round(box.x), Math.round(box.y), textureKey)
+      .setOrigin(0, 0)
+      .setDisplaySize(Math.round(box.w), Math.round(box.h));
+    return true;
   }
 
   /** 본문 32px */

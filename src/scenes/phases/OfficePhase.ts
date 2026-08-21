@@ -1,6 +1,6 @@
 import { SCENES } from '../../config';
 import { content } from '../../core/content';
-import { key, MISSING_TEXTURE } from '../../render/assets';
+import { starArt } from '../../render/assets';
 import { L, slotX, actionX, ACTION_W } from '../../ui/layout';
 import { Button } from '../../ui/Button';
 import { PhaseScene } from './PhaseScene';
@@ -40,7 +40,7 @@ export class OfficePhase extends PhaseScene {
   private buildGuest(s: Readonly<GameState>): void {
     const g = L.guest;
     this.rect(g.x, g.y, g.w, g.h, 'ink');
-    this.sprite(g.x, g.y, 'bg.shop.room', g.w, g.h);
+    this.spriteCover(g, ['bg.shop.room']);
     this.frame(g.x, g.y, g.w, g.h, 'dust');
 
     const visitor = s.visitors[0];
@@ -49,16 +49,15 @@ export class OfficePhase extends PhaseScene {
       ? visitor.displayName
       : s.personas.find((p) => p.id === star?.personaId)?.displayName ?? '무명';
 
-    // 전신 실루엣 384x480 — 진짜 초상은 M03
+    // 전신 CG 자리 — star.body.* → star.portrait.* → 실루엣 순으로 내려간다
+    const art = star === undefined ? null : starArt(star.id);
     const w = 384;
     const h = 480;
     const x = g.x + Math.round((g.w - w) / 2);
     const y = g.y + g.h - h - 24;
-    const portraitKey = star === undefined ? MISSING_TEXTURE : key(star.portraitKey);
-    const textureKey = portraitKey === MISSING_TEXTURE ? key('star.silhouette') : portraitKey;
-    if (textureKey !== MISSING_TEXTURE) {
-      this.add.image(x, y, textureKey, 0).setOrigin(0, 0).setDisplaySize(w, h);
-    } else {
+    const full = { x: g.x, y: g.y + 96, w: g.w, h: g.h - 120 };
+    const body = art === null ? false : this.spriteFit(full, [art.body]);
+    if (!body && !this.spriteFit({ x, y, w, h }, [...(art === null ? [] : [art.portrait]), 'star.silhouette'])) {
       this.rect(x, y, w, h, 'mid');
     }
 
@@ -77,7 +76,7 @@ export class OfficePhase extends PhaseScene {
   private buildBenchBackdrop(): void {
     const b = L.bench;
     this.rect(b.x, b.y, b.w, b.h, 'ink');
-    this.sprite(b.x, b.y, 'bg.shop.bench', b.w, b.h);
+    this.spriteCover(b, ['bg.shop.bench']);
     // 소품 — 작업대를 세 구역으로 나눠 놓는다.
     //   좌: 램프(진열 왼쪽) · 장부(아래)   우: 도장·두루마리(진열 오른쪽 세로 띠)
     //   가운데 아래(local 380~1130 / 400~570)는 출연자 줄이 쓰므로 비워 둔다.

@@ -1,6 +1,6 @@
 import { SCENES } from '../../config';
 import { reviveQuote } from '../../core/systems/economy';
-import { key, MISSING_TEXTURE } from '../../render/assets';
+import { starArt } from '../../render/assets';
 import { L, actionX, ACTION_W } from '../../ui/layout';
 import { Button } from '../../ui/Button';
 import { PhaseScene } from './PhaseScene';
@@ -43,7 +43,8 @@ export class RevivePhase extends PhaseScene {
   private buildGuest(s: Readonly<GameState>, star: Star | undefined, count: number): void {
     const g = L.guest;
     this.rect(g.x, g.y, g.w, g.h, 'ink');
-    this.sprite(g.x, g.y, 'bg.shop.room', g.w, g.h);
+    // 소생실 전용 배경이 오면 그걸 쓰고, 없으면 상점 방을 그대로 쓴다
+    this.spriteCover(g, ['bg.revive.room', 'bg.shop.room']);
     this.frame(g.x, g.y, g.w, g.h, 'dust');
 
     this.title(g.x + L.pad, g.y + L.pad, '소생실');
@@ -58,16 +59,14 @@ export class RevivePhase extends PhaseScene {
       return;
     }
 
-    // 전신 384x480 — 진짜 초상·균열 오버레이는 M03 `ui/Portrait.ts`
+    // 전신 CG 자리 — star.body.* 가 오면 칸을 그대로 채우고, 없으면 초상/실루엣으로 내려간다
+    const art = starArt(star.id);
     const w = 384;
     const h = 480;
     const x = g.x + Math.round((g.w - w) / 2);
     const y = g.y + g.h - h - 24;
-    const portrait = key(star.portraitKey);
-    const textureKey = portrait === MISSING_TEXTURE ? key('star.silhouette') : portrait;
-    if (textureKey !== MISSING_TEXTURE) {
-      this.add.image(x, y, textureKey, 0).setOrigin(0, 0).setDisplaySize(w, h);
-    } else {
+    const full = { x: g.x, y: g.y + 96, w: g.w, h: g.h - 120 };
+    if (!this.spriteFit(full, [art.body]) && !this.spriteFit({ x, y, w, h }, [art.portrait, 'star.silhouette'])) {
       this.rect(x, y, w, h, 'mid');
     }
     // 열화 균열 — 소생 횟수만큼. 진짜 오버레이는 M03
@@ -84,7 +83,7 @@ export class RevivePhase extends PhaseScene {
   private buildBench(s: Readonly<GameState>, corpse: Corpse | undefined, star: Star | undefined): void {
     const b = L.bench;
     this.rect(b.x, b.y, b.w, b.h, 'ink');
-    this.sprite(b.x, b.y, 'bg.shop.bench', b.w, b.h);
+    this.spriteCover(b, ['bg.revive.bench', 'bg.shop.bench']);
     // 소생실에서는 작업대에 장부와 도장만 올려 둔다 (진열은 편성실 몫)
     this.sprite(b.x + 24, b.y + 470, 'prop.ledger', 336, 264);
     this.sprite(b.x + 980, b.y + 120, 'prop.stamp', 128, 205);

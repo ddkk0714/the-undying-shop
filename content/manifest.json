@@ -1,38 +1,430 @@
 {
-  "activePack": "placeholder",
+  "_readme": "아트를 넣는 곳은 public/assets/packs/final/ 이다. 그 폴더의 README.md 를 읽어라. 파일을 넣은 뒤 `npm run art` 한 번이면 끝난다.",
+  "activePack": "final",
   "packs": {
     "placeholder": {
       "root": "assets/packs/placeholder/",
       "entries": {
-        "ui.panel.9s":         { "type": "nineslice",   "file": "ui/panel.png",  "slice": [4, 4, 4, 4] },
-        "ui.button.9s":        { "type": "nineslice",   "file": "ui/button.png", "slice": [3, 3, 3, 3] },
-        "ui.seal":             { "type": "spritesheet", "file": "ui/seal.png",   "frameWidth": 192, "frameHeight": 192 },
-        "bg.shop":             { "type": "image",       "file": "bg/shop.png" },
-        "bg.revive":           { "type": "image",       "file": "bg/revive.png" },
-        "bg.tower":            { "type": "image",       "file": "bg/tower.png" },
-        "bg.autopsy":          { "type": "image",       "file": "bg/autopsy.png" },
-        "bg.studio":           { "type": "image",       "file": "bg/studio.png" },
-
-        "bg.shop.room":        { "type": "image",       "file": "bg/shop_room.png" },
-        "bg.shop.bench":       { "type": "image",       "file": "bg/shop_bench.png" },
-        "prop.lamp":           { "type": "image",       "file": "prop/lamp.png" },
-        "prop.ledger":         { "type": "image",       "file": "prop/ledger.png" },
-        "prop.stamp":          { "type": "image",       "file": "prop/stamp.png" },
-        "prop.scroll":         { "type": "image",       "file": "prop/scroll.png" },
-        "prop.tag":            { "type": "image",       "file": "prop/tag.png" },
-
-        "star.portrait.karin": { "type": "image",       "file": "star/karin.png" },
-        "star.silhouette":     { "type": "spritesheet", "file": "star/silhouette.png", "frameWidth": 384, "frameHeight": 480 },
-        "sfx.stamp":           { "type": "audio",       "file": "sfx/stamp.wav" },
-        "sfx.superchat":       { "type": "audio",       "file": "sfx/superchat.wav" }
+        "ui.panel.9s": {
+          "type": "nineslice",
+          "file": "ui/panel.png",
+          "slice": [
+            4,
+            4,
+            4,
+            4
+          ],
+          "desc": "패널 테두리 (융기)"
+        },
+        "ui.panel.sunken.9s": {
+          "type": "nineslice",
+          "file": "ui/panel_sunken.png",
+          "slice": [
+            4,
+            4,
+            4,
+            4
+          ],
+          "desc": "패널 테두리 (함몰 · 목록/채팅창)"
+        },
+        "ui.button.9s": {
+          "type": "nineslice",
+          "file": "ui/button.png",
+          "slice": [
+            3,
+            3,
+            3,
+            3
+          ],
+          "desc": "버튼 평상"
+        },
+        "ui.button.hover.9s": {
+          "type": "nineslice",
+          "file": "ui/button_hover.png",
+          "slice": [
+            3,
+            3,
+            3,
+            3
+          ],
+          "desc": "버튼 마우스오버"
+        },
+        "ui.button.danger.9s": {
+          "type": "nineslice",
+          "file": "ui/button_danger.png",
+          "slice": [
+            3,
+            3,
+            3,
+            3
+          ],
+          "desc": "버튼 위험 (소생·어필·훼손)"
+        },
+        "ui.button.ghost.9s": {
+          "type": "nineslice",
+          "file": "ui/button_ghost.png",
+          "slice": [
+            3,
+            3,
+            3,
+            3
+          ],
+          "desc": "버튼 보조 (테두리만 · 비활성/돌아가기)"
+        },
+        "ui.seal": {
+          "type": "spritesheet",
+          "file": "ui/seal.png",
+          "frameWidth": 192,
+          "frameHeight": 192,
+          "desc": "봉랍 도장 4프레임"
+        },
+        "ui.logo": {
+          "type": "image",
+          "file": "ui/logo.png",
+          "size": [
+            960,
+            240
+          ],
+          "desc": "타이틀 로고"
+        },
+        "bg.title": {
+          "type": "image",
+          "file": "bg/title.png",
+          "size": [
+            1920,
+            1080
+          ],
+          "desc": "타이틀 화면 배경"
+        },
+        "bg.shop.room": {
+          "type": "image",
+          "file": "bg/shop_room.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "② 편성실 좌측 — 방문자가 서는 자리"
+        },
+        "bg.shop.bench": {
+          "type": "image",
+          "file": "bg/shop_bench.png",
+          "size": [
+            1152,
+            792
+          ],
+          "desc": "② 편성실 우측 — 작업대"
+        },
+        "bg.revive.room": {
+          "type": "image",
+          "file": "bg/revive_room.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "① 소생실 좌측 (없으면 bg.shop.room 을 쓴다)"
+        },
+        "bg.revive.bench": {
+          "type": "image",
+          "file": "bg/revive_bench.png",
+          "size": [
+            1152,
+            792
+          ],
+          "desc": "① 소생실 우측 (없으면 bg.shop.bench 를 쓴다)"
+        },
+        "bg.live": {
+          "type": "image",
+          "file": "bg/live.png",
+          "size": [
+            1920,
+            1080
+          ],
+          "desc": "③ 생방송 5분할 바탕 (칸 사이 여백)"
+        },
+        "bg.tower": {
+          "type": "image",
+          "file": "bg/tower.png",
+          "size": [
+            744,
+            720
+          ],
+          "desc": "③ 생방송 전투 칸 배경 (던전)"
+        },
+        "bg.death": {
+          "type": "image",
+          "file": "bg/death.png",
+          "size": [
+            1920,
+            936
+          ],
+          "desc": "④ 사망 화면"
+        },
+        "bg.autopsy": {
+          "type": "image",
+          "file": "bg/autopsy.png",
+          "size": [
+            1920,
+            936
+          ],
+          "desc": "⑤ 검시실"
+        },
+        "bg.studio": {
+          "type": "image",
+          "file": "bg/studio.png",
+          "size": [
+            1920,
+            936
+          ],
+          "desc": "⑥ 발표 스튜디오"
+        },
+        "prop.lamp": {
+          "type": "image",
+          "file": "prop/lamp.png",
+          "size": [
+            224,
+            352
+          ],
+          "desc": "작업대 램프 (광원)"
+        },
+        "prop.ledger": {
+          "type": "image",
+          "file": "prop/ledger.png",
+          "size": [
+            448,
+            352
+          ],
+          "desc": "장부"
+        },
+        "prop.stamp": {
+          "type": "image",
+          "file": "prop/stamp.png",
+          "size": [
+            160,
+            256
+          ],
+          "desc": "도장"
+        },
+        "prop.scroll": {
+          "type": "image",
+          "file": "prop/scroll.png",
+          "size": [
+            256,
+            96
+          ],
+          "desc": "두루마리"
+        },
+        "prop.tag": {
+          "type": "image",
+          "file": "prop/tag.png",
+          "size": [
+            192,
+            128
+          ],
+          "desc": "가격표"
+        },
+        "star.silhouette": {
+          "type": "spritesheet",
+          "file": "star/silhouette.png",
+          "frameWidth": 384,
+          "frameHeight": 480,
+          "desc": "이름 없는 몸 실루엣 4프레임"
+        },
+        "star.body.karin": {
+          "type": "image",
+          "file": "star/body_karin.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "카린 전신 (상점 좌측)"
+        },
+        "star.body.juno": {
+          "type": "image",
+          "file": "star/body_juno.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "주노 전신"
+        },
+        "star.body.sela": {
+          "type": "image",
+          "file": "star/body_sela.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "셀라 전신"
+        },
+        "star.body.ilan": {
+          "type": "image",
+          "file": "star/body_ilan.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "일란 전신"
+        },
+        "star.body.mor": {
+          "type": "image",
+          "file": "star/body_mor.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "모르 전신"
+        },
+        "star.portrait.karin": {
+          "type": "image",
+          "file": "star/karin.png",
+          "size": [
+            384,
+            480
+          ],
+          "desc": "카린 초상 (생방송 우상단)"
+        },
+        "star.portrait.juno": {
+          "type": "image",
+          "file": "star/juno.png",
+          "size": [
+            384,
+            480
+          ],
+          "desc": "주노 초상"
+        },
+        "star.portrait.sela": {
+          "type": "image",
+          "file": "star/sela.png",
+          "size": [
+            384,
+            480
+          ],
+          "desc": "셀라 초상"
+        },
+        "star.portrait.ilan": {
+          "type": "image",
+          "file": "star/ilan.png",
+          "size": [
+            384,
+            480
+          ],
+          "desc": "일란 초상"
+        },
+        "star.portrait.mor": {
+          "type": "image",
+          "file": "star/mor.png",
+          "size": [
+            384,
+            480
+          ],
+          "desc": "모르 초상"
+        },
+        "star.appeal.karin": {
+          "type": "image",
+          "file": "star/karin_appeal.png",
+          "size": [
+            384,
+            480
+          ],
+          "desc": "카린 어필 컷 — 억지 웃음 + 카메라를 본다 (M06 §7 최우선 컷)"
+        },
+        "star.appeal.juno": {
+          "type": "image",
+          "file": "star/juno_appeal.png",
+          "size": [
+            384,
+            480
+          ],
+          "desc": "주노 어필 컷"
+        },
+        "star.appeal.sela": {
+          "type": "image",
+          "file": "star/sela_appeal.png",
+          "size": [
+            384,
+            480
+          ],
+          "desc": "셀라 어필 컷"
+        },
+        "star.appeal.ilan": {
+          "type": "image",
+          "file": "star/ilan_appeal.png",
+          "size": [
+            384,
+            480
+          ],
+          "desc": "일란 어필 컷"
+        },
+        "star.appeal.mor": {
+          "type": "image",
+          "file": "star/mor_appeal.png",
+          "size": [
+            384,
+            480
+          ],
+          "desc": "모르 어필 컷"
+        },
+        "enemy.rat": {
+          "type": "image",
+          "file": "enemy/rat.png",
+          "size": [
+            512,
+            512
+          ],
+          "desc": "쥐 — 22F 이하"
+        },
+        "enemy.husk": {
+          "type": "image",
+          "file": "enemy/husk.png",
+          "size": [
+            512,
+            512
+          ],
+          "desc": "껍데기 — 22F 이하"
+        },
+        "enemy.beast": {
+          "type": "image",
+          "file": "enemy/beast.png",
+          "size": [
+            512,
+            512
+          ],
+          "desc": "짐승 — 23~30F"
+        },
+        "enemy.flame": {
+          "type": "image",
+          "file": "enemy/flame.png",
+          "size": [
+            512,
+            512
+          ],
+          "desc": "화염 — 23~30F"
+        },
+        "enemy.gatekeeper": {
+          "type": "image",
+          "file": "enemy/gatekeeper.png",
+          "size": [
+            512,
+            512
+          ],
+          "desc": "문지기 — 31F 이상"
+        },
+        "sfx.stamp": {
+          "type": "audio",
+          "file": "sfx/stamp.wav",
+          "desc": "봉랍 찍는 소리"
+        },
+        "sfx.superchat": {
+          "type": "audio",
+          "file": "sfx/superchat.wav",
+          "desc": "슈퍼챗 알림"
+        }
       }
     },
     "final": {
       "root": "assets/packs/final/",
       "inherit": "placeholder",
-      "entries": {
-        "bg.shop": { "type": "image", "file": "bg/shop.png" }
-      }
+      "entries": {}
     }
   }
 }

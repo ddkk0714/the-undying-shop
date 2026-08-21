@@ -4,7 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "art": "node tools/scan-art.mjs",
+    "art:placeholder": "node tools/gen-placeholder.mjs",
+    "predev": "node tools/scan-art.mjs",
     "dev": "vite",
+    "prebuild": "node tools/scan-art.mjs",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",

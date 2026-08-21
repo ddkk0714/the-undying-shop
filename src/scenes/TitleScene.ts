@@ -3,7 +3,7 @@ import { BASE_W, BASE_H, SCENES } from '../config';
 import { PALETTE, css } from '../render/palette';
 import { FONT, FONT_TITLE } from '../render/font';
 import { Button } from '../ui/Button';
-import { key as assetKey } from '../render/assets';
+import { key as assetKey, hasTexture } from '../render/assets';
 import { newRun } from './run';
 
 /**
@@ -25,8 +25,10 @@ export class TitleScene extends Phaser.Scene {
   create(): void {
     this.cameras.main.setBackgroundColor(PALETTE.ink);
 
-    // 배경: 어두운 가게 내부 1컷
-    this.add.image(0, 0, assetKey('bg.shop')).setOrigin(0).setDisplaySize(BASE_W, BASE_H).setAlpha(0.55);
+    // 배경: 어두운 가게 내부 1컷 (bg.title 이 오면 그걸 쓴다)
+    if (hasTexture(this, 'bg.title')) {
+      this.add.image(0, 0, assetKey('bg.title')).setOrigin(0).setDisplaySize(BASE_W, BASE_H).setAlpha(0.55);
+    }
 
     // 촛불 깜빡임 2프레임 루프 — tallow 점 하나의 밝기만 바꾼다
     const candle = this.add.graphics();
@@ -48,13 +50,18 @@ export class TitleScene extends Phaser.Scene {
       },
     });
 
-    // 제목 — 자간을 벌려 간판처럼
-    this.add
-      .text(BASE_W / 2, 208, '죽 지  않 는  가 게', { ...FONT_TITLE, color: css('bone') })
-      .setOrigin(0.5);
-    this.add
-      .text(BASE_W / 2, 296, 'THE UNDYING SHOP', { ...FONT, color: css('dust') })
-      .setOrigin(0.5);
+    // 제목 — 로고 아트가 오면 글자 대신 그것을 건다
+    if (hasTexture(this, 'ui.logo')) {
+      this.add.image(BASE_W / 2, 256, assetKey('ui.logo')).setOrigin(0.5);
+    } else {
+      // 자간을 벌려 간판처럼
+      this.add
+        .text(BASE_W / 2, 208, '죽 지  않 는  가 게', { ...FONT_TITLE, color: css('bone') })
+        .setOrigin(0.5);
+      this.add
+        .text(BASE_W / 2, 296, 'THE UNDYING SHOP', { ...FONT, color: css('dust') })
+        .setOrigin(0.5);
+    }
 
     // 버튼 2×2
     const bw = 528;

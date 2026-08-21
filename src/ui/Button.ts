@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { PALETTE, css } from '../render/palette';
 import { FONT } from '../render/font';
+import { firstTexture, slice } from '../render/assets';
 import { L } from './layout';
 
 export type ButtonVariant = 'default' | 'danger' | 'ghost';
@@ -22,9 +23,23 @@ export interface ButtonOpts {
  * 04-UI-KIT §2-1.
  * 라운딩 0 · 1px 하드 엣지 · hover/press/disabled 3상태.
  */
+/**
+ * 상태 → 버튼 스킨 키.
+ * 그 상태 전용 그림이 없으면 평상 스킨 위에 상태 테두리만 얹는다 —
+ * 아트를 한 장만 줘도 hover/press/danger 가 구분된다.
+ */
+function skinKeyFor(visual: string, variant: ButtonVariant): string {
+  if (visual === 'disabled' || variant === 'ghost') return 'ui.button.ghost.9s';
+  if (variant === 'danger') return 'ui.button.danger.9s';
+  if (visual === 'hover') return 'ui.button.hover.9s';
+  return 'ui.button.9s';
+}
+
 export class Button extends Phaser.GameObjects.Container {
   private bg: Phaser.GameObjects.Graphics;
   private txt: Phaser.GameObjects.Text;
+  /** 본 아트 버튼이 도착하면 여기에 들어온다. 없으면 null 이고 Graphics 로 그린다 */
+  private skin: Phaser.GameObjects.NineSlice | null = null;
   private readonly opts: Required<Pick<ButtonOpts, 'w' | 'h' | 'variant'>> & ButtonOpts;
   private visual: 'idle' | 'hover' | 'press' | 'disabled' = 'idle';
 
@@ -33,12 +48,22 @@ export class Button extends Phaser.GameObjects.Container {
     this.opts = { variant: 'default', ...opts, w: opts.w, h: opts.h };
 
     this.bg = scene.add.graphics();
+
+    // 03-ASSET-MODULES §2 — 버튼 CG 가 있으면 9-slice 로 늘려 쓴다 (모서리가 뭉개지지 않는다)
+    const base = firstTexture(scene, 'ui.button.9s');
+    if (base !== null) {
+      const [left, right, top, bottom] = slice('ui.button.9s');
+      this.skin = scene.add
+        .nineslice(0, 0, base, undefined, opts.w, opts.h, left, right, top, bottom)
+        .setOrigin(0, 0);
+    }
+
     const text = opts.hotkey ? `${opts.hotkey}. ${opts.label}` : opts.label;
     this.txt = scene.add
       .text(Math.round(opts.w / 2), Math.round(opts.h / 2), text, { ...FONT, color: css('bone') })
       .setOrigin(0.5);
 
-    this.add([this.bg, this.txt]);
+    this.add([...(this.skin === null ? [] : [this.skin]), this.bg, this.txt]);
     scene.add.existing(this);
 
     this.visual = opts.enabled === false ? 'disabled' : 'idle';
@@ -76,6 +101,27 @@ export class Button extends Phaser.GameObjects.Container {
     const { w, h, variant } = this.opts;
     const g = this.bg;
     g.clear();
+
+    if (this.skin !== null) {
+      const want = skinKeyFor(this.visual, variant);
+      const exact = firstTexture(this.scene, want);
+      const tex = exact ?? firstTexture(this.scene, 'ui.button.9s');
+      if (tex !== null) this.skin.setTexture(tex);
+
+      // 이 상태 전용 그림이 없으면 테두리로만 상태를 말한다
+      if (exact === null) {
+        g.fillStyle(
+          variant === 'danger' ? PALETTE.wax : this.visual === 'hover' ? PALETTE.bone : PALETTE.dust,
+          1,
+        );
+        strokeRect(g, 0, 0, w, h);
+      }
+      this.txt.setY(Math.round(h / 2) + (this.visual === 'press' ? 2 : 0));
+      this.txt.setColor(
+        css(this.visual === 'disabled' ? 'dust' : variant === 'danger' ? 'wax' : this.visual === 'hover' ? 'bone' : 'bone'),
+      );
+      return;
+    }
 
     if (this.visual === 'disabled') {
       g.fillStyle(PALETTE.ink, 1);

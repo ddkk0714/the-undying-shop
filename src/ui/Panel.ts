@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { PALETTE } from '../render/palette';
+import { firstTexture, slice } from '../render/assets';
 import { L } from './layout';
 
 export type PanelVariant = 'raised' | 'sunken' | 'danger';
@@ -24,6 +25,15 @@ export function panel(
   const X = Math.round(x);
   const Y = Math.round(y);
   const t = L.line;
+
+  // 패널 CG 가 있으면 9-slice 로 대신한다. Graphics 는 빈 채로 돌려준다 (호출부 시그니처 유지)
+  const skinKey = variant === 'raised' ? 'ui.panel.9s' : 'ui.panel.sunken.9s';
+  const tex = firstTexture(scene, skinKey, 'ui.panel.9s');
+  if (tex !== null) {
+    const [left, right, top, bottom] = slice(skinKey);
+    scene.add.nineslice(X, Y, tex, undefined, Math.round(w), Math.round(h), left, right, top, bottom).setOrigin(0, 0);
+    return g;
+  }
   const fill = variant === 'raised' ? PALETTE.mid : PALETTE.ink;
   const border = variant === 'raised' ? PALETTE.bone : variant === 'danger' ? PALETTE.wax : PALETTE.dust;
 

@@ -76,6 +76,31 @@ export function key(k: AssetKey): string {
   return k;
 }
 
+/**
+ * 출연자 한 명이 쓰는 아트 3종의 키.
+ * 이름 규칙은 여기 한 곳에만 있다 — 씬이 문자열을 조립하지 않는다.
+ *   body_karin → star.body.karin / star.portrait.karin / star.appeal.karin
+ */
+export function starArt(starId: string): { body: string; portrait: string; appeal: string } {
+  const name = starId.replace(/^body_/, '');
+  return { body: `star.body.${name}`, portrait: `star.portrait.${name}`, appeal: `star.appeal.${name}` };
+}
+
+/**
+ * 매니페스트에 자리가 있어도 파일이 없으면 텍스처는 로드되지 않는다.
+ * 그림을 그리기 전에 반드시 이걸로 물어봐야 미싱 더미가 화면에 뜨지 않는다.
+ */
+export function hasTexture(scene: Phaser.Scene, k: AssetKey): boolean {
+  const textureKey = key(k);
+  return textureKey !== MISSING_TEXTURE && scene.textures.exists(textureKey);
+}
+
+/** 후보 중 실제로 로드된 첫 키. 전부 없으면 null (본 아트 → 플레이스홀더 → 절차적 순서로 쓴다) */
+export function firstTexture(scene: Phaser.Scene, ...keys: AssetKey[]): string | null {
+  for (const k of keys) if (hasTexture(scene, k)) return key(k);
+  return null;
+}
+
 /** nineslice 슬라이스 값 조회 */
 export function slice(k: AssetKey): [number, number, number, number] {
   const hit = resolve(k);
@@ -146,4 +171,4 @@ export function swallowLoadErrors(scene: Phaser.Scene): string[] {
   return failed;
 }
 
-export const Assets = { key, slice, queuePack, allKeys, createMissingTexture, MISSING_TEXTURE };
+export const Assets = { key, slice, queuePack, allKeys, createMissingTexture, starArt, hasTexture, firstTexture, MISSING_TEXTURE };
