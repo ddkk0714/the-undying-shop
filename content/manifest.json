@@ -18,7 +18,8 @@
           "size": [
             48,
             48
-          ]
+          ],
+          "display": "버튼/패널 크기에 맞춰 늘어난다"
         },
         "ui.panel.sunken.9s": {
           "type": "nineslice",
@@ -33,7 +34,8 @@
           "size": [
             48,
             48
-          ]
+          ],
+          "display": "버튼/패널 크기에 맞춰 늘어난다"
         },
         "ui.button.9s": {
           "type": "nineslice",
@@ -48,7 +50,8 @@
           "size": [
             32,
             32
-          ]
+          ],
+          "display": "버튼/패널 크기에 맞춰 늘어난다"
         },
         "ui.button.hover.9s": {
           "type": "nineslice",
@@ -63,7 +66,8 @@
           "size": [
             32,
             32
-          ]
+          ],
+          "display": "버튼/패널 크기에 맞춰 늘어난다"
         },
         "ui.button.danger.9s": {
           "type": "nineslice",
@@ -78,7 +82,8 @@
           "size": [
             32,
             32
-          ]
+          ],
+          "display": "버튼/패널 크기에 맞춰 늘어난다"
         },
         "ui.button.ghost.9s": {
           "type": "nineslice",
@@ -93,14 +98,16 @@
           "size": [
             32,
             32
-          ]
+          ],
+          "display": "버튼/패널 크기에 맞춰 늘어난다"
         },
         "ui.seal": {
           "type": "spritesheet",
           "file": "ui/seal.png",
           "frameWidth": 192,
           "frameHeight": 192,
-          "desc": "봉랍 도장 4프레임"
+          "desc": "봉랍 도장 4프레임",
+          "display": "192×192 프레임 1칸 (1:1)"
         },
         "ui.logo": {
           "type": "image",
@@ -251,7 +258,8 @@
           "file": "star/silhouette.png",
           "frameWidth": 384,
           "frameHeight": 480,
-          "desc": "이름 없는 몸 실루엣 4프레임"
+          "desc": "이름 없는 몸 실루엣 4프레임",
+          "display": "384×480 프레임 1칸 (1:1)"
         },
         "star.body.karin": {
           "type": "image",
@@ -305,7 +313,8 @@
             384,
             480
           ],
-          "desc": "카린 초상 (생방송 우상단)"
+          "desc": "카린 초상 (생방송 우상단)",
+          "display": "192×240 생방송(1/2) · 384×480 상점(1:1)"
         },
         "star.portrait.juno": {
           "type": "image",
@@ -314,7 +323,8 @@
             384,
             480
           ],
-          "desc": "주노 초상"
+          "desc": "주노 초상",
+          "display": "192×240 생방송(1/2) · 384×480 상점(1:1)"
         },
         "star.portrait.sela": {
           "type": "image",
@@ -323,7 +333,8 @@
             384,
             480
           ],
-          "desc": "셀라 초상"
+          "desc": "셀라 초상",
+          "display": "192×240 생방송(1/2) · 384×480 상점(1:1)"
         },
         "star.portrait.ilan": {
           "type": "image",
@@ -332,7 +343,8 @@
             384,
             480
           ],
-          "desc": "일란 초상"
+          "desc": "일란 초상",
+          "display": "192×240 생방송(1/2) · 384×480 상점(1:1)"
         },
         "star.portrait.mor": {
           "type": "image",
@@ -341,7 +353,8 @@
             384,
             480
           ],
-          "desc": "모르 초상"
+          "desc": "모르 초상",
+          "display": "192×240 생방송(1/2) · 384×480 상점(1:1)"
         },
         "star.appeal.karin": {
           "type": "image",
@@ -350,7 +363,8 @@
             384,
             480
           ],
-          "desc": "카린 어필 컷 — 억지 웃음 + 카메라를 본다 (M06 §7 최우선 컷)"
+          "desc": "카린 어필 컷 — 억지 웃음 + 카메라를 본다 (M06 §7 최우선 컷)",
+          "display": "192×240 (1/2)"
         },
         "star.appeal.juno": {
           "type": "image",
@@ -359,7 +373,8 @@
             384,
             480
           ],
-          "desc": "주노 어필 컷"
+          "desc": "주노 어필 컷",
+          "display": "192×240 (1/2)"
         },
         "star.appeal.sela": {
           "type": "image",
@@ -368,7 +383,8 @@
             384,
             480
           ],
-          "desc": "셀라 어필 컷"
+          "desc": "셀라 어필 컷",
+          "display": "192×240 (1/2)"
         },
         "star.appeal.ilan": {
           "type": "image",
@@ -377,7 +393,8 @@
             384,
             480
           ],
-          "desc": "일란 어필 컷"
+          "desc": "일란 어필 컷",
+          "display": "192×240 (1/2)"
         },
         "star.appeal.mor": {
           "type": "image",
@@ -386,7 +403,8 @@
             384,
             480
           ],
-          "desc": "모르 어필 컷"
+          "desc": "모르 어필 컷",
+          "display": "192×240 (1/2)"
         },
         "enemy.rat": {
           "type": "image",
@@ -395,7 +413,8 @@
             512,
             512
           ],
-          "desc": "쥐 — 22F 이하"
+          "desc": "쥐 — 22F 이하",
+          "display": "256×256 (1/2)"
         },
         "enemy.husk": {
           "type": "image",
@@ -404,7 +423,8 @@
             512,
             512
           ],
-          "desc": "껍데기 — 22F 이하"
+          "desc": "껍데기 — 22F 이하",
+          "display": "256×256 (1/2)"
         },
         "enemy.beast": {
           "type": "image",
@@ -413,7 +433,8 @@
             512,
             512
           ],
-          "desc": "짐승 — 23~30F"
+          "desc": "짐승 — 23~30F",
+          "display": "256×256 (1/2)"
         },
         "enemy.flame": {
           "type": "image",
@@ -422,7 +443,8 @@
             512,
             512
           ],
-          "desc": "화염 — 23~30F"
+          "desc": "화염 — 23~30F",
+          "display": "256×256 (1/2)"
         },
         "enemy.gatekeeper": {
           "type": "image",
@@ -431,7 +453,8 @@
             512,
             512
           ],
-          "desc": "문지기 — 31F 이상"
+          "desc": "문지기 — 31F 이상",
+          "display": "256×256 (1/2)"
         },
         "sfx.stamp": {
           "type": "audio",

@@ -4,8 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "art": "node tools/scan-art.mjs",
+    "art": "node tools/scan-art.mjs && node tools/art-sheet.mjs",
     "art:placeholder": "node tools/gen-placeholder.mjs",
+    "art:sheet": "node tools/art-sheet.mjs",
     "predev": "node tools/scan-art.mjs",
     "dev": "vite",
     "prebuild": "node tools/scan-art.mjs",
