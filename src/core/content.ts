@@ -184,7 +184,7 @@ export function loadContent(): Content {
   for (const key of ['inheritFandomLoss', 'inheritSuspicion'] as const) assertNumber(balanceJson.roster[key], `balance.roster.${key}`);
   assertShape(isRecord(radioJson) && isRecord(chatJson) && isRecord(narrativeJson), 'localized content must be objects');
   return {
-    balance: balanceJson as Balance,
+    balance: balanceJson as unknown as Balance,
     items: makeItems(itemsJson),
     stars: makeStars(starsJson),
     personas: makePersonas(personasJson),
