@@ -194,6 +194,28 @@ class Img {
       }
   }
 
+  /**
+   * 최근접 축소 — 손으로 그린 소품을 선언된 크기에 맞춘다.
+   * 보간하지 않는다. 픽셀은 픽셀로 남는다 (03-ASSET-MODULES §4-1).
+   */
+  resized(w, h) {
+    if (w === this.w && h === this.h) return this;
+    const out = new Img(w, h);
+    for (let j = 0; j < h; j++) {
+      const sy = Math.min(this.h - 1, Math.floor((j * this.h) / h));
+      for (let i = 0; i < w; i++) {
+        const sx = Math.min(this.w - 1, Math.floor((i * this.w) / w));
+        const o = (sy * this.w + sx) * 4;
+        const q = (j * w + i) * 4;
+        out.d[q] = this.d[o];
+        out.d[q + 1] = this.d[o + 1];
+        out.d[q + 2] = this.d[o + 2];
+        out.d[q + 3] = this.d[o + 3];
+      }
+    }
+    return out;
+  }
+
   text(x, y, str, c, s = 1) {
     let cx = x;
     for (const ch of String(str).toUpperCase()) {
@@ -395,18 +417,23 @@ function enemyBlob(w, h, name) {
 /* ── 타입별 더미 ───────────────────────────────────────────── */
 function makeImage(key, entry = {}) {
   const shopArt = SHOP_ART[key];
-  if (shopArt !== undefined) return shopArt();
+  if (shopArt !== undefined) {
+    const drawn = shopArt();
+    // 선언 크기와 다르면 맞춰 준다 — 런타임에 소수배로 줄어드는 것보다 낫다
+    return Array.isArray(entry.size) ? drawn.resized(entry.size[0], entry.size[1]) : drawn;
+  }
 
   // 매니페스트의 size 가 정본이다. 본 아트도 이 크기로 그리면 좌표가 그대로 맞는다.
   const [w, h] = entry.size ?? [256, 256];
   const name = key.split('.').pop() ?? key;
 
   if (key.startsWith('bg.')) {
+    // 배경 더미는 조용해야 한다 — 이 위에 실제 UI 가 올라간다.
+    // 옅은 디더 한 겹 + 좌하단에 작은 키 이름만.
     const img = new Img(w, h, P.ink);
-    for (let y = 0; y < h; y += 8) for (let x = (y / 8) % 2 ? 4 : 0; x < w; x += 8) img.rect(x, y, 4, 4, P.mid);
+    img.dither(0, 0, w, h, P.mid, 3);
     img.frame(0, 0, w, h, P.dust);
-    img.text(24, 24, key, P.dust, 8);
-    img.text(24, 96, w + 'X' + h, P.dust, 5);
+    img.text(16, h - 28, key + '  ' + w + 'X' + h, P.dust, 2);
     return img;
   }
   if (key.startsWith('star.body.')) return bodySilhouette(w, h, name.slice(0, 2));
@@ -445,7 +472,8 @@ const NINE_STYLE = {
 
 function makeNineslice(key, entry) {
   const s = entry.slice ?? [4, 4, 4, 4];
-  const size = Math.max(16, 2 * Math.max(...s) + 2);
+  // 매니페스트의 size 가 정본. 없으면 모서리가 겹치지 않을 최소 크기로.
+  const size = entry.size?.[0] ?? Math.max(16, 2 * Math.max(...s) + 2);
   const style = NINE_STYLE[key] ?? { fill: P.ink, border: P.dust };
   const img = new Img(size, size, style.fill);
   // 04-UI-KIT §2-2 (v3.1) — 테두리는 2px

@@ -55,7 +55,8 @@ export class OfficePhase extends PhaseScene {
     const h = 480;
     const x = g.x + Math.round((g.w - w) / 2);
     const y = g.y + g.h - h - 24;
-    const full = { x: g.x, y: g.y + 96, w: g.w, h: g.h - 120 };
+    // 전신은 좌측 칸과 1:1 이다 (752x792). 이름 글자는 그 위에 얹는다
+    const full = { x: g.x, y: g.y, w: g.w, h: g.h };
     const body = art === null ? false : this.spriteFit(full, [art.body]);
     if (!body && !this.spriteFit({ x, y, w, h }, [...(art === null ? [] : [art.portrait]), 'star.silhouette'])) {
       this.rect(x, y, w, h, 'mid');
@@ -82,10 +83,10 @@ export class OfficePhase extends PhaseScene {
     //   가운데 아래(local 380~1130 / 400~570)는 출연자 줄이 쓰므로 비워 둔다.
     this.sprite(b.x + 24, b.y + 30, 'prop.lamp');
     this.sprite(b.x + 24, b.y + 470, 'prop.ledger', 336, 264);
-    this.sprite(b.x + 980, b.y + 120, 'prop.stamp', 128, 205);
-    this.sprite(b.x + 960, b.y + 350, 'prop.scroll', 176, 66);
-    this.sprite(b.x + 400, b.y + 640, 'prop.tag', 154, 102);
-    this.sprite(b.x + 880, b.y + 660, 'prop.tag', 154, 102);
+    this.sprite(b.x + 980, b.y + 120, 'prop.stamp', 128, 208);
+    this.sprite(b.x + 960, b.y + 350, 'prop.scroll', 176, 64);
+    this.sprite(b.x + 400, b.y + 640, 'prop.tag', 152, 104);
+    this.sprite(b.x + 880, b.y + 660, 'prop.tag', 152, 104);
     this.frame(b.x, b.y, b.w, b.h, 'dust');
   }
 

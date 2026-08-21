@@ -298,7 +298,8 @@ export class LivePhase extends PhaseScene {
       this.label(v.x + L.pad, v.y + 16, `${enc.floor}F · ${enc.turn}턴`, 'dust');
       this.title(v.x + L.pad, v.y + 48, this.clip(enemyName(enc.enemyKey), inner, 'title'), 'bone');
       // 적 CG 가 오면 그걸 쓰고, 없으면 키 해시로 만든 실루엣을 그린다
-      if (!this.spriteFit({ x: v.x + 212, y: v.y + 130, w: 320, h: 300 }, [enc.enemyKey])) {
+      // 512x512 원본을 정확히 1/2 로 줄여 놓는다. 소수배로 줄이면 디더가 깨진다
+      if (!this.spriteFit({ x: v.x + 244, y: v.y + 152, w: 256, h: 256 }, [enc.enemyKey])) {
         this.enemyShape(v.x + 212, v.y + 130, 320, 300, enc.enemyKey);
       }
       this.bar(v.x + L.pad, v.y + 452, inner, enc.enemy.hp, enc.enemy.maxHp, 'wax');
@@ -358,7 +359,8 @@ export class LivePhase extends PhaseScene {
     const art = starArt(star.id);
     const px = v.x + v.w - 248;
     const py = v.y + 16;
-    const box = { x: px, y: py, w: 232, h: v.h - 32 };
+    // 384x480 원본을 정확히 1/2 로 (192x240). 상점 화면에서는 1:1 로 쓰인다
+    const box = { x: v.x + v.w - 216, y: v.y + 80, w: 192, h: 240 };
     const before = this.children.list.length;
     const keys = appealing ? [art.appeal, art.portrait] : [art.portrait];
     if (!this.spriteFit(box, keys)) this.dither(px, py, 232, v.h - 32, 'mid', ratio < 0.15 ? 12 : 8);

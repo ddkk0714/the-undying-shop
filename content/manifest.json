@@ -9,67 +9,91 @@
           "type": "nineslice",
           "file": "ui/panel.png",
           "slice": [
-            4,
-            4,
-            4,
-            4
+            12,
+            12,
+            12,
+            12
           ],
-          "desc": "패널 테두리 (융기)"
+          "desc": "패널 테두리 (융기)",
+          "size": [
+            48,
+            48
+          ]
         },
         "ui.panel.sunken.9s": {
           "type": "nineslice",
           "file": "ui/panel_sunken.png",
           "slice": [
-            4,
-            4,
-            4,
-            4
+            12,
+            12,
+            12,
+            12
           ],
-          "desc": "패널 테두리 (함몰 · 목록/채팅창)"
+          "desc": "패널 테두리 (함몰 · 목록/채팅창)",
+          "size": [
+            48,
+            48
+          ]
         },
         "ui.button.9s": {
           "type": "nineslice",
           "file": "ui/button.png",
           "slice": [
-            3,
-            3,
-            3,
-            3
+            8,
+            8,
+            8,
+            8
           ],
-          "desc": "버튼 평상"
+          "desc": "버튼 평상",
+          "size": [
+            32,
+            32
+          ]
         },
         "ui.button.hover.9s": {
           "type": "nineslice",
           "file": "ui/button_hover.png",
           "slice": [
-            3,
-            3,
-            3,
-            3
+            8,
+            8,
+            8,
+            8
           ],
-          "desc": "버튼 마우스오버"
+          "desc": "버튼 마우스오버",
+          "size": [
+            32,
+            32
+          ]
         },
         "ui.button.danger.9s": {
           "type": "nineslice",
           "file": "ui/button_danger.png",
           "slice": [
-            3,
-            3,
-            3,
-            3
+            8,
+            8,
+            8,
+            8
           ],
-          "desc": "버튼 위험 (소생·어필·훼손)"
+          "desc": "버튼 위험 (소생·어필·훼손)",
+          "size": [
+            32,
+            32
+          ]
         },
         "ui.button.ghost.9s": {
           "type": "nineslice",
           "file": "ui/button_ghost.png",
           "slice": [
-            3,
-            3,
-            3,
-            3
+            8,
+            8,
+            8,
+            8
           ],
-          "desc": "버튼 보조 (테두리만 · 비활성/돌아가기)"
+          "desc": "버튼 보조 (테두리만 · 비활성/돌아가기)",
+          "size": [
+            32,
+            32
+          ]
         },
         "ui.seal": {
           "type": "spritesheet",
@@ -190,8 +214,8 @@
           "type": "image",
           "file": "prop/ledger.png",
           "size": [
-            448,
-            352
+            336,
+            264
           ],
           "desc": "장부"
         },
@@ -199,8 +223,8 @@
           "type": "image",
           "file": "prop/stamp.png",
           "size": [
-            160,
-            256
+            128,
+            208
           ],
           "desc": "도장"
         },
@@ -208,8 +232,8 @@
           "type": "image",
           "file": "prop/scroll.png",
           "size": [
-            256,
-            96
+            176,
+            64
           ],
           "desc": "두루마리"
         },
@@ -217,8 +241,8 @@
           "type": "image",
           "file": "prop/tag.png",
           "size": [
-            192,
-            128
+            152,
+            104
           ],
           "desc": "가격표"
         },

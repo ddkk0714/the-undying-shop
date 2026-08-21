@@ -65,7 +65,8 @@ export class RevivePhase extends PhaseScene {
     const h = 480;
     const x = g.x + Math.round((g.w - w) / 2);
     const y = g.y + g.h - h - 24;
-    const full = { x: g.x, y: g.y + 96, w: g.w, h: g.h - 120 };
+    // 전신은 좌측 칸과 1:1 이다 (752x792). 이름 글자는 그 위에 얹는다
+    const full = { x: g.x, y: g.y, w: g.w, h: g.h };
     if (!this.spriteFit(full, [art.body]) && !this.spriteFit({ x, y, w, h }, [art.portrait, 'star.silhouette'])) {
       this.rect(x, y, w, h, 'mid');
     }
@@ -86,7 +87,7 @@ export class RevivePhase extends PhaseScene {
     this.spriteCover(b, ['bg.revive.bench', 'bg.shop.bench']);
     // 소생실에서는 작업대에 장부와 도장만 올려 둔다 (진열은 편성실 몫)
     this.sprite(b.x + 24, b.y + 470, 'prop.ledger', 336, 264);
-    this.sprite(b.x + 980, b.y + 120, 'prop.stamp', 128, 205);
+    this.sprite(b.x + 980, b.y + 120, 'prop.stamp', 128, 208);
     this.frame(b.x, b.y, b.w, b.h, 'dust');
 
     if (corpse === undefined || star === undefined) return;
