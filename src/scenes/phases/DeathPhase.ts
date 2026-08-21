@@ -133,25 +133,25 @@ export class DeathPhase extends PhaseScene {
   /** M08 「이 연출이 데모 영상의 클라이맥스다. 아끼지 마라」 */
   private buildRecord(floor: number): void {
     const w = 880;
-    const h = 360;
+    const h = 300;
     const x = L.W - w - L.pad * 4;
-    const y = L.stage.y + 96;
+    const y = L.stage.y + 80;
 
     this.rect(x, y, w, h, 'ink');
     this.frame(x, y, w, h, 'bone');
     this.frame(x + 8, y + 8, w - 16, h - 16, 'wax');
 
     // 자간을 벌린다 — 간판처럼 읽혀야 한다
-    this.title(x + 64, y + 44, 'N E W   R E C O R D', 'bone');
+    this.title(x + 64, y + 36, 'N E W   R E C O R D', 'bone');
     this.add
-      .text(x + w / 2, y + 124, `${floor} F`, {
+      .text(x + w / 2, y + 106, `${floor} F`, {
         fontFamily: 'NeoDunggeunmo, monospace',
         fontSize: '144px',
         resolution: 1,
         color: '#' + PALETTE.wax.toString(16).padStart(6, '0'),
       })
       .setOrigin(0.5, 0);
-    if (this.prevRecord !== null) this.text(x + 64, y + h - 60, `이전 기록 · ${this.prevRecord}F`, 'dust');
+    if (this.prevRecord !== null) this.text(x + 64, y + h - 52, `이전 기록 · ${this.prevRecord}F`, 'dust');
 
     if (this.reduced || this.flashes > 0) return;
     // 화면 전체 wax 플래시 3회 + 카메라 흔들림
@@ -167,26 +167,35 @@ export class DeathPhase extends PhaseScene {
   private buildTally(s: Readonly<GameState>, floor: number): void {
     // 하단 액션 바(L.actionsFull.y = 936)를 넘지 않는다
     const w = 880;
-    const h = 320;
+    const h = 388;
     const x = L.W - w - L.pad * 4;
-    const y = this.isRecord ? L.stage.y + 472 : L.stage.y + 96;
+    const y = this.isRecord ? L.stage.y + 404 : L.stage.y + 96;
 
     this.rect(x, y, w, h, 'ink');
     this.frame(x, y, w, h, 'dust');
     this.label(x + 48, y + 28, `DAY ${s.day} 종료`, 'dust');
 
-    // 화면은 계산하지 않는다 — core 가 today 에 적어 둔 값을 읽기만 한다
+    // 화면은 계산하지 않는다 — core 가 today.income 에 적어 둔 원장을 읽기만 한다 (HO-012)
+    const ledger = s.today?.income ?? { superchat: 0, shelf: 0, goods: 0 };
+    const total = ledger.superchat + ledger.shelf + ledger.goods;
+    const fansDelta = s.today?.fansDelta ?? 0;
     this.rows = [
       { label: '도달', value: floor, suffix: 'F', color: this.isRecord ? 'wax' : 'bone' },
-      { label: '슈퍼챗', value: s.today?.superchat ?? 0, suffix: ' G', color: 'bone' },
-      { label: '어필', value: s.today?.appealCount ?? 0, suffix: '회', color: 'dust' },
-      { label: '팬', value: s.today?.fansDelta ?? 0, suffix: '', color: 'bone' },
+      { label: '슈퍼챗', value: ledger.superchat, suffix: ' G', color: 'dust' },
+      { label: '장비 판매', value: ledger.shelf, suffix: ' G', color: 'dust' },
+      { label: '굿즈', value: ledger.goods, suffix: ' G', color: 'dust' },
+      { label: '오늘 수입', value: total, suffix: ' G', color: 'bone' },
+      { label: '팬', value: fansDelta, suffix: '', color: fansDelta < 0 ? 'wax' : 'bone' },
     ];
     this.rows.forEach((row, i) => {
-      const ry = y + 76 + i * 58;
+      // 「오늘 수입」 위에 가로줄 — 합계라는 걸 선 하나로 말한다
+      if (row.label === '오늘 수입') this.rect(x + 48, y + 62 + i * 48, w - 96, L.line, 'mid');
+      const ry = y + 72 + i * 48;
       this.text(x + 48, ry, row.label, 'dust');
       row.text = this.textRight(x + w - 48, ry, '0' + row.suffix, row.color);
     });
+    // 팬은 몇에서 몇이 됐는지가 더 중요하다
+    this.label(x + 48, y + h - 34, `팬 ${fmtK(s.fans - fansDelta)} → ${fmtK(s.fans)}`, 'dust');
     this.tallyStartedAt = this.time.now;
   }
 }
@@ -200,6 +209,11 @@ function recordBroken(scene: Phaser.Scene, floor: number, maxFloor: number): boo
   if (fx !== undefined && scene.time.now - fx.at < 8000 && fx.kinds.includes('RECORD_BREAK')) return true;
   const prev = scene.registry.get('record.prev') as number | undefined;
   return prev !== undefined && floor >= maxFloor && maxFloor > prev;
+}
+
+/** 표시는 84.2K 형태 (02-DATA-SCHEMA §1) */
+function fmtK(n: number): string {
+  return n >= 1000 ? (n / 1000).toFixed(1) + 'K' : String(n);
 }
 
 function fmt(n: number): string {
