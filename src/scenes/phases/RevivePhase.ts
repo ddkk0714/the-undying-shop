@@ -3,6 +3,8 @@ import { reviveQuote } from '../../core/systems/economy';
 import { starArt } from '../../render/assets';
 import { L, actionX, ACTION_W } from '../../ui/layout';
 import { Button } from '../../ui/Button';
+import { reducedMotion } from '../../ui/options';
+import { sealStamp } from '../../ui/SealStamp';
 import { PhaseScene } from './PhaseScene';
 import type { Corpse, GameState, Star } from '../../core/types';
 
@@ -16,6 +18,8 @@ import type { Corpse, GameState, Star } from '../../core/types';
  */
 export class RevivePhase extends PhaseScene {
   private index = 0;
+  /** 도장이 찍히는 동안 다시 누르지 못하게 */
+  private discarding = false;
 
   constructor() {
     super(SCENES.PHASE_REVIVE);
@@ -35,7 +39,8 @@ export class RevivePhase extends PhaseScene {
 
     this.buildGuest(s, star, waiting.length);
     this.buildBench(s, corpse, star);
-    this.buildActions(s, corpse, star, waiting.length);
+    this.buildPager(waiting.length);
+    this.buildActions(s, corpse, star);
   }
 
   /* ── 좌 · 소생 수조의 몸 ──────────────────────────────── */
@@ -120,9 +125,44 @@ export class RevivePhase extends PhaseScene {
     if (!quote.affordable) this.text(ox + 320, py + 32, '자금이 부족합니다', 'wax');
   }
 
-  /* ── 하단 4택 — 「폐기」는 계약에 액션이 없다 (HO-003) ── */
+  /** 대기 중인 시체가 여럿이면 작업대 위에서 넘긴다. 하단 네 자리는 3택 + 편성실이 쓴다 */
+  private buildPager(count: number): void {
+    if (count <= 1) return;
+    const b = L.bench;
+    this.label(b.x + b.w - 300, b.y + L.pad * 3, `대기 ${count}구`, 'dust');
+    new Button(this, {
+      x: b.x + b.w - 300, y: b.y + L.pad * 3 + 28, w: 220, h: 56,
+      label: `次 ${this.index + 1}/${count}`, hotkey: '5', variant: 'ghost',
+      onClick: () => {
+        this.index = (this.index + 1) % Math.max(1, count);
+        this.redraw();
+      },
+    });
+  }
 
-  private buildActions(s: Readonly<GameState>, corpse: Corpse | undefined, star: Star | undefined, count: number): void {
+  /* ── 하단 4택 — 蘇生 / 保管 / 廢棄 (M04 §화면의 3택) + 編成 ── */
+
+  /**
+   * M04 §81 — 폐기 확정 시 봉랍 도장이 먼저 찍힌다.
+   * 누르는 즉시 dispatch 하면 시체가 목록에서 사라져 도장이 보일 새가 없다.
+   */
+  private discard(starId: string): void {
+    if (this.discarding) return;
+    this.discarding = true;
+    this.redraw();
+    sealStamp(this, {
+      x: L.guest.x + L.guest.w / 2,
+      y: L.guest.y + L.guest.h / 2,
+      reduced: reducedMotion(this.registry),
+      onDone: () => {
+        this.discarding = false;
+        this.index = 0;
+        this.store.dispatch({ type: 'REVIVE/DISCARD', starId });
+      },
+    });
+  }
+
+  private buildActions(s: Readonly<GameState>, corpse: Corpse | undefined, star: Star | undefined): void {
     const a = L.actions;
     this.rect(a.x, a.y, a.w, a.h, 'ink');
     const y = a.y + L.pad;
@@ -147,14 +187,12 @@ export class RevivePhase extends PhaseScene {
         this.redraw();
       },
     });
+    // 廢棄 — 몸이 사라지고 유품이 남는다. 되돌릴 수 없다 (M04 §결과표)
     new Button(this, {
       x: actionX(2), y, w: ACTION_W, h,
-      label: count > 1 ? `次 ${this.index + 1}/${count}` : '次 다음', variant: 'ghost',
-      enabled: count > 1,
-      onClick: () => {
-        this.index = (this.index + 1) % Math.max(1, count);
-        this.redraw();
-      },
+      label: '廢棄 폐기', hotkey: '3', variant: 'danger',
+      enabled: corpse !== undefined && !this.discarding,
+      onClick: () => corpse && this.discard(corpse.starId),
     });
     new Button(this, {
       x: actionX(3), y, w: ACTION_W, h,
