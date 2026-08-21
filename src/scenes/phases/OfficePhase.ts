@@ -21,6 +21,8 @@ type BenchMode = 'CONTRACT' | 'SHELF';
 
 export class OfficePhase extends PhaseScene {
   private mode: BenchMode = 'SHELF';
+  /** 계약서가 2장 올 수 있다 (M05). 지금 보고 있는 장 */
+  private contractIndex = 0;
 
   constructor() {
     super(SCENES.PHASE_OFFICE);
@@ -43,9 +45,15 @@ export class OfficePhase extends PhaseScene {
     this.spriteCover(g, ['bg.shop.room']);
     this.frame(g.x, g.y, g.w, g.h, 'dust');
 
-    const visitor = s.visitors[0];
-    const star = s.stars.find((x) => x.id === s.today?.starId) ?? s.stars.find((x) => x.status === 'ALIVE');
-    const name = this.mode === 'CONTRACT' && visitor !== undefined
+    // 계약 모드에서 좌측에 서 있는 사람은 **방문자**다. 아직 계약 전이라 recruitPool 에 있다.
+    // 이름만 방문자로 바꾸고 그림은 기존 출연자를 쓰면, 이름과 얼굴이 어긋난다
+    const visitor = s.visitors[this.contractIndex] ?? s.visitors[0];
+    const contracting = this.mode === 'CONTRACT' && visitor !== undefined;
+    const guest = contracting ? s.recruitPool.find((x) => x.id === visitor.starId) : undefined;
+    const star = guest
+      ?? s.stars.find((x) => x.id === s.today?.starId)
+      ?? s.stars.find((x) => x.status === 'ALIVE');
+    const name = contracting
       ? visitor.displayName
       : s.personas.find((p) => p.id === star?.personaId)?.displayName ?? '무명';
 
@@ -94,7 +102,8 @@ export class OfficePhase extends PhaseScene {
 
   private buildContract(s: Readonly<GameState>): void {
     const p = L.office.paper;
-    const visitor: Contract | undefined = s.visitors[0];
+    if (this.contractIndex >= s.visitors.length) this.contractIndex = 0;
+    const visitor: Contract | undefined = s.visitors[this.contractIndex];
 
     this.rect(p.x + L.pad * 2, p.y + L.pad * 2, p.w - L.pad * 4, p.h - L.pad * 4, 'mid');
     this.frame(p.x + L.pad * 2, p.y + L.pad * 2, p.w - L.pad * 4, p.h - L.pad * 4, 'bone');
@@ -122,6 +131,14 @@ export class OfficePhase extends PhaseScene {
     });
 
     this.text(ox, p.y + p.h - L.pad * 4 - 40, `인지도 ${visitor.recognition} · 팬덤 ${visitor.fandom.toLocaleString('en-US')}`, 'dust');
+
+    // 계약금을 낼 수 없으면 그렇다고 말한다. 눌리는데 아무 일도 안 일어나는 버튼이 제일 나쁘다
+    if (s.gold < visitor.fee) {
+      this.textRight(p.x + p.w - L.pad * 4, oy - 40, `자금 부족 · 보유 ${s.gold.toLocaleString('en-US')} G`, 'wax');
+    }
+    if (s.visitors.length > 1) {
+      this.label(ox, p.y + L.pad * 4 + 56, `${this.contractIndex + 1} / ${s.visitors.length} 장`, 'dust');
+    }
   }
 
   /* ── 작업대 B · 진열 3칸 ──────────────────────────────── */
@@ -178,7 +195,6 @@ export class OfficePhase extends PhaseScene {
     this.rect(a.x, a.y, a.w, a.h, 'ink');
     const y = a.y + L.pad;
     const h = a.h - L.pad * 2;
-    const visitor = s.visitors[0];
 
     // 蘇生 — 소생실로 되돌아간다 (CCR-002). 되살릴 시체가 없으면 잠근다.
     const hasCorpse = s.corpses.some((c) =>
@@ -208,19 +224,34 @@ export class OfficePhase extends PhaseScene {
       onClick: () => this.store.dispatch({ type: 'OFFICE/CONFIRM' }),
     });
 
-    // 계약 모드에서는 「출격」 자리 위에 수락/거절을 겹치지 않고, 작업대 안에서 처리한다
-    if (this.mode === 'CONTRACT' && visitor !== undefined) {
-      const p = L.office.paper;
+    // 계약 모드에서는 「출격」 자리 위에 수락/거절을 겹치지 않고, 작업대 안에서 처리한다.
+    // 하단 4택이 1~4 를 쓰므로 여기는 5·6·7 을 쓴다
+    if (this.mode === 'CONTRACT') {
+      const paper = L.office.paper;
+      const sheet = s.visitors[this.contractIndex];
+      const by = paper.y + paper.h - L.pad * 4 - 104;
       new Button(this, {
-        x: p.x + L.pad * 4, y: p.y + p.h - L.pad * 4 - 104, w: 300, h: 64,
-        label: '계약한다',
-        onClick: () => this.store.dispatch({ type: 'OFFICE/CONTRACT_ACCEPT', starId: visitor.starId }),
+        x: paper.x + L.pad * 4, y: by, w: 300, h: 64,
+        label: '계약한다', hotkey: '5',
+        enabled: sheet !== undefined && s.gold >= sheet.fee,
+        onClick: () => sheet && this.store.dispatch({ type: 'OFFICE/CONTRACT_ACCEPT', starId: sheet.starId }),
       });
       new Button(this, {
-        x: p.x + L.pad * 4 + 324, y: p.y + p.h - L.pad * 4 - 104, w: 300, h: 64,
-        label: '돌려보낸다', variant: 'danger',
-        onClick: () => this.store.dispatch({ type: 'OFFICE/CONTRACT_REJECT', starId: visitor.starId }),
+        x: paper.x + L.pad * 4 + 324, y: by, w: 300, h: 64,
+        label: '돌려보낸다', hotkey: '6', variant: 'danger',
+        enabled: sheet !== undefined,
+        onClick: () => sheet && this.store.dispatch({ type: 'OFFICE/CONTRACT_REJECT', starId: sheet.starId }),
       });
+      if (s.visitors.length > 1) {
+        new Button(this, {
+          x: paper.x + L.pad * 4 + 648, y: by, w: 220, h: 64,
+          label: '次 다음 장', hotkey: '7', variant: 'ghost',
+          onClick: () => {
+            this.contractIndex = (this.contractIndex + 1) % s.visitors.length;
+            this.redraw();
+          },
+        });
+      }
     }
   }
 

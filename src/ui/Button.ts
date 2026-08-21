@@ -165,6 +165,10 @@ function keyCodeFor(hotkey: string): string {
     '3': 'THREE',
     '4': 'FOUR',
     '5': 'FIVE',
+    '6': 'SIX',
+    '7': 'SEVEN',
+    '8': 'EIGHT',
+    '9': 'NINE',
   };
   return digits[hotkey] ?? hotkey.toUpperCase();
 }
