@@ -22,22 +22,45 @@ export function reviveQuote(state: GameState, corpse: Corpse, star: Star) {
   return { cost, affordable: state.gold >= cost, witnessWarning: star.witnessed.some((floor) => floor <= warningFloor) };
 }
 
-export function discardReviveCorpse(state: GameState, starId: string): GameState {
-  const corpse = state.corpses.find((candidate) => candidate.starId === starId);
-  const star = state.stars.find((candidate) => candidate.id === starId);
-  if (corpse === undefined || star?.status !== 'DEAD') return state;
+function addLootToInventory(state: GameState, loot: string[]): GameState['inventory'] {
   const inventory = [...state.inventory];
-  for (const itemId of corpse.loot) {
+  for (const itemId of loot) {
     const index = inventory.findIndex((stack) => stack.id === itemId);
     if (index < 0) inventory.push({ id: itemId, qty: 1 });
     else inventory[index] = { ...inventory[index]!, qty: inventory[index]!.qty + 1 };
   }
+  return inventory;
+}
+
+function drawUniqueRelics(state: GameState, count: number): [string[], GameState] {
+  const available = content.items.filter((item) => item.isRelic).map((item) => item.id);
+  const loot: string[] = [];
+  let next = state;
+  for (let index = 0; index < Math.min(count, available.length); index += 1) {
+    const [itemRoll, afterItem] = draw(next);
+    const itemIndex = Math.floor(itemRoll * available.length);
+    const [itemId] = available.splice(itemIndex, 1);
+    if (itemId !== undefined) loot.push(itemId);
+    next = afterItem;
+  }
+  return [loot, next];
+}
+
+export function discardReviveCorpse(state: GameState, starId: string): GameState {
+  const corpse = state.corpses.find((candidate) => candidate.starId === starId);
+  const star = state.stars.find((candidate) => candidate.id === starId);
+  if (corpse === undefined || star?.status !== 'DEAD') return state;
+  const [generatedLoot, next] = corpse.loot.length === 0
+    ? drawUniqueRelics(state, content.balance.revive.discardLoot)
+    : [corpse.loot, state];
+  const loot = corpse.loot.length === 0 ? generatedLoot : corpse.loot;
   return {
-    ...state,
-    inventory,
-    stars: state.stars.map((candidate) => candidate.id === starId ? { ...candidate, status: 'DISCARDED' as const } : candidate),
-    stats: { ...state.stats, totalDiscarded: state.stats.totalDiscarded + 1 },
-    pendingFx: [...state.pendingFx, { kind: 'SEAL_STAMP', payload: { starId } }],
+    ...next,
+    inventory: addLootToInventory(next, loot),
+    corpses: next.corpses.map((candidate) => candidate === corpse && corpse.loot.length === 0 ? { ...candidate, loot } : candidate),
+    stars: next.stars.map((candidate) => candidate.id === starId ? { ...candidate, status: 'DISCARDED' as const } : candidate),
+    stats: { ...next.stats, totalDiscarded: next.stats.totalDiscarded + 1 },
+    pendingFx: [...next.pendingFx, { kind: 'SEAL_STAMP', payload: { starId } }],
   };
 }
 
@@ -47,30 +70,14 @@ export function damageAutopsyCorpse(state: GameState, starId: string): GameState
   if (corpse === undefined || star === undefined) return state;
 
   const rules = content.balance.autopsy;
-  const relics = content.items.filter((item) => item.isRelic).map((item) => item.id);
-  if (relics.length === 0) return state;
+  const relicCount = content.items.filter((item) => item.isRelic).length;
+  if (relicCount === 0) return state;
   const [countRoll, afterCount] = draw(state);
-  const lootCount = Math.min(relics.length, rules.lootMin + Math.floor(countRoll * (rules.lootMax - rules.lootMin + 1)));
-  const available = [...relics];
-  const loot: string[] = [];
-  let next = afterCount;
-  for (let index = 0; index < lootCount; index += 1) {
-    const [itemRoll, afterItem] = draw(next);
-    const itemIndex = Math.floor(itemRoll * available.length);
-    const [itemId] = available.splice(itemIndex, 1);
-    if (itemId !== undefined) loot.push(itemId);
-    next = afterItem;
-  }
-
-  const inventory = [...next.inventory];
-  for (const itemId of loot) {
-    const index = inventory.findIndex((stack) => stack.id === itemId);
-    if (index < 0) inventory.push({ id: itemId, qty: 1 });
-    else inventory[index] = { ...inventory[index]!, qty: inventory[index]!.qty + 1 };
-  }
+  const lootCount = Math.min(relicCount, rules.lootMin + Math.floor(countRoll * (rules.lootMax - rules.lootMin + 1)));
+  const [loot, next] = drawUniqueRelics(afterCount, lootCount);
   return {
     ...next,
-    inventory,
+    inventory: addLootToInventory(next, loot),
     corpses: next.corpses.map((candidate) => candidate === corpse ? { ...candidate, grade: 'DAMAGED' as const, loot } : candidate),
     stars: next.stars.map((candidate) => candidate.id === starId ? { ...candidate, status: 'DISCARDED' as const, witnessed: [] } : candidate),
     witnessLog: next.witnessLog.map((entry) => entry.starId === starId ? { ...entry, suppressed: true } : entry),

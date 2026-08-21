@@ -13,7 +13,8 @@
     "gradeMul": { "INTACT": 1.0, "DAMAGED": 1.5 },
     "degradeExp": 1.4,
     "decayPerDay": 1.08,
-    "roundTo": 10
+    "roundTo": 10,
+    "discardLoot": 1
   },
   "degrade": {
     "statMul": [1.0, 0.94, 0.87, 0.78, 0.67, 0.55]

@@ -10,7 +10,7 @@ import type { ForkOutcome, ItemDef, Persona, Star } from './types';
 
 export interface Balance {
   start: { gold: number; fans: number; reputation: number; maxFloor: number; days: number; targetFloor: number };
-  revive: { base: number; floorExp: number; gradeMul: Record<'INTACT' | 'DAMAGED', number>; degradeExp: number; decayPerDay: number; roundTo: number };
+  revive: { base: number; floorExp: number; gradeMul: Record<'INTACT' | 'DAMAGED', number>; degradeExp: number; decayPerDay: number; roundTo: number; discardLoot: number };
   dive: { floorSeconds: number; encounterEvery: number; delayGraceSeconds: number; delayFanLossPerSec: number; delayFanLossCap: number };
   combat: CombatBalance;
   degrade: { statMul: number[] };
@@ -212,7 +212,8 @@ function makeFloors(raw: unknown): FloorContent {
 export function loadContent(): Content {
   assertShape(isRecord(balanceJson) && isRecord(balanceJson.start) && isRecord(balanceJson.revive) && isRecord(balanceJson.dive) && isRecord(balanceJson.combat) && isRecord(balanceJson.degrade) && isRecord(balanceJson.income), 'balance sections missing');
   for (const key of ['gold', 'fans', 'reputation', 'maxFloor', 'days', 'targetFloor'] as const) assertNumber(balanceJson.start[key], `balance.start.${key}`);
-  for (const key of ['base', 'floorExp', 'degradeExp', 'decayPerDay', 'roundTo'] as const) assertNumber(balanceJson.revive[key], `balance.revive.${key}`);
+  for (const key of ['base', 'floorExp', 'degradeExp', 'decayPerDay', 'roundTo', 'discardLoot'] as const) assertNumber(balanceJson.revive[key], `balance.revive.${key}`);
+  assertShape(balanceJson.revive.discardLoot > 0, 'balance.revive.discardLoot must be positive');
   assertShape(isRecord(balanceJson.revive.gradeMul), 'balance.revive.gradeMul missing');
   assertNumber(balanceJson.revive.gradeMul.INTACT, 'balance.revive.gradeMul.INTACT');
   assertNumber(balanceJson.revive.gradeMul.DAMAGED, 'balance.revive.gradeMul.DAMAGED');
