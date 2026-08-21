@@ -12,6 +12,12 @@ permissions:
   pages: write
   id-token: write
 
+# Pages 배포는 한 번에 하나만 돈다. 연달아 push 하면 뒤엣것이
+# "deployment already in progress" 로 죽는다. 취소하지 않고 줄을 세운다.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
