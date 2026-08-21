@@ -1,7 +1,7 @@
 import { content } from './content';
 import { createInitialState } from './state';
 import { chooseCombat, startLive, tickLive } from './systems/dive';
-import { reviveQuote } from './systems/economy';
+import { discardReviveCorpse, reviveQuote } from './systems/economy';
 import { acceptContract, confirmOffice, pickStar, rejectContract } from './systems/office';
 import { inherit } from './systems/roster';
 import type { Action } from './actions';
@@ -76,6 +76,7 @@ export function reducer(state: GameState, action: Action): GameState {
       };
     }
     case 'REVIVE/SKIP': return state;
+    case 'REVIVE/DISCARD': return state.phase === 'REVIVE' ? discardReviveCorpse(state, action.starId) : state;
     case 'REVIVE/INHERIT': return inherit(state, action.personaId, action.toStarId);
     case 'OFFICE/CONTRACT_ACCEPT': return acceptContract(state, action.starId);
     case 'OFFICE/CONTRACT_REJECT': return rejectContract(state, action.starId);

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { content } from '../src/core/content';
 import { reducer } from '../src/core/reducer';
 import { createInitialState } from '../src/core/state';
-import { reviveCost, reviveQuote } from '../src/core/systems/economy';
+import { discardReviveCorpse, reviveCost, reviveQuote } from '../src/core/systems/economy';
 import type { Corpse, Star } from '../src/core/types';
 
 function corpse(diedFloor: number, grade: Corpse['grade']): Corpse {
@@ -41,5 +41,18 @@ describe('revive economy', () => {
     expect(paid.gold).toBe(initial.gold - quote.cost);
     expect(paid.stats.goldSpentOnRevive).toBe(quote.cost);
     expect(reducer(paid, { type: 'REVIVE/PAY', starId: star.id })).toEqual(paid);
+  });
+
+  it('discards a dead body once, preserves its inheritance record, and transfers its loot', () => {
+    const body = { ...corpse(24, 'DAMAGED'), loot: ['mask_bone', 'mask_bone', 'ring_rust'] };
+    const base = createInitialState(92);
+    const initial = { ...base, phase: 'REVIVE' as const, stars: base.stars.map((star) => star.id === body.starId ? { ...star, status: 'DEAD' as const } : star), corpses: [body] };
+    const discarded = discardReviveCorpse(initial, body.starId);
+    expect(discarded.stars.find((star) => star.id === body.starId)?.status).toBe('DISCARDED');
+    expect(discarded.inventory).toEqual([{ id: 'mask_bone', qty: 2 }, { id: 'ring_rust', qty: 1 }]);
+    expect(discarded.corpses).toEqual([body]);
+    expect(discarded.stats.totalDiscarded).toBe(1);
+    expect(discarded.pendingFx.at(-1)).toMatchObject({ kind: 'SEAL_STAMP', payload: { starId: body.starId } });
+    expect(reducer(discarded, { type: 'REVIVE/DISCARD', starId: body.starId })).toEqual(discarded);
   });
 });

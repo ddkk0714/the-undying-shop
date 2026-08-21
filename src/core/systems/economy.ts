@@ -20,3 +20,22 @@ export function reviveQuote(state: GameState, corpse: Corpse, star: Star) {
   const warningFloor = Math.min(...Object.keys(content.balance.opinion.leakPerWitnessRevive).map(Number));
   return { cost, affordable: state.gold >= cost, witnessWarning: star.witnessed.some((floor) => floor <= warningFloor) };
 }
+
+export function discardReviveCorpse(state: GameState, starId: string): GameState {
+  const corpse = state.corpses.find((candidate) => candidate.starId === starId);
+  const star = state.stars.find((candidate) => candidate.id === starId);
+  if (corpse === undefined || star?.status !== 'DEAD') return state;
+  const inventory = [...state.inventory];
+  for (const itemId of corpse.loot) {
+    const index = inventory.findIndex((stack) => stack.id === itemId);
+    if (index < 0) inventory.push({ id: itemId, qty: 1 });
+    else inventory[index] = { ...inventory[index]!, qty: inventory[index]!.qty + 1 };
+  }
+  return {
+    ...state,
+    inventory,
+    stars: state.stars.map((candidate) => candidate.id === starId ? { ...candidate, status: 'DISCARDED' as const } : candidate),
+    stats: { ...state.stats, totalDiscarded: state.stats.totalDiscarded + 1 },
+    pendingFx: [...state.pendingFx, { kind: 'SEAL_STAMP', payload: { starId } }],
+  };
+}

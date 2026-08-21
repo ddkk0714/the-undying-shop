@@ -25,6 +25,7 @@ export type Action =
   | { type: 'PHASE/GOTO'; phase: PhaseId }                      // 상점 화면(①↔②) 안에서만 오간다
   | { type: 'REVIVE/PAY'; starId: StarId }
   | { type: 'REVIVE/SKIP'; starId: StarId }
+  | { type: 'REVIVE/DISCARD'; starId: StarId }
   | { type: 'REVIVE/INHERIT'; personaId: PersonaId; toStarId: StarId }
   | { type: 'OFFICE/CONTRACT_ACCEPT'; starId: StarId }
   | { type: 'OFFICE/CONTRACT_REJECT'; starId: StarId }
