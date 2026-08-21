@@ -1,6 +1,7 @@
 import { content } from '../content';
 import { draw } from '../rng';
 import { createEncounter, createHero, isEncounterFloor, resolveCombatChoice } from './combat';
+import { addAppealChat, awardSuperchat } from './opinion';
 import type { CombatChoice, GameState, ItemDef, Star } from '../types';
 
 function equippedItems(state: GameState): ItemDef[] {
@@ -19,6 +20,16 @@ function currentTime(state: GameState, dt: number): number {
   return state.phaseStartedAt + dt * 1000;
 }
 
+function lieCallbackKey(starId: string): string {
+  return `lieCallback:${starId}`;
+}
+
+function actualCeiling(state: GameState): number {
+  const today = state.today;
+  const star = today === null ? undefined : state.stars.find((candidate) => candidate.id === today.starId);
+  return today === null ? 1 : Math.max(1, Math.floor(today.claimedCeiling * (star?.honesty ?? 1)));
+}
+
 function waitingPenalty(state: GameState, now: number): GameState {
   if (state.waitingSince === null || state.flags.reducedMotion === true) return { ...state, phaseStartedAt: now };
   const waitedSeconds = Math.max(0, (now - state.waitingSince) / 1000 - content.balance.dive.delayGraceSeconds);
@@ -30,11 +41,27 @@ export function startLive(state: GameState): GameState {
   if (state.today === null) return state;
   const star = state.stars.find((candidate) => candidate.id === state.today?.starId);
   if (star === undefined) return state;
+  const callbackKey = lieCallbackKey(star.id);
+  if (state.flags[callbackKey] !== true) {
+    return {
+      ...state,
+      phase: 'LIVE',
+      waitingSince: null,
+      today: { ...state.today, hero: createHero(star, equippedItems(state), degradationMultiplier(star)), encounter: null },
+    };
+  }
+  const [roll, nextState] = draw(state);
+  const lines = content.radio.lieCallback;
+  const line = lines[Math.floor(roll * lines.length)] ?? lines[0] ?? '';
+  const flags = { ...nextState.flags };
+  delete flags[callbackKey];
   return {
-    ...state,
+    ...nextState,
     phase: 'LIVE',
     waitingSince: null,
+    flags,
     today: { ...state.today, hero: createHero(star, equippedItems(state), degradationMultiplier(star)), encounter: null },
+    pendingFx: [...nextState.pendingFx, { kind: 'TRUTH_WHISPER', payload: { starId: star.id, line } }],
   };
 }
 
@@ -49,6 +76,16 @@ export function tickLive(state: GameState, dt: number): GameState {
     const today = nextState.today;
     if (today === null) return nextState;
     const floor = today.currentFloor + 1;
+    if (floor >= actualCeiling(nextState) + content.floors.encounterEvery) {
+      return { ...nextState, phase: 'DEATH', waitingSince: null, today: { ...today, currentFloor: floor, diedFloor: floor, deathCause: 'descent limit' }, pendingFx: [...nextState.pendingFx, { kind: 'SIGNAL_LOST' }] };
+    }
+    const witnessFloor = Object.keys(content.balance.opinion.leakPerWitnessRevive).map(Number).find((value) => value === floor && !nextState.seenWitnessFloors.includes(value));
+    if (witnessFloor !== undefined) {
+      const witnessed = { ...nextState, seenWitnessFloors: [...nextState.seenWitnessFloors, witnessFloor], stars: nextState.stars.map((candidate) => candidate.id === today.starId ? { ...candidate, witnessed: [...candidate.witnessed, witnessFloor] } : candidate), witnessLog: [...nextState.witnessLog, { floor: witnessFloor, starId: today.starId, line: '', day: nextState.day, suppressed: false }], viewerFatigue: witnessFloor === Math.max(...Object.keys(content.balance.opinion.leakPerWitnessRevive).map(Number)) ? nextState.viewerFatigue + content.balance.opinion.viewerFatigueOn28F : nextState.viewerFatigue, today: { ...today, currentFloor: floor } };
+      return awardSuperchat(witnessed, 'witness');
+    }
+    const fork = content.floors.forks.find((candidate) => candidate.atFloor === floor);
+    if (fork !== undefined) return { ...nextState, waitingSince: now, today: { ...today, currentFloor: floor, forks: [...today.forks, { floor, truth: { a: fork.a, b: fork.b }, told: 'UNKNOWN', wasLie: false }] } };
     if (isEncounterFloor(floor)) {
       const [enemyRoll, withRng] = draw(nextState);
       return {
@@ -60,6 +97,28 @@ export function tickLive(state: GameState, dt: number): GameState {
     nextState = { ...nextState, today: { ...today, currentFloor: floor } };
   }
   return nextState;
+}
+
+export function answerRadio(state: GameState, dir: 'A' | 'B' | 'UNKNOWN'): GameState {
+  const today = state.today;
+  const record = today?.forks.at(-1);
+  if (state.phase !== 'LIVE' || today === null || record === undefined || record.told !== 'UNKNOWN') return state;
+  const [roll, next] = draw(state);
+  const swapped = roll < 0.5;
+  const chosen = dir === 'UNKNOWN' ? undefined : (dir === 'A' ? (swapped ? record.truth.b : record.truth.a) : (swapped ? record.truth.a : record.truth.b));
+  const alternative = chosen === record.truth.a ? record.truth.b : record.truth.a;
+  const wasLie = chosen !== undefined && chosen.reachDelta < alternative.reachDelta;
+  const flags = wasLie ? { ...next.flags, [lieCallbackKey(today.starId)]: true } : next.flags;
+  const answered: GameState = {
+    ...next,
+    flags,
+    waitingSince: null,
+    stats: wasLie ? { ...next.stats, liesTold: next.stats.liesTold + 1 } : next.stats,
+    today: { ...today, currentFloor: today.currentFloor + (chosen?.reachDelta ?? 0), forks: [...today.forks.slice(0, -1), { ...record, told: dir, wasLie }] },
+  };
+  const hazardMultiplier = content.balance.combat.hazardAtkMul;
+  const choseRiskierPath = chosen !== undefined && hazardMultiplier[chosen.hazard] > hazardMultiplier[alternative.hazard];
+  return choseRiskierPath ? awardSuperchat(answered, 'fork') : answered;
 }
 
 export function chooseCombat(state: GameState, choice: CombatChoice): GameState {
@@ -77,25 +136,27 @@ export function chooseCombat(state: GameState, choice: CombatChoice): GameState 
     encounter: result.enemyDefeated ? null : result.encounter,
     appealCount: activeRun.appealCount + (choice === 'APPEAL' ? 1 : 0),
     fansDelta: activeRun.fansDelta + result.fansDelta,
-    superchat: activeRun.superchat + (result.superchat ? content.balance.income.superchat.witness[0] ?? 0 : 0),
   };
-  if (result.heroDied) {
-    return {
-      ...afterCounter,
-      phase: 'DEATH',
-      waitingSince: null,
-      fans,
-      today: { ...today, diedFloor: today.currentFloor, deathCause: '전투 중 사망' },
-      pendingFx: [...afterCounter.pendingFx, { kind: 'SIGNAL_LOST' }],
-    };
-  }
-  return {
+  const resolved: GameState = {
     ...afterCounter,
-    waitingSince: result.enemyDefeated ? null : afterCounter.phaseStartedAt,
     fans,
     today,
     leak: result.leakRiskMultiplier > 1 ? Math.min(100, afterCounter.leak + result.leakRiskMultiplier) : afterCounter.leak,
     stats: { ...afterCounter.stats, appeals: afterCounter.stats.appeals + (choice === 'APPEAL' ? 1 : 0) },
-    pendingFx: [...afterCounter.pendingFx, { kind: choice === 'APPEAL' ? 'APPEAL_POSE' : choice === 'DEFEND' ? 'GUARD' : 'HIT' }],
+  };
+  const withAppeal = result.superchat ? awardSuperchat(addAppealChat(resolved), 'appeal') : resolved;
+  if (result.heroDied) {
+    return {
+      ...withAppeal,
+      phase: 'DEATH',
+      waitingSince: null,
+      today: { ...withAppeal.today!, diedFloor: today.currentFloor, deathCause: '전투 중 사망' },
+      pendingFx: [...withAppeal.pendingFx, { kind: 'SIGNAL_LOST' }],
+    };
+  }
+  return {
+    ...withAppeal,
+    waitingSince: result.enemyDefeated ? null : withAppeal.phaseStartedAt,
+    pendingFx: [...withAppeal.pendingFx, { kind: choice === 'APPEAL' ? 'APPEAL_POSE' : choice === 'DEFEND' ? 'GUARD' : 'HIT' }],
   };
 }

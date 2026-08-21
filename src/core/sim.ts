@@ -2,8 +2,8 @@ import { createStore } from './store';
 import { reducer } from './reducer';
 import { createInitialState } from './state';
 import { mulberry32 } from './rng';
-import type { Action } from './actions';
 import { reviveQuote } from './systems/economy';
+import type { Action } from './actions';
 import type { GameState, RunStats } from './types';
 
 export type Policy = (state: Readonly<GameState>) => Action;
@@ -28,6 +28,8 @@ export const randomPolicy: Policy = (state) => {
     return { type: 'OFFICE/PICK_STAR', starId: choices[Math.floor(roll * choices.length)]?.id ?? choices[0]!.id };
   }
   if (state.phase === 'LIVE') {
+    const pendingFork = state.today?.forks.at(-1);
+    if (pendingFork?.told === 'UNKNOWN') return { type: 'RADIO/ANSWER', dir: roll < 0.5 ? 'A' : 'B' };
     if (state.today?.encounter !== null && state.today?.encounter !== undefined) return { type: 'COMBAT/CHOOSE', choice: roll < 0.7 ? 'APPEAL' : 'ATTACK' };
     return { type: 'LIVE/TICK', dt: 30 };
   }
@@ -36,10 +38,10 @@ export const randomPolicy: Policy = (state) => {
   return { type: 'PHASE/ADVANCE' };
 };
 
-/** Conservatively recruit only after every living star is gone. */
+/** 모집비를 아끼고, 생존 출연자가 모두 사라질 때만 계약한다. */
 export const conservativePolicy: Policy = randomPolicy;
 
-/** Accept every affordable current visitor before selecting a star. */
+/** 오늘 낼 수 있는 계약서는 먼저 모두 수락한 뒤 출연자를 고른다. */
 export const proactivePolicy: Policy = (state) => {
   if (state.phase === 'OFFICE' && state.today === null) {
     const affordable = state.visitors.filter((visitor) => state.gold >= visitor.fee);

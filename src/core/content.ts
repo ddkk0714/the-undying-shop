@@ -14,8 +14,40 @@ export interface Balance {
   dive: { floorSeconds: number; encounterEvery: number; delayGraceSeconds: number; delayFanLossPerSec: number; delayFanLossCap: number };
   combat: CombatBalance;
   degrade: { statMul: number[] };
-  income: { superchat: { witness: number[] } };
-  opinion: { leakPerWitnessRevive: Record<string, number> };
+  income: {
+    goodsPerFan: number;
+    superchat: {
+      poolPerFan: number;
+      fork: [number, number];
+      record: [number, number];
+      death: [number, number];
+      witness: [number, number];
+      appeal: [number, number];
+      charismaMul: number;
+      depletedMul: number;
+    };
+  };
+  opinion: {
+    chatLifetimeSeconds: number;
+    chatMaxVisible: number;
+    nickPoolSize: number;
+    midLeakThreshold: number;
+    truthChanceAtMidLeak: number;
+    hypeChance: number;
+    casualChance: number;
+    truthLeakPower: number;
+    slowAfterSeconds: number;
+    backlashIntervalSeconds: number;
+    moderationDeleteCost: number;
+    moderationBanCost: number;
+    leakPerWitnessRevive: Record<string, number>;
+    leakPerIgnoredChat: number;
+    leakEndingThreshold: number;
+    viewerFatigueOn28F: number;
+    moderationFreeCount: number;
+    moderationRepPenalty: number;
+  };
+  fans: { base: number; depthPivot: number; depthMul: number; recordBonus: number; shallowLiePenalty: number; appealMul: number };
   reputation: { onSuccessAnnounce: number; onFailureAnnounce: number; grades: [number, string][] };
   recruit: { baseSlots: number; lossPerFailures: number };
   contract: {
@@ -184,8 +216,20 @@ export function loadContent(): Content {
   assertNumber(balanceJson.revive.gradeMul.DAMAGED, 'balance.revive.gradeMul.DAMAGED');
   for (const key of ['floorSeconds', 'encounterEvery', 'delayGraceSeconds', 'delayFanLossPerSec', 'delayFanLossCap'] as const) assertNumber(balanceJson.dive[key], `balance.dive.${key}`);
   assertShape(Array.isArray(balanceJson.degrade.statMul) && balanceJson.degrade.statMul.length > 0, 'balance.degrade.statMul missing');
-  assertShape(isRecord(balanceJson.income.superchat) && Array.isArray(balanceJson.income.superchat.witness), 'balance.income.superchat.witness missing');
+  assertShape(isRecord(balanceJson.income.superchat), 'balance.income.superchat missing');
+  assertNumber(balanceJson.income.goodsPerFan, 'balance.income.goodsPerFan');
+  for (const key of ['poolPerFan', 'charismaMul', 'depletedMul'] as const) assertNumber(balanceJson.income.superchat[key], `balance.income.superchat.${key}`);
+  for (const key of ['fork', 'record', 'death', 'witness', 'appeal'] as const) {
+    const range = balanceJson.income.superchat[key];
+    assertShape(Array.isArray(range) && range.length === 2, `balance.income.superchat.${key} range missing`);
+    assertNumber(range[0], `balance.income.superchat.${key}[0]`);
+    assertNumber(range[1], `balance.income.superchat.${key}[1]`);
+  }
+  assertShape(isRecord(balanceJson.fans), 'balance.fans missing');
+  for (const key of ['base', 'depthPivot', 'depthMul', 'recordBonus', 'shallowLiePenalty', 'appealMul'] as const) assertNumber(balanceJson.fans[key], `balance.fans.${key}`);
   assertShape(isRecord(balanceJson.opinion) && isRecord(balanceJson.opinion.leakPerWitnessRevive), 'balance.opinion.leakPerWitnessRevive missing');
+  for (const key of ['chatLifetimeSeconds', 'chatMaxVisible', 'nickPoolSize', 'midLeakThreshold', 'truthChanceAtMidLeak', 'hypeChance', 'casualChance', 'truthLeakPower', 'slowAfterSeconds', 'backlashIntervalSeconds', 'moderationDeleteCost', 'moderationBanCost', 'leakPerIgnoredChat', 'leakEndingThreshold', 'moderationFreeCount', 'moderationRepPenalty'] as const) assertNumber(balanceJson.opinion[key], `balance.opinion.${key}`);
+  assertNumber(balanceJson.opinion.viewerFatigueOn28F, 'balance.opinion.viewerFatigueOn28F');
   assertShape(isRecord(balanceJson.reputation) && Array.isArray(balanceJson.reputation.grades), 'balance.reputation.grades missing');
   assertNumber(balanceJson.reputation.onSuccessAnnounce, 'balance.reputation.onSuccessAnnounce');
   assertNumber(balanceJson.reputation.onFailureAnnounce, 'balance.reputation.onFailureAnnounce');
@@ -200,6 +244,7 @@ export function loadContent(): Content {
     assertNumber(tier.floor, `balance.contract.claimedTiers[${index}].floor`);
     assertNumber(tier.rate, `balance.contract.claimedTiers[${index}].rate`);
   });
+  assertShape(balanceJson.contract.honestyMin <= balanceJson.contract.honestyMax, 'balance.contract honesty range invalid');
   assertShape(isRecord(radioJson) && isRecord(chatJson) && isRecord(narrativeJson), 'localized content must be objects');
   return {
     balance: balanceJson as unknown as Balance,

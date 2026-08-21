@@ -37,4 +37,5 @@ describe('reducer', () => {
     expect(state.phase).toBe('REVIVE');
     expect(JSON.parse(JSON.stringify(state))).toEqual(state);
   });
+
 });

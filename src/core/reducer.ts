@@ -1,9 +1,10 @@
 import { content } from './content';
 import { createInitialState } from './state';
-import { chooseCombat, startLive, tickLive } from './systems/dive';
+import { answerRadio, chooseCombat, startLive, tickLive } from './systems/dive';
 import { discardReviveCorpse, reviveQuote } from './systems/economy';
 import { acceptContract, confirmOffice, pickStar, populateVisitors, rejectContract } from './systems/office';
 import { inherit } from './systems/roster';
+import { awardSuperchat, expireChats, moderateChat, spawnChat } from './systems/opinion';
 import type { Action } from './actions';
 import type { Corpse, GameState, PhaseId } from './types';
 
@@ -26,20 +27,38 @@ function latestTodayCorpse(state: GameState): Corpse | undefined {
   return state.today === null ? undefined : state.corpses.find((corpse) => corpse.starId === state.today?.starId && corpse.diedDay === state.day);
 }
 
-function finishLive(state: GameState): GameState {
-  if (state.today === null || state.today.diedFloor !== null) return withPhase(state, 'DEATH');
-  const diedFloor = Math.max(1, state.today.currentFloor, state.today.claimedCeiling);
+function concludeRun(state: GameState): GameState {
+  if (state.today === null) return withPhase(state, 'DEATH');
+  const existingCorpse = latestTodayCorpse(state);
+  if (existingCorpse !== undefined) return withPhase(state, 'DEATH');
+  const diedFloor = state.today.diedFloor ?? Math.max(1, state.today.currentFloor, state.today.claimedCeiling);
   const star = state.stars.find((candidate) => candidate.id === state.today?.starId);
   if (star === undefined) return withPhase(state, 'DEATH');
+  const isRecord = diedFloor > state.maxFloor;
+  const rules = content.balance.fans;
+  const drama = 1 + (isRecord ? rules.recordBonus : 0) + (state.today.forks.some((fork) => fork.wasLie) ? rules.shallowLiePenalty : 0) + state.today.appealCount * rules.appealMul;
+  const fansDelta = Math.floor(rules.base * (1 + (diedFloor - rules.depthPivot) * rules.depthMul) * drama * (1 - state.viewerFatigue / 100));
+  const goodsIncome = Math.floor(state.fans * content.balance.income.goodsPerFan);
   const corpse: Corpse = { starId: star.id, diedFloor, diedDay: state.day, grade: 'INTACT', announced: null, loot: [] };
   const stars = state.stars.map((candidate) => candidate.id === star.id ? { ...candidate, status: 'DEAD' as const } : candidate);
   const maxFloor = Math.max(state.maxFloor, diedFloor);
-  return {
-    ...state, phase: 'DEATH', stars, corpses: [...state.corpses, corpse],
-    today: { ...state.today, currentFloor: diedFloor, diedFloor, deathCause: '하강 중 사망' }, maxFloor,
-    pendingFx: [...state.pendingFx, { kind: 'SIGNAL_LOST' }, ...(diedFloor > state.maxFloor ? [{ kind: 'RECORD_BREAK' as const }] : [])],
-    stats: { ...state.stats, deepestFloor: Math.max(state.stats.deepestFloor, diedFloor) },
+  const settled: GameState = {
+    ...state, phase: 'DEATH', stars, corpses: [...state.corpses, corpse], gold: state.gold + goodsIncome,
+    fans: Math.max(0, state.fans + fansDelta),
+    today: { ...state.today, currentFloor: diedFloor, diedFloor, deathCause: state.today.deathCause ?? '하강 중 사망', fansDelta }, maxFloor,
+    pendingFx: [...state.pendingFx, ...(isRecord ? [{ kind: 'RECORD_BREAK' as const }] : [])],
+    stats: { ...state.stats, goldEarned: state.stats.goldEarned + goodsIncome, deepestFloor: Math.max(state.stats.deepestFloor, diedFloor) },
   };
+  const withDeathSuperchat = awardSuperchat(settled, 'death');
+  return isRecord ? awardSuperchat(withDeathSuperchat, 'record') : withDeathSuperchat;
+}
+
+function finishLive(state: GameState): GameState {
+  return concludeRun(state);
+}
+
+function concludeRunIfDead(state: GameState): GameState {
+  return state.phase === 'DEATH' ? concludeRun(state) : state;
 }
 
 function advance(state: GameState): GameState {
@@ -89,12 +108,12 @@ export function reducer(state: GameState, action: Action): GameState {
       return { ...state, shelf };
     }
     case 'OFFICE/CONFIRM': return state.phase === 'OFFICE' ? startLive(confirmOffice(state)) : state;
-    case 'LIVE/TICK': return tickLive(state, action.dt);
-    case 'COMBAT/CHOOSE': return chooseCombat(state, action.choice);
-    case 'RADIO/ANSWER': return state;
-    case 'CHAT/SPAWN': return state;
-    case 'CHAT/DELETE': return state;
-    case 'CHAT/BAN': return state;
+    case 'LIVE/TICK': return expireChats(concludeRunIfDead(tickLive(state, action.dt)));
+    case 'COMBAT/CHOOSE': return concludeRunIfDead(chooseCombat(state, action.choice));
+    case 'RADIO/ANSWER': return answerRadio(state, action.dir);
+    case 'CHAT/SPAWN': return spawnChat(state);
+    case 'CHAT/DELETE': return moderateChat(state, action.id, false);
+    case 'CHAT/BAN': return moderateChat(state, action.id, true);
     case 'AUTOPSY/DECIDE': {
       if (state.phase !== 'AUTOPSY') return state;
       const corpse = latestTodayCorpse(state);
@@ -109,7 +128,8 @@ export function reducer(state: GameState, action: Action): GameState {
       const corpse = latestTodayCorpse(state);
       const corpses = corpse === undefined ? state.corpses : state.corpses.map((candidate) => candidate === corpse ? { ...candidate, announced: action.as } : candidate);
       const falseAnnouncements = action.as === 'FAILURE' ? state.stats.falseAnnouncements + 1 : state.stats.falseAnnouncements;
-      return advance({ ...state, corpses, stats: { ...state.stats, falseAnnouncements } });
+      const reputation = Math.max(0, Math.min(100, state.reputation + (action.as === 'SUCCESS' ? content.balance.reputation.onSuccessAnnounce : content.balance.reputation.onFailureAnnounce)));
+      return advance({ ...state, corpses, reputation, stats: { ...state.stats, falseAnnouncements } });
     }
     case 'FX/CONSUME': return { ...state, pendingFx: [] };
     case 'OPTION/SET': return state;
