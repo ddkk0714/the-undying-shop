@@ -62,6 +62,11 @@ export class DayScene extends Phaser.Scene {
   private skipCurtain = false;
   /** 기록 갱신 연출용 — 정산이 끝나면 이전 최고층은 state 에서 사라진다 (M08) */
   private lastMaxFloor = -1;
+  /** 도달 게이지 — 목표까지 차오른다. 신기록이면 눈에 보이게 밀려 올라간다 (M08 §연출) */
+  private gauge!: Phaser.GameObjects.Graphics;
+  private gaugeShown = 0;
+  private gaugeTarget = 0;
+  private gaugeFlashUntil = 0;
 
   constructor() {
     super(SCENES.DAY);
@@ -97,6 +102,8 @@ export class DayScene extends Phaser.Scene {
       .text(L.hudTools.x + L.hudTools.w - 24, L.hudTools.y + 52, '', { ...FONT, color: css('bone') })
       .setOrigin(1, 0);
     this.hudFloor = this.add.text(L.hudTools.x + 24, L.hudTools.y + 52, '', { ...FONT, color: css('bone') });
+    // 도달 게이지 — 글자 오른쪽 빈자리. 차오르는 게 보여야 기록이 기록으로 느껴진다
+    this.gauge = this.add.graphics();
 
     // 본문 (L.stage) — 단계 씬이 들어올 자리
     this.body = this.add
@@ -150,12 +157,46 @@ export class DayScene extends Phaser.Scene {
       const s = this.store.getState();
       this.swap(s.isOver ? undefined : PHASE_SCENE[s.phase]);
     }
+    this.drawGauge();
+
     const fx = this.store.getState().pendingFx;
     if (fx.length === 0) return;
     // 단계 씬이 소비할 수 있게 남겨 둔다 — 여기서 비우면 그쪽은 볼 기회가 없다 (M02 §6)
     this.registry.set('fx.recent', { kinds: fx.map((e) => e.kind), at: this.time.now });
     this.fxLine.setText(fx.map((e) => e.kind).join('  '));
     this.store.dispatch({ type: 'FX/CONSUME' });
+  }
+
+  /**
+   * 도달 게이지 n/40. 값이 오르면 **차오르는 게 보이도록** 프레임마다 조금씩 따라간다.
+   * 신기록 직후 1.4초 동안은 wax 로 칠한다 (M08 §RECORD_BREAK 「HUD 게이지가 차오름」).
+   */
+  private drawGauge(): void {
+    const target = content.balance.start.targetFloor;
+    if (Math.abs(this.gaugeShown - this.gaugeTarget) > 0.05) {
+      this.gaugeShown += (this.gaugeTarget - this.gaugeShown) * 0.08;
+    } else {
+      this.gaugeShown = this.gaugeTarget;
+    }
+
+    const x = L.hudTools.x + 240;
+    const y = L.hudTools.y + 58;
+    const w = 520;
+    const h = 16;
+    const ratio = target <= 0 ? 0 : Math.max(0, Math.min(1, this.gaugeShown / target));
+    const hot = this.time.now < this.gaugeFlashUntil;
+
+    const g = this.gauge;
+    g.clear();
+    g.fillStyle(PALETTE.ink, 1);
+    g.fillRect(x, y, w, h);
+    g.fillStyle(hot ? PALETTE.wax : PALETTE.bone, 1);
+    g.fillRect(x, y, Math.round(w * ratio), h);
+    g.fillStyle(PALETTE.dust, 1);
+    g.fillRect(x, y, w, L.line);
+    g.fillRect(x, y + h - L.line, w, L.line);
+    g.fillRect(x, y, L.line, h);
+    g.fillRect(x + w - L.line, y, L.line, h);
   }
 
   /** 04-UI-KIT §2-2 — HUD 이중선 액자 (바깥 bone 2px + 안쪽 dust 2px) */
@@ -174,8 +215,11 @@ export class DayScene extends Phaser.Scene {
     // 최고층이 갱신되는 순간 직전 값을 넘겨 준다. DeathPhase 의 「이전 기록」 표시용
     if (this.lastMaxFloor >= 0 && s.maxFloor !== this.lastMaxFloor) {
       this.registry.set('record.prev', this.lastMaxFloor);
+      this.gaugeFlashUntil = this.time.now + 1400;
     }
+    if (this.lastMaxFloor < 0) this.gaugeShown = s.maxFloor; // 첫 그림은 차오르지 않는다
     this.lastMaxFloor = s.maxFloor;
+    this.gaugeTarget = s.maxFloor;
 
     this.hudLeft.setText(`DAY ${s.day}\n/${content.balance.start.days}`);
     this.hudValues[0]?.setText(`${fmtGold(s.gold)} G`);

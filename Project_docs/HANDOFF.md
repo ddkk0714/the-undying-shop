@@ -584,3 +584,24 @@ git clone --depth 1 → npm ci → npm run build     전부 통과, dist/ 생성
 `Settings → General → Change visibility → Public` 그리고
 `Settings → Pages → Source: GitHub Actions` 만 하면 다음 push 에서 워크플로가 돈다.
 **이건 레포 소유자만 할 수 있다.**
+
+
+## HO-014  (from: Claude Code → to: Codex / 기획)  D2
+
+**필요한 것**: 평판 등급의 `+`/`-` 규칙. 명세가 자기 예시와 어긋난다.
+
+M09 §평판 등급 표시:
+
+```
+0-19 F · 20-39 D · 40-54 C · 55-69 B · 70-84 A · 85-100 S
+`B+` 같은 +/- 는 구간 상위 1/3에 붙인다. 초기값 62 → `B+`.
+```
+
+B 구간은 55~69(폭 15)이고 상위 1/3 은 65~69 다. **62 는 상위 1/3 이 아니므로 `B` 가 되어야 한다.**
+명세가 스스로 모순이다. 규칙이 틀렸는지, 예시가 틀렸는지 정해 달라.
+
+`reputationGrade()` 는 `content.ts`(Codex 소유)에 있고 지금은 `+`/`-` 없이 글자만 준다.
+발표 화면은 그걸 그대로 쓰고 있다 — **없는 규칙을 화면에서 지어내지 않았다.**
+규칙이 정해지면 `reputationGrade()` 가 붙여 주는 게 맞다 (HUD 와 발표 화면 두 곳이 같은 값을 써야 한다).
+
+**상태**: [ ] 미처리
