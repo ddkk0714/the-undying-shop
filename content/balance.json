@@ -100,6 +100,11 @@
       { "floor": 30, "rate": 0.25 }
     ]
   },
-  "autopsy": { "lootMin": 2, "lootMax": 3 },
+  "autopsy": {
+    "lootMin": 2,
+    "lootMax": 3,
+    "truthRelicMinFloor": 28,
+    "truthRelicIds": ["soil_deep", "page_torn"]
+  },
   "roster": { "inheritFandomLoss": 0.15, "inheritSuspicion": 35 }
 }

@@ -17,7 +17,7 @@ function contractFor(star: Star): Contract {
   };
 }
 
-function autopsyState(seed = 91, grade: Corpse['grade'] = 'INTACT'): GameState {
+function autopsyState(seed = 91, grade: Corpse['grade'] = 'INTACT', diedFloor = 23): GameState {
   const initial = createInitialState(seed);
   const star = initial.stars[0]!;
   return {
@@ -26,22 +26,22 @@ function autopsyState(seed = 91, grade: Corpse['grade'] = 'INTACT'): GameState {
     today: {
       starId: star.id,
       personaId: star.personaId,
-      currentFloor: 23,
+      currentFloor: diedFloor,
       hero: { hp: 0, maxHp: 82, atk: 13, def: 2 },
       encounter: null,
       appealCount: 0,
-      claimedCeiling: 23,
+      claimedCeiling: diedFloor,
       forks: [],
       superchat: 0,
       income: { superchat: 0, shelf: 0, goods: 0 },
       fansDelta: 0,
       chatQueue: [],
       deletedCount: 0,
-      diedFloor: 23,
+      diedFloor,
       deathCause: 'test',
     },
     stars: initial.stars.map((candidate) => candidate.id === star.id ? { ...candidate, status: 'DEAD', witnessed: [18, 23] } : candidate),
-    corpses: [{ starId: star.id, diedFloor: 23, diedDay: 1, grade, announced: null, loot: [] }],
+    corpses: [{ starId: star.id, diedFloor, diedDay: 1, grade, announced: null, loot: [] }],
     witnessLog: [
       { floor: 18, starId: star.id, line: 'f18', day: 1, suppressed: false },
       { floor: 23, starId: star.id, line: 'f23', day: 1, suppressed: false },
@@ -86,10 +86,18 @@ describe('autopsy and announcement combinations', () => {
     expect(corpse.grade).toBe('DAMAGED');
     expect(corpse.loot.length).toBeGreaterThanOrEqual(content.balance.autopsy.lootMin);
     expect(corpse.loot.length).toBeLessThanOrEqual(content.balance.autopsy.lootMax);
+    expect(corpse.loot.some((itemId) => content.balance.autopsy.truthRelicIds.includes(itemId))).toBe(false);
     expect(decided.inventory.reduce((total, stack) => total + stack.qty, 0)).toBe(corpse.loot.length);
     expect(decided.witnessLog.every((entry) => entry.suppressed)).toBe(true);
     expect(decided.stars[0]?.witnessed).toEqual([]);
     expect(decided.pendingFx.at(-1)?.kind).toBe('SEAL_STAMP');
+  });
+
+  it('unlocks truth relics only for bodies recovered at the configured depth', () => {
+    const deepLoot = Array.from({ length: 100 }, (_, seed) =>
+      reducer(autopsyState(300 + seed, 'INTACT', content.balance.autopsy.truthRelicMinFloor), { type: 'AUTOPSY/DECIDE', grade: 'DAMAGED' }).corpses[0]!.loot,
+    );
+    expect(deepLoot.some((loot) => loot.some((itemId) => content.balance.autopsy.truthRelicIds.includes(itemId)))).toBe(true);
   });
 
   it('applies distinct fake-success and failure-announcement consequences after damage', () => {

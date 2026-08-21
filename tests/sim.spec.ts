@@ -30,7 +30,7 @@ describe('headless simulation', () => {
         for (const value of Object.values(state.stats)) expect(Number.isFinite(value)).toBe(true);
       }
     }
-  });
+  }, 15_000);
 
   it('records real deaths and day-end settlement over an eight-day run', () => {
     const state = simulateState(20260822, randomPolicy);

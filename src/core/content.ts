@@ -62,7 +62,7 @@ export interface Balance {
     fandomPerCharisma: number;
     claimedTiers: { floor: number; rate: number }[];
   };
-  autopsy: { lootMin: number; lootMax: number };
+  autopsy: { lootMin: number; lootMax: number; truthRelicMinFloor: number; truthRelicIds: string[] };
   roster: { inheritFandomLoss: number; inheritSuspicion: number };
 }
 
@@ -211,6 +211,7 @@ function makeFloors(raw: unknown): FloorContent {
 
 export function loadContent(): Content {
   assertShape(isRecord(balanceJson) && isRecord(balanceJson.start) && isRecord(balanceJson.revive) && isRecord(balanceJson.dive) && isRecord(balanceJson.combat) && isRecord(balanceJson.degrade) && isRecord(balanceJson.income), 'balance sections missing');
+  const items = makeItems(itemsJson);
   for (const key of ['gold', 'fans', 'reputation', 'maxFloor', 'days', 'targetFloor'] as const) assertNumber(balanceJson.start[key], `balance.start.${key}`);
   for (const key of ['base', 'floorExp', 'degradeExp', 'decayPerDay', 'roundTo', 'discardLoot'] as const) assertNumber(balanceJson.revive[key], `balance.revive.${key}`);
   assertShape(balanceJson.revive.discardLoot > 0, 'balance.revive.discardLoot must be positive');
@@ -248,8 +249,10 @@ export function loadContent(): Content {
     assertNumber(tier.rate, `balance.contract.claimedTiers[${index}].rate`);
   });
   assertShape(balanceJson.contract.honestyMin <= balanceJson.contract.honestyMax, 'balance.contract honesty range invalid');
-  for (const key of ['lootMin', 'lootMax'] as const) assertNumber(balanceJson.autopsy[key], `balance.autopsy.${key}`);
+  for (const key of ['lootMin', 'lootMax', 'truthRelicMinFloor'] as const) assertNumber(balanceJson.autopsy[key], `balance.autopsy.${key}`);
   assertShape(balanceJson.autopsy.lootMin > 0 && balanceJson.autopsy.lootMin <= balanceJson.autopsy.lootMax, 'balance.autopsy loot range invalid');
+  assertShape(Array.isArray(balanceJson.autopsy.truthRelicIds) && balanceJson.autopsy.truthRelicIds.length === 2 && balanceJson.autopsy.truthRelicIds.every((id) => typeof id === 'string'), 'balance.autopsy truth relic ids invalid');
+  assertShape(balanceJson.autopsy.truthRelicIds.every((id) => items.some((item) => item.id === id && item.isRelic)), 'balance.autopsy truth relic ids must be relic items');
   assertShape(isRecord(radioJson) && isRecord(chatJson) && isRecord(narrativeJson), 'localized content must be objects');
   for (const key of ['combatHealthy', 'combatHalf', 'combatDanger', 'combatAppeal', 'degrade4'] as const) {
     const lines = radioJson[key];
@@ -257,7 +260,7 @@ export function loadContent(): Content {
   }
   return {
     balance: balanceJson as unknown as Balance,
-    items: makeItems(itemsJson),
+    items,
     stars: makeStars(starsJson),
     personas: makePersonas(personasJson),
     floors: makeFloors(floorsJson),

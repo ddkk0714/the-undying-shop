@@ -32,8 +32,12 @@ function addLootToInventory(state: GameState, loot: string[]): GameState['invent
   return inventory;
 }
 
-function drawUniqueRelics(state: GameState, count: number): [string[], GameState] {
-  const available = content.items.filter((item) => item.isRelic).map((item) => item.id);
+function drawUniqueRelics(state: GameState, count: number, diedFloor: number): [string[], GameState] {
+  const rules = content.balance.autopsy;
+  const truthRelicsAllowed = diedFloor >= rules.truthRelicMinFloor;
+  const available = content.items
+    .filter((item) => item.isRelic && (truthRelicsAllowed || !rules.truthRelicIds.includes(item.id)))
+    .map((item) => item.id);
   const loot: string[] = [];
   let next = state;
   for (let index = 0; index < Math.min(count, available.length); index += 1) {
@@ -51,7 +55,7 @@ export function discardReviveCorpse(state: GameState, starId: string): GameState
   const star = state.stars.find((candidate) => candidate.id === starId);
   if (corpse === undefined || star?.status !== 'DEAD') return state;
   const [generatedLoot, next] = corpse.loot.length === 0
-    ? drawUniqueRelics(state, content.balance.revive.discardLoot)
+    ? drawUniqueRelics(state, content.balance.revive.discardLoot, corpse.diedFloor)
     : [corpse.loot, state];
   const loot = corpse.loot.length === 0 ? generatedLoot : corpse.loot;
   return {
@@ -70,11 +74,11 @@ export function damageAutopsyCorpse(state: GameState, starId: string): GameState
   if (corpse === undefined || star === undefined) return state;
 
   const rules = content.balance.autopsy;
-  const relicCount = content.items.filter((item) => item.isRelic).length;
+  const relicCount = content.items.filter((item) => item.isRelic && (corpse.diedFloor >= rules.truthRelicMinFloor || !rules.truthRelicIds.includes(item.id))).length;
   if (relicCount === 0) return state;
   const [countRoll, afterCount] = draw(state);
   const lootCount = Math.min(relicCount, rules.lootMin + Math.floor(countRoll * (rules.lootMax - rules.lootMin + 1)));
-  const [loot, next] = drawUniqueRelics(afterCount, lootCount);
+  const [loot, next] = drawUniqueRelics(afterCount, lootCount, corpse.diedFloor);
   return {
     ...next,
     inventory: addLootToInventory(next, loot),
