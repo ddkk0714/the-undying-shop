@@ -16,6 +16,7 @@ export interface Balance {
   degrade: { statMul: number[] };
   income: { superchat: { witness: number[] } };
   opinion: { leakPerWitnessRevive: Record<string, number> };
+  reputation: { onSuccessAnnounce: number; onFailureAnnounce: number; grades: [number, string][] };
   recruit: { baseSlots: number; lossPerFailures: number };
   roster: { inheritFandomLoss: number; inheritSuspicion: number };
 }
@@ -174,6 +175,10 @@ export function loadContent(): Content {
   assertShape(Array.isArray(balanceJson.degrade.statMul) && balanceJson.degrade.statMul.length > 0, 'balance.degrade.statMul missing');
   assertShape(isRecord(balanceJson.income.superchat) && Array.isArray(balanceJson.income.superchat.witness), 'balance.income.superchat.witness missing');
   assertShape(isRecord(balanceJson.opinion) && isRecord(balanceJson.opinion.leakPerWitnessRevive), 'balance.opinion.leakPerWitnessRevive missing');
+  assertShape(isRecord(balanceJson.reputation) && Array.isArray(balanceJson.reputation.grades), 'balance.reputation.grades missing');
+  assertNumber(balanceJson.reputation.onSuccessAnnounce, 'balance.reputation.onSuccessAnnounce');
+  assertNumber(balanceJson.reputation.onFailureAnnounce, 'balance.reputation.onFailureAnnounce');
+  assertShape(balanceJson.reputation.grades.every((grade) => Array.isArray(grade) && grade.length === 2 && typeof grade[0] === 'number' && typeof grade[1] === 'string'), 'balance.reputation.grades invalid');
   assertShape(isRecord(balanceJson.recruit) && isRecord(balanceJson.roster), 'balance.recruit/roster missing');
   for (const key of ['baseSlots', 'lossPerFailures'] as const) assertNumber(balanceJson.recruit[key], `balance.recruit.${key}`);
   for (const key of ['inheritFandomLoss', 'inheritSuspicion'] as const) assertNumber(balanceJson.roster[key], `balance.roster.${key}`);
@@ -191,3 +196,9 @@ export function loadContent(): Content {
 }
 
 export const content = loadContent();
+
+export function reputationGrade(reputation: number): string {
+  let grade = content.balance.reputation.grades[0]?.[1] ?? '';
+  for (const [minimum, name] of content.balance.reputation.grades) if (reputation >= minimum) grade = name;
+  return grade;
+}

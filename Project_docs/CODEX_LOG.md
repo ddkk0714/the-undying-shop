@@ -62,3 +62,7 @@
 
 **Project**: Added pure persona inheritance and recruit-capacity rules without touching portrait or phase UI code.
 **Validation**: Persona fandom/generation/lineage/FX and four-false-announcement capacity exhaustion are covered by tests.
+
+## D1 8/21 · HO-004 reputation API
+
+**Project**: Exposed and validated the balance reputation table in core, with a shared numeric-to-grade helper for HUD consumers.
