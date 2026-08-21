@@ -251,6 +251,10 @@ export function loadContent(): Content {
   for (const key of ['lootMin', 'lootMax'] as const) assertNumber(balanceJson.autopsy[key], `balance.autopsy.${key}`);
   assertShape(balanceJson.autopsy.lootMin > 0 && balanceJson.autopsy.lootMin <= balanceJson.autopsy.lootMax, 'balance.autopsy loot range invalid');
   assertShape(isRecord(radioJson) && isRecord(chatJson) && isRecord(narrativeJson), 'localized content must be objects');
+  for (const key of ['combatHealthy', 'combatHalf', 'combatDanger', 'combatAppeal', 'degrade4'] as const) {
+    const lines = radioJson[key];
+    assertShape(Array.isArray(lines) && lines.length > 0 && lines.every((line) => typeof line === 'string' && line.length > 0), `radio.${key} lines missing`);
+  }
   return {
     balance: balanceJson as unknown as Balance,
     items: makeItems(itemsJson),

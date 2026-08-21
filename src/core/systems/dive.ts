@@ -1,8 +1,8 @@
 import { content } from '../content';
 import { draw } from '../rng';
-import { createEncounter, createHero, isEncounterFloor, resolveCombatChoice } from './combat';
+import { combatLine, createEncounter, createHero, isEncounterFloor, resolveCombatChoice, type CombatLineTone } from './combat';
 import { addAppealChat, awardSuperchat } from './opinion';
-import type { CombatChoice, GameState, ItemDef, Star } from '../types';
+import type { CombatChoice, Combatant, GameState, ItemDef, Star } from '../types';
 
 function equippedItems(state: GameState): ItemDef[] {
   return state.shelf.flatMap((id) => {
@@ -32,6 +32,15 @@ function actualCeiling(state: GameState): number {
   const today = state.today;
   const star = today === null ? undefined : state.stars.find((candidate) => candidate.id === today.starId);
   return today === null ? 1 : Math.max(1, Math.floor(today.claimedCeiling * (star?.honesty ?? 1)));
+}
+
+function combatLineTone(star: Star, hero: Combatant, choice?: CombatChoice): CombatLineTone {
+  if (star.reviveCount >= 4) return 'DEGRADE4';
+  if (choice === 'APPEAL') return 'APPEAL';
+  const healthRatio = hero.hp / hero.maxHp;
+  if (healthRatio <= 0.15) return 'DANGER';
+  if (healthRatio <= 0.5) return 'HALF';
+  return 'HEALTHY';
 }
 
 function waitingPenalty(state: GameState, now: number): GameState {
@@ -96,11 +105,14 @@ export function tickLive(state: GameState, dt: number): GameState {
       return { ...nextState, flags, waitingSince: now, today: { ...today, currentFloor: floor, forks: [...today.forks, { floor, truth: { a: fork.a, b: fork.b }, told: 'UNKNOWN', wasLie: false }] } };
     }
     if (isEncounterFloor(floor)) {
-      const [enemyRoll, withRng] = draw(nextState);
+      const [enemyRoll, afterEnemy] = draw(nextState);
+      const [lineRoll, withRng] = draw(afterEnemy);
+      const star = withRng.stars.find((candidate) => candidate.id === today.starId);
+      const line = star === undefined ? combatLine('HEALTHY', lineRoll) : combatLine(combatLineTone(star, today.hero), lineRoll);
       return {
         ...withRng,
         waitingSince: now,
-        today: { ...today, currentFloor: floor, encounter: createEncounter(floor, 'NONE', enemyRoll) },
+        today: { ...today, currentFloor: floor, encounter: createEncounter(floor, 'NONE', enemyRoll, line) },
       };
     }
     nextState = { ...nextState, today: { ...today, currentFloor: floor } };
@@ -138,20 +150,27 @@ export function chooseCombat(state: GameState, choice: CombatChoice): GameState 
   const [effectRoll, afterEffect] = draw(state);
   const [counterRoll, afterCounter] = draw(afterEffect);
   const result = resolveCombatChoice(activeRun.hero, activeRun.encounter, choice, star.stats.charisma, [effectRoll, counterRoll]);
-  const fans = Math.max(0, Math.floor(afterCounter.fans * result.fanMultiplier) + result.fansDelta);
+  let afterDialogue = afterCounter;
+  let encounter = result.enemyDefeated ? null : result.encounter;
+  if (!result.heroDied && encounter !== null) {
+    const [lineRoll, next] = draw(afterDialogue);
+    afterDialogue = next;
+    encounter = { ...encounter, line: combatLine(combatLineTone(star, result.hero, choice), lineRoll) };
+  }
+  const fans = Math.max(0, Math.floor(afterDialogue.fans * result.fanMultiplier) + result.fansDelta);
   const today = {
     ...activeRun,
     hero: result.hero,
-    encounter: result.enemyDefeated ? null : result.encounter,
+    encounter,
     appealCount: activeRun.appealCount + (choice === 'APPEAL' ? 1 : 0),
     fansDelta: activeRun.fansDelta + result.fansDelta,
   };
   const resolved: GameState = {
-    ...afterCounter,
+    ...afterDialogue,
     fans,
     today,
-    leak: result.leakRiskMultiplier > 1 ? Math.min(100, afterCounter.leak + result.leakRiskMultiplier) : afterCounter.leak,
-    stats: { ...afterCounter.stats, appeals: afterCounter.stats.appeals + (choice === 'APPEAL' ? 1 : 0) },
+    leak: result.leakRiskMultiplier > 1 ? Math.min(100, afterDialogue.leak + result.leakRiskMultiplier) : afterDialogue.leak,
+    stats: { ...afterDialogue.stats, appeals: afterDialogue.stats.appeals + (choice === 'APPEAL' ? 1 : 0) },
   };
   const withAppeal = result.superchat ? awardSuperchat(addAppealChat(resolved), 'appeal') : resolved;
   if (result.heroDied) {

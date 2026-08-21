@@ -29,7 +29,21 @@ describe('live dive', () => {
     expect(state.today?.currentFloor).toBe(3);
     expect(state.today?.hero.maxHp).toBeGreaterThan(80);
     expect(state.today?.encounter).not.toBeNull();
+    expect(state.today?.encounter?.line).not.toBe('');
+    expect(content.radio.combatHealthy).toContain(state.today?.encounter?.line);
     expect(state.waitingSince).not.toBeNull();
+  });
+
+  it('updates a surviving encounter with the contextual appeal and degradation dialogue', () => {
+    let appealState = liveState(131, 3);
+    appealState = { ...appealState, today: { ...appealState.today!, encounter: createEncounter(3, 'NONE', 0) } };
+    const appealed = reducer(appealState, { type: 'COMBAT/CHOOSE', choice: 'APPEAL' });
+    expect(content.radio.combatAppeal).toContain(appealed.today?.encounter?.line);
+
+    let degradedState = liveState(132, 2);
+    degradedState = { ...degradedState, stars: degradedState.stars.map((star) => star.id === 'body_karin' ? { ...star, reviveCount: 4 } : star) };
+    const entered = reducer(degradedState, { type: 'LIVE/TICK', dt: content.balance.dive.floorSeconds });
+    expect(content.radio.degrade4).toContain(entered.today?.encounter?.line);
   });
 
   it('applies the wait penalty without progressing an unresolved encounter', () => {

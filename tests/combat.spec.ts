@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createEncounter, createHero, isEncounterFloor, resolveCombatChoice } from '../src/core/systems/combat';
+import { combatLine, createEncounter, createHero, isEncounterFloor, resolveCombatChoice } from '../src/core/systems/combat';
 import { content } from '../src/core/content';
 
 const karin = content.stars.find((star) => star.id === 'body_karin')!;
@@ -11,6 +11,14 @@ describe('combat', () => {
     expect(isEncounterFloor(4)).toBe(false);
     expect(hero.maxHp).toBe(94);
     expect(hero.def).toBe(9);
+    expect(content.radio.combatHealthy).toContain(createEncounter(3, 'NONE', 0).line);
+  });
+
+  it('selects each contextual combat line from localized content', () => {
+    expect(content.radio.combatHalf).toContain(combatLine('HALF', 0));
+    expect(content.radio.combatDanger).toContain(combatLine('DANGER', 0));
+    expect(content.radio.combatAppeal).toContain(combatLine('APPEAL', 0));
+    expect(content.radio.degrade4).toContain(combatLine('DEGRADE4', 0));
   });
 
   it('attack damages the enemy and only counterattacks at the configured chance', () => {

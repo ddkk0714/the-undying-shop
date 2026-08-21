@@ -12,6 +12,16 @@ export interface CombatResolution {
   enemyDefeated: boolean;
 }
 
+export type CombatLineTone = 'HEALTHY' | 'HALF' | 'DANGER' | 'APPEAL' | 'DEGRADE4';
+
+const combatLineKey: Record<CombatLineTone, string> = {
+  HEALTHY: 'combatHealthy',
+  HALF: 'combatHalf',
+  DANGER: 'combatDanger',
+  APPEAL: 'combatAppeal',
+  DEGRADE4: 'degrade4',
+};
+
 function equippedBonus(items: readonly ItemDef[], key: 'hp' | 'atk' | 'def'): number {
   return items.reduce((total, item) => total + item[key], 0);
 }
@@ -30,6 +40,11 @@ function enemyKeyForFloor(floor: number, roll: number): string {
   return zone.keys[Math.min(zone.keys.length - 1, Math.floor(roll * zone.keys.length))] ?? zone.keys[0]!;
 }
 
+export function combatLine(tone: CombatLineTone, roll: number): string {
+  const lines = content.radio[combatLineKey[tone]] ?? [];
+  return lines[Math.min(lines.length - 1, Math.floor(roll * lines.length))] ?? '';
+}
+
 export function isEncounterFloor(floor: number): boolean {
   return floor > 0 && floor % content.floors.encounterEvery === 0;
 }
@@ -41,7 +56,7 @@ export function createHero(star: Star, equipped: readonly ItemDef[], degradeMult
   return { hp, maxHp: hp, atk, def: rules.defBase + equippedBonus(equipped, 'def') };
 }
 
-export function createEncounter(floor: number, hazard: ForkOutcome['hazard'], enemyRoll: number): Encounter {
+export function createEncounter(floor: number, hazard: ForkOutcome['hazard'], enemyRoll: number, line = combatLine('HEALTHY', enemyRoll)): Encounter {
   const enemyRules = content.floors.enemy;
   const enemyHp = Math.ceil(enemyRules.hpBase + floor * enemyRules.hpPerFloor);
   const enemyAtk = Math.ceil((enemyRules.atkBase + floor * enemyRules.atkPerFloor) * content.balance.combat.hazardAtkMul[hazard]);
@@ -50,7 +65,7 @@ export function createEncounter(floor: number, hazard: ForkOutcome['hazard'], en
     enemyKey: enemyKeyForFloor(floor, enemyRoll),
     enemy: { hp: enemyHp, maxHp: enemyHp, atk: enemyAtk, def: 0 },
     turn: 1,
-    line: '',
+    line,
     guarding: false,
     log: [],
   };
