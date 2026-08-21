@@ -142,3 +142,29 @@ v3.1 아트 개편으로 ①소생과 ②편성이 **한 화면(상점)의 모�
 
 **상태**: [x] 반영됨 (D1, Claude Code) — `actions.ts` + `reducer.ts` `gotoPhase()` + `OfficePhase` 蘇生 버튼.
 `reducer.ts` 는 Codex 소유라 **가드 한 함수만** 넣었다. 규칙을 바꾸고 싶으면 그쪽에서 다시 써라.
+
+### CCR-002 변경 범위 — Codex 확인용 (D2, `1d29c62`)
+
+M06(하강/무전)이 같은 리듀서를 만지므로, **Codex 소유 파일에 내가 남긴 자국의 전부**를 적어둔다.
+아래 네 지점 밖에는 손대지 않았다. `git show 1d29c62 -- src/core/` 로 검증 가능.
+
+| 파일 | 지점 | 내용 | M06과 겹치나 |
+|---|---|---|---|
+| `src/core/actions.ts` | L25 | `PHASE/GOTO { phase: PhaseId }` 유니온 1줄 추가 | 아니오 |
+| `src/core/actions.ts` | L11–L16 | 파일 헤더 주석에 CCR-002 3줄 | 아니오 |
+| `src/core/actions.ts` | L17 | import 에 `PhaseId` 추가 | 아니오 |
+| `src/core/reducer.ts` | L14–L23 | `SHOP_PHASES` 상수 + `gotoPhase()` 신규 함수 (기존 코드 위 삽입) | 아니오 |
+| `src/core/reducer.ts` | L63 | `switch` 에 `case 'PHASE/GOTO'` 1줄 (`PHASE/ADVANCE` 바로 아래) | **가능** |
+
+**기존 함수는 하나도 고치지 않았다.** `advance()` `nextPhase()` `phaseOrder` `withPhase()`
+`latestTodayCorpse()` 및 모든 기존 `case` 는 그대로다. 순수 추가(+19줄, -0줄).
+
+**충돌 가능 지점은 `reducer.ts` L63 한 줄뿐**이다 — M06이 `LIVE/*` `RADIO/*` `COMBAT/*` case 를
+같은 `switch` 에 넣으면 여기서 만난다. 그 경우 **내 줄을 지우지 말고 아래에 붙여라.**
+`case 'PHASE/GOTO'` 가 사라지면 상점 화면의 `蘇生` 버튼이 무반응이 된다 (M05 수용 기준).
+
+**M06 쪽에 거는 제약 없음.** `gotoPhase()` 는 `REVIVE`/`OFFICE` 밖에서는 `state` 를 그대로 반환하므로
+`LIVE` 이후 단계의 흐름·강제 사망·목격 판정에 전혀 관여하지 않는다.
+`SHOP_PHASES` 게이트를 다시 쓰고 싶으면 그쪽 판단대로 해라 — 다만 `REVIVE ↔ OFFICE` 양방향은 유지해야 한다.
+
+**상태**: [x] 정보 제공 — 처리 불필요
