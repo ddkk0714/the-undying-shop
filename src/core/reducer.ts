@@ -5,7 +5,7 @@ import { damageAutopsyCorpse, discardReviveCorpse, reviveQuote } from './systems
 import { acceptContract, confirmOffice, pickStar, populateVisitors, rejectContract } from './systems/office';
 import { inherit } from './systems/roster';
 import { awardSuperchat, expireChats, moderateChat, spawnChat } from './systems/opinion';
-import { judgeEnding } from './systems/narrative';
+import { isEarlyClosure, judgeEnding } from './systems/narrative';
 import type { Action } from './actions';
 import type { Corpse, GameState, PhaseId } from './types';
 
@@ -78,8 +78,15 @@ function concludeRunIfDead(state: GameState): GameState {
 
 function advance(state: GameState): GameState {
   if (state.isOver) return state;
-  if (state.phase === 'OFFICE') return startLive(confirmOffice(state));
-  if (state.phase === 'REVIVE') return populateVisitors(withPhase(state, 'OFFICE'));
+  if (state.phase === 'OFFICE') {
+    const confirmed = confirmOffice(state);
+    return isEarlyClosure(confirmed) ? { ...confirmed, isOver: true, ending: 'B_CONTINUE', today: null } : startLive(confirmed);
+  }
+  if (state.phase === 'REVIVE') {
+    return isEarlyClosure(state)
+      ? { ...state, isOver: true, ending: 'B_CONTINUE', today: null }
+      : populateVisitors(withPhase(state, 'OFFICE'));
+  }
   if (state.phase === 'LIVE') return finishLive(state);
   if (state.phase === 'ANNOUNCE') {
     const ending = judgeEnding(state);
@@ -122,7 +129,7 @@ export function reducer(state: GameState, action: Action): GameState {
       shelf[action.slot] = action.itemId;
       return { ...state, shelf };
     }
-    case 'OFFICE/CONFIRM': return state.phase === 'OFFICE' ? startLive(confirmOffice(state)) : state;
+    case 'OFFICE/CONFIRM': return state.phase === 'OFFICE' ? advance(state) : state;
     case 'LIVE/TICK': return expireChats(concludeRunIfDead(tickLive(state, action.dt)));
     case 'COMBAT/CHOOSE': return concludeRunIfDead(chooseCombat(state, action.choice));
     case 'RADIO/ANSWER': return answerRadio(state, action.dir);
