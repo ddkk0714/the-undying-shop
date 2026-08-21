@@ -44,6 +44,25 @@ describe('live dive', () => {
     expect(state.fans).toBeLessThan(fansBefore);
   });
 
+  it('lets the reduced-motion option disable the live wait penalty', () => {
+    let state = createInitialState(130);
+    state = { ...state, phase: 'OFFICE' };
+    state = reducer(state, { type: 'OFFICE/PICK_STAR', starId: 'body_karin' });
+    state = reducer(state, { type: 'OFFICE/CONFIRM' });
+    state = reducer(state, { type: 'LIVE/TICK', dt: 1 });
+    const fansBefore = state.fans;
+
+    state = reducer(state, { type: 'OPTION/SET', key: 'reducedMotion', value: true });
+    expect(state.flags.reducedMotion).toBe(true);
+    state = reducer(state, { type: 'LIVE/TICK', dt: 10 });
+    expect(state.fans).toBe(fansBefore);
+
+    state = reducer(state, { type: 'OPTION/SET', key: 'reducedMotion', value: false });
+    expect(state.flags.reducedMotion).toBe(false);
+    state = reducer(state, { type: 'LIVE/TICK', dt: 10 });
+    expect(state.fans).toBeLessThan(fansBefore);
+  });
+
   it('uses a signed applicant honesty value for the actual descent limit', () => {
     const initial = createInitialState(14);
     const claimedCeiling = Math.max(...content.balance.contract.claimedTiers.map((tier) => tier.floor));

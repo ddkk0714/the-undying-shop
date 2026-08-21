@@ -155,6 +155,9 @@ export function reducer(state: GameState, action: Action): GameState {
       return advance({ ...state, corpses, stars, leak, reputation, stats: { ...state.stats, falseAnnouncements } });
     }
     case 'FX/CONSUME': return { ...state, pendingFx: [] };
-    case 'OPTION/SET': return state;
+    case 'OPTION/SET': {
+      if (action.key !== 'reducedMotion' || typeof action.value !== 'boolean') return state;
+      return { ...state, flags: { ...state.flags, reducedMotion: action.value } };
+    }
   }
 }
