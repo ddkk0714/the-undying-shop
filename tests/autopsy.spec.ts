@@ -33,6 +33,7 @@ function autopsyState(seed = 91, grade: Corpse['grade'] = 'INTACT'): GameState {
       claimedCeiling: 23,
       forks: [],
       superchat: 0,
+      income: { superchat: 0, shelf: 0, goods: 0 },
       fansDelta: 0,
       chatQueue: [],
       deletedCount: 0,

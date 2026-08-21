@@ -60,7 +60,11 @@ function concludeRun(state: GameState): GameState {
   const settled: GameState = {
     ...state, phase: 'DEATH', stars, corpses: [...state.corpses, corpse], gold: state.gold + goodsIncome,
     fans: Math.max(0, state.fans + fansDelta),
-    today: { ...state.today, currentFloor: diedFloor, diedFloor, deathCause: state.today.deathCause ?? '하강 중 사망', fansDelta }, maxFloor,
+    today: {
+      ...state.today, currentFloor: diedFloor, diedFloor,
+      deathCause: state.today.deathCause ?? '하강 중 사망', fansDelta,
+      income: { ...state.today.income, goods: state.today.income.goods + goodsIncome },
+    }, maxFloor,
     pendingFx: [...state.pendingFx, ...(isRecord ? [{ kind: 'RECORD_BREAK' as const }] : [])],
     stats: { ...state.stats, goldEarned: state.stats.goldEarned + goodsIncome, deepestFloor: Math.max(state.stats.deepestFloor, diedFloor) },
   };

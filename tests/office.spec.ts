@@ -94,6 +94,7 @@ describe('office', () => {
     state = reducer(state, { type: 'OFFICE/CONFIRM' });
     expect(state.gold).toBe(12840 + 1340 + 4400);
     expect(state.stats.goldEarned).toBe(5740);
+    expect(state.today?.income).toEqual({ superchat: 0, shelf: 5740, goods: 0 });
     expect(state.leak).toBe(10);
     expect(state.today?.hero).toEqual({ hp: 94, maxHp: 94, atk: 13, def: 9 });
   });

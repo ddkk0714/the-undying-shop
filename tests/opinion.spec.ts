@@ -24,6 +24,7 @@ function liveState(seed = 71): GameState {
       claimedCeiling: 30,
       forks: [],
       superchat: 0,
+      income: { superchat: 0, shelf: 0, goods: 0 },
       fansDelta: 0,
       chatQueue: [],
       deletedCount: 0,
@@ -87,6 +88,7 @@ describe('opinion and superchat core', () => {
     expect(paid.gold).toBeGreaterThan(initial.gold);
     expect(paid.stats.goldEarned).toBeGreaterThan(0);
     expect(paid.today?.superchat).toBe(paid.stats.goldEarned);
+    expect(paid.today?.income.superchat).toBe(paid.today?.superchat);
     expect(paid.today?.chatQueue.some((entry) => entry.tone === 'SUPERCHAT' && entry.amount !== undefined)).toBe(true);
     expect(paid.pendingFx.at(-1)).toMatchObject({ kind: 'SUPERCHAT_POP', payload: { trigger: 'appeal' } });
     expect(awardSuperchat(appealed, 'appeal')).toEqual(paid);

@@ -79,7 +79,8 @@ export function pickStar(state: GameState, starId: string): GameState {
     starId: star.id, personaId: star.personaId, currentFloor: 1,
     hero: officeHero(state, star), encounter: null, appealCount: 0,
     claimedCeiling: claimedCeiling(state, star.id), forks: [], superchat: 0,
-    fansDelta: 0, chatQueue: [], deletedCount: 0, diedFloor: null, deathCause: null,
+    income: { superchat: 0, shelf: 0, goods: 0 }, fansDelta: 0,
+    chatQueue: [], deletedCount: 0, diedFloor: null, deathCause: null,
   };
   return { ...state, today };
 }
@@ -122,5 +123,6 @@ export function confirmOffice(state: GameState): GameState {
     gold: state.gold + goldEarned,
     leak: Math.min(100, state.leak + truthRelics * 10),
     stats: { ...state.stats, goldEarned: state.stats.goldEarned + goldEarned },
+    today: state.today === null ? null : { ...state.today, income: { ...state.today.income, shelf: state.today.income.shelf + goldEarned } },
   };
 }

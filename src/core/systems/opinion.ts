@@ -111,7 +111,11 @@ export function awardSuperchat(state: GameState, trigger: SuperchatTrigger): Gam
     ...withRoll,
     gold: withRoll.gold + amount,
     stats: { ...withRoll.stats, goldEarned: withRoll.stats.goldEarned + amount },
-    today: { ...withRoll.today!, superchat: withRoll.today!.superchat + amount },
+    today: {
+      ...withRoll.today!,
+      superchat: withRoll.today!.superchat + amount,
+      income: { ...withRoll.today!.income, superchat: withRoll.today!.income.superchat + amount },
+    },
   };
   const withMessage = appendMessage(paid, 'SUPERCHAT', 'SUPERCHAT', 0, amount);
   return { ...withMessage, pendingFx: [...withMessage.pendingFx, { kind: 'SUPERCHAT_POP', payload: { amount, trigger } }] };

@@ -14,7 +14,7 @@ function liveState(seed: number, currentFloor: number, claimedCeiling = 40): Gam
       starId: 'body_karin', personaId: 'persona_rion', currentFloor,
       hero: { hp: 82, maxHp: 82, atk: 13, def: 2 },
       encounter: null, appealCount: 0, claimedCeiling,
-      forks: [], superchat: 0, fansDelta: 0, chatQueue: [], deletedCount: 0, diedFloor: null, deathCause: null,
+      forks: [], superchat: 0, income: { superchat: 0, shelf: 0, goods: 0 }, fansDelta: 0, chatQueue: [], deletedCount: 0, diedFloor: null, deathCause: null,
     },
   };
 }
@@ -76,7 +76,7 @@ describe('live dive', () => {
       today: {
         starId: star.id, personaId: star.personaId, currentFloor: deathFloor - 1,
         hero: { hp: 82, maxHp: 82, atk: 13, def: 2 }, encounter: null, appealCount: 0,
-        claimedCeiling, forks: [], superchat: 0, fansDelta: 0, chatQueue: [], deletedCount: 0,
+        claimedCeiling, forks: [], superchat: 0, income: { superchat: 0, shelf: 0, goods: 0 }, fansDelta: 0, chatQueue: [], deletedCount: 0,
         diedFloor: null, deathCause: null,
       },
     };
@@ -91,7 +91,7 @@ describe('live dive', () => {
       starId: 'body_karin', personaId: 'persona_rion', currentFloor: 3,
       hero: { hp: 1, maxHp: 82, atk: 13, def: 2 },
       encounter: createEncounter(3, 'GATEKEEPER', 0), appealCount: 0, claimedCeiling: 20,
-      forks: [], superchat: 0, fansDelta: 0, chatQueue: [], deletedCount: 0, diedFloor: null, deathCause: null,
+      forks: [], superchat: 0, income: { superchat: 0, shelf: 0, goods: 0 }, fansDelta: 0, chatQueue: [], deletedCount: 0, diedFloor: null, deathCause: null,
     } };
     state = reducer(state, { type: 'COMBAT/CHOOSE', choice: 'DEFEND' });
     expect(state.phase).toBe('DEATH');
@@ -119,6 +119,8 @@ describe('live dive', () => {
     expect(state.stats.deepestFloor).toBe(29);
     expect(state.fans).toBeGreaterThan(createInitialState(16).fans);
     expect(state.gold).toBeGreaterThan(createInitialState(16).gold);
+    expect(state.today?.income.goods).toBeGreaterThan(0);
+    expect((state.today?.income.goods ?? 0) + (state.today?.income.superchat ?? 0)).toBe(state.gold - createInitialState(16).gold);
     const settled = state;
     state = reducer(state, { type: 'PHASE/ADVANCE' });
     expect(state.corpses).toHaveLength(1);

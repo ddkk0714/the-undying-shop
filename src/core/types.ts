@@ -171,6 +171,8 @@ export interface TodayRun {
   forks: ForkRecord[];
   /** 실시간 누적 */
   superchat: number;
+  /** 오늘의 정산 카드에 표시할 수입 원장 */
+  income: { superchat: number; shelf: number; goods: number };
   fansDelta: number;
   chatQueue: ChatMessage[];
   deletedCount: number;
