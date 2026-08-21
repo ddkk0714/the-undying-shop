@@ -26,6 +26,15 @@ export class AutopsyPhase extends PhaseScene {
     super(SCENES.PHASE_AUTOPSY);
   }
 
+  override create(): void {
+  /**
+   * ★ Phaser 씬 인스턴스는 stop/launch 를 거쳐도 **살아남는다.**
+   * 어제 남긴 필드를 지우지 않으면 다음 날 화면이 어제 상태로 시작한다.
+   */
+    this.sealing = false;
+    super.create();
+  }
+
   protected build(s: Readonly<GameState>): void {
     this.stageBackdrop();
     this.spriteCover(L.stage, ['bg.autopsy']);

@@ -61,6 +61,18 @@ export class LivePhase extends PhaseScene {
   }
 
   override create(): void {
+  /**
+   * ★ Phaser 씬 인스턴스는 stop/launch 를 거쳐도 **살아남는다.**
+   * 어제 남긴 필드를 지우지 않으면 다음 날 화면이 어제 상태로 시작한다.
+   */
+    this.seenWitness = null;
+    this.witnessFloor = null;
+    this.witnessUntil = 0;
+    this.chatSilentUntil = 0;
+    this.deathAt = null;
+    this.lastFans = -1;
+    this.fanDropUntil = 0;
+
     super.create();
     const stepMs = Math.round((content.balance.dive.floorSeconds * 1000) / speedMul(this.registry));
     this.ticker = this.time.addEvent({ delay: stepMs, loop: true, callback: () => this.step() });

@@ -47,6 +47,15 @@ export class DeathPhase extends PhaseScene {
   }
 
   override create(): void {
+  /**
+   * ★ Phaser 씬 인스턴스는 stop/launch 를 거쳐도 **살아남는다.**
+   * 어제 남긴 필드를 지우지 않으면 다음 날 화면이 어제 상태로 시작한다.
+   */
+    this.stage = 0;
+    this.flashes = 0;
+    this.isRecord = false;
+    this.rows = [];
+
     this.reduced = reducedMotion(this.registry);
     this.prevRecord = (this.registry.get('record.prev') as number | undefined) ?? null;
     super.create();

@@ -28,7 +28,21 @@ export class OfficePhase extends PhaseScene {
     super(SCENES.PHASE_OFFICE);
   }
 
+  override create(): void {
+  /**
+   * ★ Phaser 씬 인스턴스는 stop/launch 를 거쳐도 **살아남는다.**
+   * 어제 남긴 필드를 지우지 않으면 다음 날 화면이 어제 상태로 시작한다.
+   */
+    this.contractIndex = 0;
+    this.mode = 'SHELF';
+    super.create();
+  }
+
   protected build(s: Readonly<GameState>): void {
+    // 심사할 계약서가 없으면 계약 모드에 머무를 이유가 없다.
+    // 여기 갇히면 「오늘의 출연자」를 고를 수 없어 하루가 넘어가지 않는다.
+    if (this.mode === 'CONTRACT' && s.visitors.length === 0) this.mode = 'SHELF';
+
     this.stageBackdrop();
     this.buildGuest(s);
     this.buildBenchBackdrop();
