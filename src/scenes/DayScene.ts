@@ -163,7 +163,8 @@ export class DayScene extends Phaser.Scene {
     if (fx.length === 0) return;
     // 단계 씬이 소비할 수 있게 남겨 둔다 — 여기서 비우면 그쪽은 볼 기회가 없다 (M02 §6)
     this.registry.set('fx.recent', { kinds: fx.map((e) => e.kind), at: this.time.now });
-    this.fxLine.setText(fx.map((e) => e.kind).join('  '));
+    // FX 이름은 개발 중에만 보인다. 심사자 화면에 SEAL_STAMP 같은 글자가 뜨면 안 된다
+    if (import.meta.env.DEV) this.fxLine.setText(fx.map((e) => e.kind).join('  '));
     this.store.dispatch({ type: 'FX/CONSUME' });
   }
 
@@ -236,7 +237,17 @@ export class DayScene extends Phaser.Scene {
     for (const button of this.fallback) button.setVisible(!hosted).setActive(!hosted);
 
     if (s.isOver) {
-      this.body.setText(`8일이 끝났다\n엔딩 ${s.ending ?? '-'}\n최고 ${s.stats.deepestFloor}F`);
+      // 끝난 판에서 「다음 단계」는 아무 일도 하지 않는다. 눌리는 버튼을 남겨 두지 않는다
+      this.fallback[0]?.setVisible(false).setActive(false);
+      this.body.setText(
+        [
+          '8일이 끝났다',
+          `엔딩 ${s.ending ?? '-'}`,
+          '',
+          `최고 도달 ${s.stats.deepestFloor}F · 소생 ${s.stats.totalRevived}회 · 폐기 ${s.stats.totalDiscarded}회`,
+          `어필 ${s.stats.appeals}회 · 거짓 공표 ${s.stats.falseAnnouncements}회`,
+        ].join('\n'),
+      );
       return;
     }
     if (hosted) return;
