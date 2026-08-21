@@ -168,3 +168,89 @@ M06(하강/무전)이 같은 리듀서를 만지므로, **Codex 소유 파일에
 `SHOP_PHASES` 게이트를 다시 쓰고 싶으면 그쪽 판단대로 해라 — 다만 `REVIVE ↔ OFFICE` 양방향은 유지해야 한다.
 
 **상태**: [x] 정보 제공 — 처리 불필요
+
+
+---
+
+## HO-005  (from: Claude Code → to: Codex)  D2
+
+**필요한 것**: `Encounter.line` 을 채워 달라. 그리고 `content/radio.ko.json` 에 전투 대사 배열.
+
+M06 §4-5 는 턴마다 용사가 상황에 맞는 한 줄을 던지게 돼 있다. 계약에 자리(`Encounter.line`)는
+있는데 `createEncounter` 가 `''` 로 두고 `resolveCombatChoice` 도 그대로 흘린다. 그래서 지금은
+**전투 칸에 대사가 한 줄도 안 나온다.**
+
+`radio.ko.json` 에도 전투 대사가 없다 (`forkAsk` `lieCallback` `degrade4` `witness` `deathCry`
+`unknownReply` 뿐). 문서 표의 5가지 상황이 필요하다:
+
+```jsonc
+"combat": {
+  "hpHigh":     ["사장님, 이 정도는 갑니다. 갈까요?"],
+  "hpMid":      ["좀... 버거운데요. 어떡할까요?"],
+  "hpLow":      ["사장님. 저 지금 죽으면 회수해주시는 거 맞죠?"],
+  "afterAppeal":["이거면... 오늘 좀 벌었나요?"]
+}
+```
+`degrade4` 는 이미 있으니 열화 4+ 일 때 그걸 쓰면 된다.
+
+**이유**: 씬에서 대사를 고르면 안 된다 — 고르려면 RNG 가 필요하고 RNG 는 core 것이다.
+층·턴으로 결정적으로 고르는 것도 해봤지만, 그건 규칙을 화면에 옮기는 짓이라 하지 않았다.
+`LivePhase` 는 `line` 이 비면 아무것도 그리지 않는다. 채워지는 즉시 화면에 뜬다.
+
+**곁들여** — `enemiesByZone` 은 에셋 키(`enemy.husk`)만 준다. 지금 전투 칸 제목이 `HUSK` 로
+나온다. 한글 표시명이 필요하다 (`content` 소유라 내가 못 만든다).
+
+**상태**: [ ] 미처리
+
+## HO-006  (from: Claude Code → to: Codex)  D2
+
+**필요한 것**: 「지연된 죄책감」이 발생할 수 있게 해 달라. 지금은 **구조적으로 불가능하다.**
+
+M06 §5 의 최고 장치 — 거짓말한 용사를 되살리면 다음 방송 첫 무전에서 콜백 대사가 나온다.
+두 가지가 막고 있다:
+
+1. `answerRadio` 가 `wasLie: false` 를 하드코딩한다. 거짓말 판정이 아예 없다
+2. `TodayRun.forks` 는 하루가 끝나면 사라진다 (`office.ts` 가 매일 `forks: []` 로 새로 만든다).
+   어제 무엇을 말했는지 아무 데도 남지 않는다
+
+`Star` 나 `GameState` 에 「이 몸에게 한 거짓말」이 남아야 한다. 계약 변경이 필요하면 CCR 로 올려라
+— 내가 `types.ts` 를 고칠 일이라면 그때 하겠다.
+
+`radio.ko.json` 의 `lieCallback` 5줄은 이미 있는데 **아무도 읽지 않는다.**
+
+**상태**: [ ] 미처리
+
+## HO-007  (from: Claude Code → to: Codex)  D2
+
+**필요한 것**: 「나도 몰라」의 대가. M06 §5 는 *50% 랜덤 + 팬 -0.5% + 채팅 "사장 왜 저럼"* 이다.
+
+지금 `answerRadio(state, 'UNKNOWN')` 은 `reachDelta 0` 으로 아무 일도 일어나지 않는다.
+게다가 `told` 가 `'UNKNOWN'` 인 채로 남아서 **그 갈림길이 답한 것으로 기록되지 않는다.**
+(가드가 `record.told !== 'UNKNOWN'` 이라, 같은 기록에 다시 답할 수도 있다)
+
+화면 쪽은 `waitingSince` 로 무전창을 여닫으므로 당장 깨지지는 않는다. 기록만 어긋난다.
+
+**상태**: [ ] 미처리
+
+## HO-008  (from: Claude Code → to: Codex)  D2
+
+**필요한 것**: `CHAT/SPAWN` `CHAT/DELETE` `CHAT/BAN` 이 전부 `return state` 다 (M07).
+
+`LivePhase` 의 채팅 칸은 다 그려 놨다 — `chatQueue` 를 읽고, `TRUTH` 톤은 `wax` 로 칠하고,
+28F 통과 후 3초 침묵도 걸어 뒀다. 큐가 채워지는 순간 그대로 흐른다. 지금은 항상
+`채팅이 조용하다` 만 뜬다. `content/chat.ko.json` 은 이미 톤별로 다 들어와 있다.
+
+**상태**: [ ] 미처리
+
+## HO-009  (from: Claude Code → to: Codex)  D2
+
+**필요한 것**: `OPTION/SET` 이 `return state` 라 `flags.reducedMotion` 을 켤 방법이 없다.
+
+`dive.ts` 의 `waitingPenalty` 는 `state.flags.reducedMotion === true` 면 지체 페널티를 건너뛴다.
+그런데 그 플래그를 세우는 길이 리듀서에 없다. M06 수용 기준
+「옵션 `연출 감소` 를 켜면 지체 페널티가 꺼진다」가 지금은 **불가능하다.**
+
+화면 흔들림·지지직·깜빡임은 내가 registry(`opt.reducedMotion`)로 이미 끄고 있다.
+규칙에 걸린 페널티만 core 가 필요하다.
+
+**상태**: [ ] 미처리

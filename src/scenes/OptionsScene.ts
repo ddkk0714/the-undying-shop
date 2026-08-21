@@ -4,6 +4,7 @@ import { PALETTE, css } from '../render/palette';
 import { FONT, FONT_TITLE } from '../render/font';
 import { Button } from '../ui/Button';
 import { panel } from '../ui/Panel';
+import { reducedMotion, speedMul } from '../ui/options';
 
 /**
  * 05-PRIORITY P0 #16 — 옵션(타이머 끄기, 속도).
@@ -12,8 +13,6 @@ import { panel } from '../ui/Panel';
  * 값은 registry 에만 둔다. 게임 규칙에 반영하는 것은 core 몫이라
  * 실제 소비는 OPTION/SET 액션으로 넘긴다 (M02 §2).
  */
-export const OPTION_DEFAULTS = { softTimer: true, speed: 1 } as const;
-
 export class OptionsScene extends Phaser.Scene {
   constructor() {
     super(SCENES.OPTIONS);
@@ -24,15 +23,15 @@ export class OptionsScene extends Phaser.Scene {
     panel(this, 24, 16, BASE_W - 48, BASE_H - 62, 'sunken');
     this.add.text(160, 104, '옵션', { ...FONT_TITLE, color: css('bone') });
 
-    const timerOn = (this.registry.get('opt.softTimer') as boolean | undefined) ?? OPTION_DEFAULTS.softTimer;
-    const speed = (this.registry.get('opt.speed') as number | undefined) ?? OPTION_DEFAULTS.speed;
+    const reduced = reducedMotion(this.registry);
+    const speed = speedMul(this.registry);
 
     this.add.text(160, 264, '연출 감소', { ...FONT, color: css('dust') });
     new Button(this, {
       x: 960, y: 248, w: 400, h: 96,
-      label: timerOn ? '켜짐' : '꺼짐', hotkey: '1',
+      label: reduced ? '켜짐' : '꺼짐', hotkey: '1',
       onClick: () => {
-        this.registry.set('opt.softTimer', !timerOn);
+        this.registry.set('opt.reducedMotion', !reduced);
         this.scene.restart();
       },
     });
@@ -49,7 +48,7 @@ export class OptionsScene extends Phaser.Scene {
     });
 
     this.add.text(160, 584, 'v3 에는 제한시간이 없다.', { ...FONT, color: css('dust') });
-    this.add.text(160, 664, '연출 감소를 켜면 생방송 지체 페널티도 꺼진다.', { ...FONT, color: css('dust') });
+    this.add.text(160, 664, '연출 감소를 켜면 화면 흔들림·노이즈가 꺼진다.', { ...FONT, color: css('dust') });
 
     new Button(this, {
       x: BASE_W / 2 - 264, y: BASE_H - 136, w: 528, h: 96,

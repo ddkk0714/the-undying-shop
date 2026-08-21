@@ -4,6 +4,8 @@ import { PALETTE, css } from '../render/palette';
 import { FONT, FONT_LABEL } from '../render/font';
 import { L } from '../ui/layout';
 import { Button } from '../ui/Button';
+import { reducedMotion } from '../ui/options';
+import { DEATH_CURTAIN_MS } from './phases/LivePhase';
 import { content, reputationGrade } from '../core/content';
 import { currentRun, newRun } from './run';
 import type { Store } from '../core/store';
@@ -54,6 +56,9 @@ export class DayScene extends Phaser.Scene {
   private unsubscribe: (() => void) | null = null;
   private launched: string | null = null;
   private fallback: Button[] = [];
+  /** M06 §8 — 생방송→사망 교체를 지지직이 끝날 때까지 붙잡는다. 0 이면 지연 없음 */
+  private swapAt = 0;
+  private skipCurtain = false;
 
   constructor() {
     super(SCENES.DAY);
@@ -140,6 +145,10 @@ export class DayScene extends Phaser.Scene {
 
   /** M02 §6 — pendingFx 를 매 프레임 확인하고 소비한다. */
   override update(): void {
+    if (this.swapAt > 0 && (this.skipCurtain || this.time.now >= this.swapAt)) {
+      const s = this.store.getState();
+      this.swap(s.isOver ? undefined : PHASE_SCENE[s.phase]);
+    }
     const fx = this.store.getState().pendingFx;
     if (fx.length === 0) return;
     // 연출 모듈이 아직 없다. 지금은 무엇이 큐에 쌓였는지 화면에 남기고 비운다.
@@ -193,6 +202,31 @@ export class DayScene extends Phaser.Scene {
   /** 단계 씬이 등록돼 있으면 갈아끼운다. 없으면 아무것도 하지 않는다. */
   private syncPhaseScene(s: Readonly<GameState>): void {
     const want = s.isOver ? undefined : PHASE_SCENE[s.phase];
+    if (want === this.launched) return;
+
+    // M06 §8 — 용사가 죽어도 생방송 화면을 1.8초 더 붙잡는다. 그 위에서 LivePhase 가
+    // 지지직을 그린다. 셸이 단계를 바로 갈아끼우면 그 연출이 통째로 사라진다.
+    if (this.launched === SCENES.PHASE_LIVE && want === SCENES.PHASE_DEATH && !reducedMotion(this.registry)) {
+      if (this.swapAt === 0) this.armCurtain();
+      return;
+    }
+    this.swap(want);
+  }
+
+  private armCurtain(): void {
+    this.swapAt = this.time.now + DEATH_CURTAIN_MS;
+    this.skipCurtain = false;
+    // 스킵 — 심사자가 기다릴 이유가 없다 (M06 §11)
+    this.input.keyboard?.once('keydown', () => { this.skipCurtain = true; });
+    this.input.once('pointerdown', () => { this.skipCurtain = true; });
+  }
+
+  private swap(want: string | undefined): void {
+    if (this.swapAt > 0) {
+      this.input.keyboard?.off('keydown');
+      this.swapAt = 0;
+      this.skipCurtain = false;
+    }
     if (want === this.launched) return;
     if (this.launched !== null) this.scene.stop(this.launched);
     if (want !== undefined) this.scene.launch(want);
