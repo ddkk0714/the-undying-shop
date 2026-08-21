@@ -1,6 +1,7 @@
 import { content } from '../content';
 import { draw } from '../rng';
 import { createHero } from './combat';
+import { recruitCapacity } from './roster';
 import type { Combatant, Contract, GameState, ItemDef, Star, TodayRun } from '../types';
 
 function signedContractKey(starId: string): string {
@@ -9,13 +10,15 @@ function signedContractKey(starId: string): string {
 
 export function populateVisitors(state: GameState): GameState {
   if (state.phase !== 'OFFICE' || state.visitors.length > 0 || state.recruitPool.length === 0) return state;
-  const candidates = state.recruitPool.filter((star) => !state.rejectedStarIds.includes(star.id));
+  const eligible = state.recruitPool.filter((star) => !state.rejectedStarIds.includes(star.id));
+  const hasAliveStar = state.stars.some((star) => star.status === 'ALIVE');
+  const candidateLimit = hasAliveStar ? recruitCapacity(state) : Math.max(1, recruitCapacity(state));
+  const candidates = eligible.slice(0, candidateLimit);
   if (candidates.length === 0) return state;
 
   const rules = content.balance.contract;
   const [countRoll, afterCount] = draw(state);
   const requestedCount = Math.floor(countRoll * (rules.visitorsPerDay + 1));
-  const hasAliveStar = afterCount.stars.some((star) => star.status === 'ALIVE');
   const count = Math.min(candidates.length, hasAliveStar ? requestedCount : Math.max(1, requestedCount));
   const remaining = [...candidates];
   const visitors: Contract[] = [];

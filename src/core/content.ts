@@ -42,6 +42,7 @@ export interface Balance {
     moderationBanCost: number;
     leakPerWitnessRevive: Record<string, number>;
     leakPerIgnoredChat: number;
+    leakPerFakeSuccess: number;
     leakEndingThreshold: number;
     viewerFatigueOn28F: number;
     moderationFreeCount: number;
@@ -61,6 +62,7 @@ export interface Balance {
     fandomPerCharisma: number;
     claimedTiers: { floor: number; rate: number }[];
   };
+  autopsy: { lootMin: number; lootMax: number };
   roster: { inheritFandomLoss: number; inheritSuspicion: number };
 }
 
@@ -228,13 +230,13 @@ export function loadContent(): Content {
   assertShape(isRecord(balanceJson.fans), 'balance.fans missing');
   for (const key of ['base', 'depthPivot', 'depthMul', 'recordBonus', 'shallowLiePenalty', 'appealMul'] as const) assertNumber(balanceJson.fans[key], `balance.fans.${key}`);
   assertShape(isRecord(balanceJson.opinion) && isRecord(balanceJson.opinion.leakPerWitnessRevive), 'balance.opinion.leakPerWitnessRevive missing');
-  for (const key of ['chatLifetimeSeconds', 'chatMaxVisible', 'nickPoolSize', 'midLeakThreshold', 'truthChanceAtMidLeak', 'hypeChance', 'casualChance', 'truthLeakPower', 'slowAfterSeconds', 'backlashIntervalSeconds', 'moderationDeleteCost', 'moderationBanCost', 'leakPerIgnoredChat', 'leakEndingThreshold', 'moderationFreeCount', 'moderationRepPenalty'] as const) assertNumber(balanceJson.opinion[key], `balance.opinion.${key}`);
+  for (const key of ['chatLifetimeSeconds', 'chatMaxVisible', 'nickPoolSize', 'midLeakThreshold', 'truthChanceAtMidLeak', 'hypeChance', 'casualChance', 'truthLeakPower', 'slowAfterSeconds', 'backlashIntervalSeconds', 'moderationDeleteCost', 'moderationBanCost', 'leakPerIgnoredChat', 'leakPerFakeSuccess', 'leakEndingThreshold', 'moderationFreeCount', 'moderationRepPenalty'] as const) assertNumber(balanceJson.opinion[key], `balance.opinion.${key}`);
   assertNumber(balanceJson.opinion.viewerFatigueOn28F, 'balance.opinion.viewerFatigueOn28F');
   assertShape(isRecord(balanceJson.reputation) && Array.isArray(balanceJson.reputation.grades), 'balance.reputation.grades missing');
   assertNumber(balanceJson.reputation.onSuccessAnnounce, 'balance.reputation.onSuccessAnnounce');
   assertNumber(balanceJson.reputation.onFailureAnnounce, 'balance.reputation.onFailureAnnounce');
   assertShape(balanceJson.reputation.grades.every((grade) => Array.isArray(grade) && grade.length === 2 && typeof grade[0] === 'number' && typeof grade[1] === 'string'), 'balance.reputation.grades invalid');
-  assertShape(isRecord(balanceJson.recruit) && isRecord(balanceJson.roster) && isRecord(balanceJson.contract), 'balance.recruit/roster/contract missing');
+  assertShape(isRecord(balanceJson.recruit) && isRecord(balanceJson.roster) && isRecord(balanceJson.contract) && isRecord(balanceJson.autopsy), 'balance.recruit/roster/contract/autopsy missing');
   for (const key of ['baseSlots', 'lossPerFailures'] as const) assertNumber(balanceJson.recruit[key], `balance.recruit.${key}`);
   for (const key of ['inheritFandomLoss', 'inheritSuspicion'] as const) assertNumber(balanceJson.roster[key], `balance.roster.${key}`);
   for (const key of ['visitorsPerDay', 'feeBase', 'feePerFandomK', 'feeHonestyBias', 'honestyMin', 'honestyMax', 'fandomBase', 'fandomPerCharisma'] as const) assertNumber(balanceJson.contract[key], `balance.contract.${key}`);
@@ -245,6 +247,8 @@ export function loadContent(): Content {
     assertNumber(tier.rate, `balance.contract.claimedTiers[${index}].rate`);
   });
   assertShape(balanceJson.contract.honestyMin <= balanceJson.contract.honestyMax, 'balance.contract honesty range invalid');
+  for (const key of ['lootMin', 'lootMax'] as const) assertNumber(balanceJson.autopsy[key], `balance.autopsy.${key}`);
+  assertShape(balanceJson.autopsy.lootMin > 0 && balanceJson.autopsy.lootMin <= balanceJson.autopsy.lootMax, 'balance.autopsy loot range invalid');
   assertShape(isRecord(radioJson) && isRecord(chatJson) && isRecord(narrativeJson), 'localized content must be objects');
   return {
     balance: balanceJson as unknown as Balance,

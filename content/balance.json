@@ -99,5 +99,6 @@
       { "floor": 30, "rate": 0.25 }
     ]
   },
+  "autopsy": { "lootMin": 2, "lootMax": 3 },
   "roster": { "inheritFandomLoss": 0.15, "inheritSuspicion": 35 }
 }

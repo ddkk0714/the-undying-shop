@@ -1,7 +1,7 @@
 import { content } from './content';
 import { createInitialState } from './state';
 import { answerRadio, chooseCombat, startLive, tickLive } from './systems/dive';
-import { discardReviveCorpse, reviveQuote } from './systems/economy';
+import { damageAutopsyCorpse, discardReviveCorpse, reviveQuote } from './systems/economy';
 import { acceptContract, confirmOffice, pickStar, populateVisitors, rejectContract } from './systems/office';
 import { inherit } from './systems/roster';
 import { awardSuperchat, expireChats, moderateChat, spawnChat } from './systems/opinion';
@@ -25,6 +25,20 @@ function gotoPhase(state: GameState, phase: PhaseId): GameState {
 
 function latestTodayCorpse(state: GameState): Corpse | undefined {
   return state.today === null ? undefined : state.corpses.find((corpse) => corpse.starId === state.today?.starId && corpse.diedDay === state.day);
+}
+
+function revealWitnessedTruth(state: GameState, starId: string): GameState {
+  const star = state.stars.find((candidate) => candidate.id === starId);
+  if (star === undefined) return state;
+  let leak = state.leak;
+  const flags: Record<string, boolean> = { ...state.flags };
+  for (const floor of star.witnessed) {
+    const key = `witnessRevealed:${starId}:${floor}`;
+    if (flags[key] === true) continue;
+    leak += content.balance.opinion.leakPerWitnessRevive[String(floor)] ?? 0;
+    flags[key] = true;
+  }
+  return { ...state, leak: Math.min(100, leak), flags };
 }
 
 function concludeRun(state: GameState): GameState {
@@ -88,11 +102,12 @@ export function reducer(state: GameState, action: Action): GameState {
       if (corpse === undefined || star === undefined) return state;
       const quote = reviveQuote(state, corpse, star);
       if (!quote.affordable) return state;
+      const revealed = revealWitnessedTruth(state, action.starId);
       return {
-        ...state,
-        gold: state.gold - quote.cost,
-        stars: state.stars.map((candidate) => candidate.id === action.starId ? { ...candidate, status: 'ALIVE' as const, reviveCount: candidate.reviveCount + 1 } : candidate),
-        stats: { ...state.stats, totalRevived: state.stats.totalRevived + 1, goldSpentOnRevive: state.stats.goldSpentOnRevive + quote.cost },
+        ...revealed,
+        gold: revealed.gold - quote.cost,
+        stars: revealed.stars.map((candidate) => candidate.id === action.starId ? { ...candidate, status: 'ALIVE' as const, reviveCount: candidate.reviveCount + 1 } : candidate),
+        stats: { ...revealed.stats, totalRevived: revealed.stats.totalRevived + 1, goldSpentOnRevive: revealed.stats.goldSpentOnRevive + quote.cost },
       };
     }
     case 'REVIVE/SKIP': return state;
@@ -118,10 +133,9 @@ export function reducer(state: GameState, action: Action): GameState {
       if (state.phase !== 'AUTOPSY') return state;
       const corpse = latestTodayCorpse(state);
       if (corpse === undefined) return advance(state);
+      if (action.grade === 'DAMAGED') return { ...damageAutopsyCorpse(state, corpse.starId), phase: 'ANNOUNCE' };
       const corpses = state.corpses.map((candidate) => candidate === corpse ? { ...candidate, grade: action.grade } : candidate);
-      const stars = state.stars.map((star) => star.id === corpse.starId && action.grade === 'DAMAGED' ? { ...star, status: 'DISCARDED' as const } : star);
-      const stats = action.grade === 'DAMAGED' ? { ...state.stats, totalDiscarded: state.stats.totalDiscarded + 1 } : state.stats;
-      return { ...state, corpses, stars, stats, phase: 'ANNOUNCE', pendingFx: [...state.pendingFx, { kind: 'SEAL_STAMP' }] };
+      return { ...state, corpses, phase: 'ANNOUNCE', pendingFx: [...state.pendingFx, { kind: 'SEAL_STAMP' }] };
     }
     case 'ANNOUNCE/DECLARE': {
       if (state.phase !== 'ANNOUNCE') return state;
@@ -129,7 +143,9 @@ export function reducer(state: GameState, action: Action): GameState {
       const corpses = corpse === undefined ? state.corpses : state.corpses.map((candidate) => candidate === corpse ? { ...candidate, announced: action.as } : candidate);
       const falseAnnouncements = action.as === 'FAILURE' ? state.stats.falseAnnouncements + 1 : state.stats.falseAnnouncements;
       const reputation = Math.max(0, Math.min(100, state.reputation + (action.as === 'SUCCESS' ? content.balance.reputation.onSuccessAnnounce : content.balance.reputation.onFailureAnnounce)));
-      return advance({ ...state, corpses, reputation, stats: { ...state.stats, falseAnnouncements } });
+      const stars = corpse?.grade === 'INTACT' && action.as === 'FAILURE' ? state.stars.map((star) => star.id === corpse.starId ? { ...star, status: 'HIDDEN' as const } : star) : state.stars;
+      const leak = corpse?.grade === 'DAMAGED' && action.as === 'SUCCESS' ? Math.min(100, state.leak + content.balance.opinion.leakPerFakeSuccess) : state.leak;
+      return advance({ ...state, corpses, stars, leak, reputation, stats: { ...state.stats, falseAnnouncements } });
     }
     case 'FX/CONSUME': return { ...state, pendingFx: [] };
     case 'OPTION/SET': return state;
