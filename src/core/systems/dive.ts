@@ -24,6 +24,10 @@ function lieCallbackKey(starId: string): string {
   return `lieCallback:${starId}`;
 }
 
+function isGatekeeperFork(fork: typeof content.floors.forks[number]): boolean {
+  return fork.a.hazard === 'GATEKEEPER' || fork.b.hazard === 'GATEKEEPER';
+}
+
 function actualCeiling(state: GameState): number {
   const today = state.today;
   const star = today === null ? undefined : state.stars.find((candidate) => candidate.id === today.starId);
@@ -85,7 +89,12 @@ export function tickLive(state: GameState, dt: number): GameState {
       return awardSuperchat(witnessed, 'witness');
     }
     const fork = content.floors.forks.find((candidate) => candidate.atFloor === floor);
-    if (fork !== undefined) return { ...nextState, waitingSince: now, today: { ...today, currentFloor: floor, forks: [...today.forks, { floor, truth: { a: fork.a, b: fork.b }, told: 'UNKNOWN', wasLie: false }] } };
+    if (fork !== undefined) {
+      const flags = isGatekeeperFork(fork) && nextState.flags.gatekeeperCutscene !== true
+        ? { ...nextState.flags, gatekeeperCutscene: true }
+        : nextState.flags;
+      return { ...nextState, flags, waitingSince: now, today: { ...today, currentFloor: floor, forks: [...today.forks, { floor, truth: { a: fork.a, b: fork.b }, told: 'UNKNOWN', wasLie: false }] } };
+    }
     if (isEncounterFloor(floor)) {
       const [enemyRoll, withRng] = draw(nextState);
       return {

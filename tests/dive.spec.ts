@@ -154,6 +154,16 @@ describe('live dive', () => {
     expect(answerA(42)).toEqual(answerA(42));
   });
 
+  it('marks the gatekeeper cutscene when its fork is first reached', () => {
+    const gatekeeper = content.floors.forks.find((fork) => fork.a.hazard === 'GATEKEEPER' || fork.b.hazard === 'GATEKEEPER')!;
+    const state = liveState(140, gatekeeper.atFloor - 1);
+    const next = reducer(state, { type: 'LIVE/TICK', dt: content.balance.dive.floorSeconds });
+
+    expect(next.today?.currentFloor).toBe(gatekeeper.atFloor);
+    expect(next.waitingSince).not.toBeNull();
+    expect(next.flags.gatekeeperCutscene).toBe(true);
+  });
+
   it('plays one delayed radio callback when a lied-to star returns after revival', () => {
     const fork = content.floors.forks[0]!;
     const answer = (seed: number, dir: 'A' | 'B') => reducer({
