@@ -45,6 +45,13 @@ describe('opinion and superchat core', () => {
     expect(generated.today?.chatQueue).toHaveLength(content.balance.opinion.chatMaxVisible);
     expect(generated.today?.chatQueue.every((entry) => entry.tone === 'TRUTH')).toBe(true);
     expect(Array.from({ length: 10 }).reduce<GameState>((state) => spawnChat(state), initial)).toEqual(generated);
+
+    const firstTruth = spawnChat(initial);
+    const deleted = moderateChat(firstTruth, firstTruth.today!.chatQueue[0]!.id, false);
+    expect(deleted.today?.chatQueue[0]?.removed).toBe(true);
+    const afterDelete = spawnChat(deleted);
+    expect(deleted.leak).toBe(initial.leak);
+    expect(afterDelete.today?.chatQueue.at(-1)?.tone).toBe('TRUTH');
   });
 
   it('expires ignored truth without leaking deleted truth', () => {
