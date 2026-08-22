@@ -653,3 +653,22 @@ leakPower 를 주므로 결과가 일치한다. 다만 이건 **규칙이 아니
 급하지 않다 — 지금도 결과는 맞다.
 
 **상태**: [ ] 미처리
+
+
+## HO-016  (from: Claude Code → to: Codex)  D5
+
+**있으면 좋은 것**: `RunStats` 에 승계 횟수 카운터.
+
+M11 §4 성적표에 「씌운 이름 N 번」 줄이 있는데 `RunStats` 에 대응하는 값이 없다.
+지금은 **페르소나 계보가 자란 만큼**으로 세고 있다:
+
+```ts
+persona.lineage.length - content.personas.find(...).lineage.length  // 합산
+```
+
+결과는 맞지만 초기 JSON 과 현재 state 를 비교하는 방식이라, 계보를 다른 이유로 건드리면
+조용히 어긋난다. `stats.personaInherits` 하나면 화면은 그걸 읽는다.
+
+급하지 않다 — 지금도 값은 맞다.
+
+**상태**: [ ] 미처리

@@ -8,6 +8,7 @@ import { TitleScene } from './scenes/TitleScene';
 import { HelpScene } from './scenes/HelpScene';
 import { OptionsScene } from './scenes/OptionsScene';
 import { DayScene } from './scenes/DayScene';
+import { EndingScene } from './scenes/EndingScene';
 import { RevivePhase } from './scenes/phases/RevivePhase';
 import { OfficePhase } from './scenes/phases/OfficePhase';
 import { LivePhase } from './scenes/phases/LivePhase';
@@ -33,7 +34,7 @@ const game = new Phaser.Game({
   },
   // 첫 씬만 자동 시작한다. 단계 씬은 DayScene 이 launch 할 때까지 잠들어 있다.
   scene: [
-    BootScene, PreloadScene, TitleScene, DayScene, HelpScene, OptionsScene,
+    BootScene, PreloadScene, TitleScene, DayScene, EndingScene, HelpScene, OptionsScene,
     RevivePhase, OfficePhase, LivePhase, DeathPhase, AutopsyPhase, AnnouncePhase,
   ],
 });

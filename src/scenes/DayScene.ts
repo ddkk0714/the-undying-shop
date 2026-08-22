@@ -60,6 +60,8 @@ export class DayScene extends Phaser.Scene {
   /** M06 §8 — 생방송→사망 교체를 지지직이 끝날 때까지 붙잡는다. 0 이면 지연 없음 */
   private swapAt = 0;
   private skipCurtain = false;
+  /** 엔딩 씬에 한 번만 넘긴다 */
+  private handedOver = false;
   /** 기록 갱신 연출용 — 정산이 끝나면 이전 최고층은 state 에서 사라진다 (M08) */
   private lastMaxFloor = -1;
   /** 도달 게이지 — 목표까지 차오른다. 신기록이면 눈에 보이게 밀려 올라간다 (M08 §연출) */
@@ -73,6 +75,21 @@ export class DayScene extends Phaser.Scene {
   }
 
   create(): void {
+    /**
+     * ★ Phaser 씬 인스턴스는 재시작해도 살아남는다. 판을 새로 시작하면
+     * 어제 판의 상태가 그대로 남아 두 번째 판이 어긋난다 (엔딩으로 안 넘어가는 등).
+     */
+    this.handedOver = false;
+    this.launched = null;
+    this.swapAt = 0;
+    this.skipCurtain = false;
+    this.lastMaxFloor = -1;
+    this.gaugeShown = 0;
+    this.gaugeTarget = 0;
+    this.gaugeFlashUntil = 0;
+    this.hudValues = [];
+    this.fallback = [];
+
     // TitleScene 의 '새로 시작' 이 이미 만들어 뒀다. 씬을 직접 열었으면 여기서 만든다.
     this.store = currentRun(this.game) ?? newRun(this.game);
 
@@ -237,7 +254,12 @@ export class DayScene extends Phaser.Scene {
     for (const button of this.fallback) button.setVisible(!hosted).setActive(!hosted);
 
     if (s.isOver) {
-      // 끝난 판에서 「다음 단계」는 아무 일도 하지 않는다. 눌리는 버튼을 남겨 두지 않는다
+      // 엔딩과 성적표는 전용 씬이 맡는다 (M11 §3·§4)
+      if (!this.handedOver) {
+        this.handedOver = true;
+        this.time.delayedCall(0, () => this.scene.start(SCENES.ENDING));
+      }
+      // 넘어가기 전 한 프레임 — 눌리는 버튼을 남겨 두지 않는다
       this.fallback[0]?.setVisible(false).setActive(false);
       this.body.setText(
         [
