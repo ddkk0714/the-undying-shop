@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { alwaysAppealPolicy, conservativePolicy, damageAwarePolicy, lowAppealPolicy, proactivePolicy, randomPolicy, simulate, simulateState } from '../src/core/sim';
 import { content } from '../src/core/content';
 import { createInitialState } from '../src/core/state';
+import { createStore } from '../src/core/store';
+import { reducer } from '../src/core/reducer';
 import { reviveQuote } from '../src/core/systems/economy';
 
 describe('headless simulation', () => {
@@ -109,5 +111,33 @@ describe('headless simulation', () => {
       expect(state.day).toBeLessThanOrEqual(content.balance.start.days);
       expect(Number.isFinite(state.gold)).toBe(true);
     }
+  }, 15_000);
+
+  it('keeps the realistic mixed-income model centered on superchat across 1000 runs', () => {
+    const income = { superchat: 0, goods: 0, stock: 0 };
+    for (let seed = 1; seed <= 1000; seed += 1) {
+      const store = createStore(createInitialState(seed), reducer);
+      const settledDays = new Set<number>();
+      for (let step = 0; step < 1000 && !store.getState().isOver; step += 1) {
+        const before = store.getState();
+        const action = damageAwarePolicy(before);
+        store.dispatch(action);
+        const after = store.getState();
+        if (action.type === 'OFFICE/SELL') income.stock += after.gold - before.gold;
+        if (after.today !== null && after.today.diedFloor !== null && !settledDays.has(after.day)) {
+          settledDays.add(after.day);
+          income.superchat += after.today.income.superchat;
+          income.goods += after.today.income.goods;
+          income.stock += after.today.income.shelf;
+        }
+      }
+      expect(store.getState().isOver).toBe(true);
+    }
+    const total = income.superchat + income.goods + income.stock;
+    expect(income.superchat / total).toBeGreaterThanOrEqual(0.5);
+    expect(income.superchat / total).toBeLessThanOrEqual(0.7);
+    expect(income.goods / total).toBeGreaterThanOrEqual(0.25);
+    expect(income.goods / total).toBeLessThanOrEqual(0.4);
+    expect(income.stock / total).toBeLessThanOrEqual(0.15);
   }, 15_000);
 });

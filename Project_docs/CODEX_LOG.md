@@ -190,3 +190,11 @@
 **1,000-seed result**: 1,000/1,000 terminal endings; B_CONTINUE 625, A_OPEN 213, B_REVEAL 162. Average final gold 6,631G, max floor 36.10, revivals 4.84, damaged disposals 2.20. Income per run: superchat 6,098G (60.8%), goods 3,559G (35.5%), stock sales 369G (3.7%); potion uses: 1,000. This makes superchat the primary income source while stock sales remain an emergency/relic path.
 
 **Validation**: `npm run typecheck`, full `npm test` (10 files, 66 tests), and `npm run build` all passed. HO-017 documents the new action semantics for Claude's UI wiring.
+
+## D5 8/22 — M10 realistic superchat-first acceptance (approved)
+
+**Decision**: Replace the incompatible fixed daily-income curve with a realistic mixed-income target: Superchat is the primary, volatile live-event income; goods remain the stable floor; stock/relic sales remain an exceptional recovery path. The superseded calendar-specific Day-5 deficit condition is not used as the completion gate.
+
+**Acceptance**: Across 1,000 seeded `damageAwarePolicy` runs, every run reaches a terminal ending; Superchat is 50–70% of all counted income, goods are 25–40%, and stock sales are at most 15%.
+
+**Validation**: Added a 1,000-seed regression that records settlement income plus pre-run stock sales. It passed with the retained balance at Superchat 60.8%, goods 35.5%, stock 3.7% and 1,000/1,000 terminal endings. `npm run typecheck` and `tests/sim.spec.ts` passed (9 tests).
