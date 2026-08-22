@@ -7,6 +7,7 @@ import { Button } from '../../ui/Button';
 import { reducedMotion } from '../../ui/options';
 import { sealStamp } from '../../ui/SealStamp';
 import { degradeOverlay, portrait } from '../../ui/Portrait';
+import { onboard } from '../../ui/Onboarding';
 import { PhaseScene } from './PhaseScene';
 import type { Corpse, GameState, Persona, Star } from '../../core/types';
 
@@ -67,6 +68,7 @@ export class RevivePhase extends PhaseScene {
     this.buildPager(waiting.length);
     this.buildInheritButton(s);
     this.buildActions(s, corpse, star);
+    onboard(this, s.day, 'REVIVE', { x: L.pad, y: L.actionsFull.y - 52, w: L.W - L.pad * 2 });
   }
 
   /* ── 좌 · 소생 수조의 몸 ──────────────────────────────── */

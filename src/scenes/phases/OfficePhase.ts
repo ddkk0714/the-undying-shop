@@ -3,6 +3,7 @@ import { content } from '../../core/content';
 import { starArt } from '../../render/assets';
 import { L, slotX, actionX, ACTION_W } from '../../ui/layout';
 import { Button } from '../../ui/Button';
+import { onboard } from '../../ui/Onboarding';
 import { PhaseScene } from './PhaseScene';
 import type { Contract, GameState } from '../../core/types';
 
@@ -49,6 +50,8 @@ export class OfficePhase extends PhaseScene {
     if (this.mode === 'CONTRACT') this.buildContract(s);
     else this.buildShelf(s);
     this.buildActions(s);
+    onboard(this, s.day, this.mode === 'CONTRACT' ? 'OFFICE_CONTRACT' : 'OFFICE_SHELF',
+      { x: L.pad, y: L.actionsFull.y - 52, w: L.W - L.pad * 2 });
   }
 
   /* ── 좌 · 방문자 / 출연자 ─────────────────────────────── */

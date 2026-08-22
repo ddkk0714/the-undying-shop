@@ -5,6 +5,7 @@ import { L } from '../../ui/layout';
 import { Button } from '../../ui/Button';
 import { reducedMotion } from '../../ui/options';
 import { sealStamp } from '../../ui/SealStamp';
+import { onboard } from '../../ui/Onboarding';
 import { PhaseScene } from './PhaseScene';
 import type { CorpseGrade, GameState } from '../../core/types';
 
@@ -65,6 +66,7 @@ export class AutopsyPhase extends PhaseScene {
 
     // 목격 기록 — 이게 딜레마의 전부다
     this.buildWitnessLog(star?.witnessed ?? []);
+    onboard(this, s.day, 'AUTOPSY', { x: L.pad * 4, y: L.stage.y + 44, w: 1100 });
 
     // 2택 카드
     const cardW = 560;

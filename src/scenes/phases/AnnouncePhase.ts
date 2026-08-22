@@ -3,6 +3,7 @@ import { reputationGrade } from '../../core/content';
 import { starArt } from '../../render/assets';
 import { L } from '../../ui/layout';
 import { Button } from '../../ui/Button';
+import { onboard } from '../../ui/Onboarding';
 import { PhaseScene } from './PhaseScene';
 import type { GameState } from '../../core/types';
 
@@ -85,5 +86,6 @@ export class AnnouncePhase extends PhaseScene {
     });
 
     this.text(ox, L.actionsFull.y + 48, `거짓 공표 ${s.stats.falseAnnouncements}회`, 'dust');
+    onboard(this, s.day, 'ANNOUNCE', { x: L.pad * 4, y: L.stage.y + 44, w: 1100 });
   }
 }

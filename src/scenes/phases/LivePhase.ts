@@ -6,6 +6,7 @@ import { starArt } from '../../render/assets';
 import { L } from '../../ui/layout';
 import { Button } from '../../ui/Button';
 import { Ticker } from '../../ui/Ticker';
+import { onboard } from '../../ui/Onboarding';
 import { reducedMotion, speedMul } from '../../ui/options';
 import { PhaseScene } from './PhaseScene';
 import type { ChatMessage, CombatChoice, ForkRecord, GameState } from '../../core/types';
@@ -173,6 +174,14 @@ export class LivePhase extends PhaseScene {
     // 5분할 경계선 — 2px 하드 엣지만으로 칸을 나눈다
     for (const box of [v.floors, v.map, v.radio, v.combat, v.choices, v.portrait, v.chat]) {
       this.frame(box.x, box.y, box.w, box.h);
+    }
+
+    // 5분할이 화면을 꽉 채워 빈 띠가 없다. 온보딩은 방송 정보 바에 태운다 (04-UI-KIT §7)
+    if (s.today !== null) {
+      const asking = pendingFork(s) !== null;
+      if (asking || s.today.encounter !== null) {
+        onboard(this, s.day, asking ? 'LIVE_RADIO' : 'LIVE_COMBAT', { x: 700, y: 8, w: 900 });
+      }
     }
 
     if (this.witnessFloor !== null) this.buildWitness(this.witnessFloor);
