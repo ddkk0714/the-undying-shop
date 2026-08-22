@@ -55,6 +55,9 @@ export class LivePhase extends PhaseScene {
   private chat!: Ticker;
   /** 이미 날려 보낸 슈퍼챗 — 같은 메시지로 두 번 연출하지 않는다 */
   private flownSuperchats = new Set<string>();
+  /** 34F 문지기 컷신 (M11 §2). 한 방송에 한 번만 뜬다 */
+  private gatekeeperOpen = false;
+  private gatekeeperSeen = false;
 
   /** 연출 상태 — 화면을 다시 그려도 살아남아야 한다 */
   private reduced = false;
@@ -81,6 +84,8 @@ export class LivePhase extends PhaseScene {
    * 어제 남긴 필드를 지우지 않으면 다음 날 화면이 어제 상태로 시작한다.
    */
     this.flownSuperchats = new Set();
+    this.gatekeeperOpen = false;
+    this.gatekeeperSeen = false;
     this.seenWitness = null;
     this.witnessFloor = null;
     this.witnessUntil = 0;
@@ -124,6 +129,7 @@ export class LivePhase extends PhaseScene {
   private step(): void {
     if (this.store.getState().phase !== 'LIVE') return;
     if (this.time.now < this.witnessUntil) return;
+    if (this.gatekeeperOpen) return; // 문지기 앞에서는 아무도 내려가지 않는다
     this.store.dispatch({ type: 'LIVE/TICK', dt: content.balance.dive.floorSeconds });
   }
 
@@ -164,6 +170,14 @@ export class LivePhase extends PhaseScene {
     const v = L.live;
     this.rect(0, 0, L.W, L.H, 'ink');
     this.spriteCover({ x: 0, y: 0, w: L.W, h: L.H }, ['bg.live']);
+
+    // 「이 순간이 게임 전체에서 가장 중요한 30초다」 (M11 §2).
+    // 덮기만 하면 아래 3택이 그대로 눌리므로 다른 것을 아예 그리지 않는다.
+    if (this.gatekeeperOpen) {
+      this.buildGatekeeper();
+      return;
+    }
+
     this.buildBar(s);
     this.buildFloors(s);
     this.buildMap(s);
@@ -204,6 +218,12 @@ export class LivePhase extends PhaseScene {
         this.witnessFloor = fresh;
         this.witnessUntil = now + WITNESS_HOLD_MS;
       }
+    }
+
+    // 34F 문지기 — core 가 flags.gatekeeperCutscene 을 세우는 순간이 신호다 (M11 §2)
+    if (s.flags.gatekeeperCutscene === true && !this.gatekeeperSeen) {
+      this.gatekeeperSeen = true;
+      this.gatekeeperOpen = true;
     }
 
     // 사망 — DayScene 이 단계 교체를 DEATH_CURTAIN_MS 만큼 늦춰 준다 (M06 §8)
@@ -503,6 +523,38 @@ export class LivePhase extends PhaseScene {
     }
   }
 
+  /**
+   * M11 §2 — 34F 문지기 컷신.
+   * **선택지가 「무전을 끈다」 하나뿐이다.** 플레이어에게 다른 길을 주지 않는다.
+   */
+  private buildGatekeeper(): void {
+    const cut = gatekeeperText();
+    const cx = Math.round(L.W / 2);
+
+    // 문지기 1컷 — 적 아트를 그대로 쓴다. 지금 눈앞에 있는 그 문지기다
+    const art = { x: cx - 192, y: 120, w: 384, h: 384 };
+    if (!this.spriteFit(art, ['enemy.gatekeeper'])) this.enemyShape(art.x + 32, art.y, 320, 320, 'enemy.gatekeeper');
+    this.frame(art.x, art.y, art.w, art.h, 'dust');
+
+    let y = 560;
+    this.text(cx - 420, y, this.clip(cut.narration, 840), 'dust');
+    y += 80;
+    this.title(cx - 420, y, this.clip(`"${cut.line}"`, 840, 'title'), 'bone');
+    y += 100;
+    this.rect(cx - 420, y, 840, L.line, 'mid');
+    y += 40;
+    this.text(cx - 420, y, this.clip(`무전  "${cut.radio}"`, 840), 'wax');
+
+    new Button(this, {
+      x: cx - 264, y: L.H - 160, w: 528, h: 88,
+      label: cut.choice, hotkey: '1', variant: 'danger',
+      onClick: () => {
+        this.gatekeeperOpen = false;
+        this.redraw();
+      },
+    });
+  }
+
   /* ── 목격 이벤트 — 하강이 멈추고 유언이 뜬다 (M06 §9) ── */
   private buildWitness(floor: number): void {
     this.rect(0, 400, L.W, 200, 'ink');
@@ -651,6 +703,18 @@ function hash2(a: number, b: number): number {
   x = Math.imul(x, 0x2545f491) >>> 0;
   x ^= x >>> 13;
   return (x >>> 0) / 4294967296;
+}
+
+/** narrative.ko.json 의 문장을 그대로 읽는다. 씬이 대사를 짓지 않는다 */
+function gatekeeperText(): { narration: string; line: string; radio: string; choice: string } {
+  const raw = (content.narrative as { gatekeeper34?: Record<string, unknown> }).gatekeeper34 ?? {};
+  const pick = (k: string, fallback: string): string => (typeof raw[k] === 'string' ? (raw[k] as string) : fallback);
+  return {
+    narration: pick('narration', ''),
+    line: pick('line', ''),
+    radio: pick('radio', ''),
+    choice: pick('choice', '무전을 끈다'),
+  };
 }
 
 /** 표시는 84.2K 형태 (02-DATA-SCHEMA §1) */
