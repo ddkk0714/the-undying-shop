@@ -93,6 +93,16 @@ describe('autopsy and announcement combinations', () => {
     expect(decided.pendingFx.at(-1)?.kind).toBe('SEAL_STAMP');
   });
 
+  it('clears a pending lie callback when the body is damaged', () => {
+    const base = autopsyState(931);
+    const initial: GameState = { ...base, flags: { ...base.flags, 'lieCallback:body_karin': true } };
+    const decided = reducer(initial, { type: 'AUTOPSY/DECIDE', grade: 'DAMAGED' });
+
+    expect(decided.stars[0]?.status).toBe('DISCARDED');
+    expect(decided.flags['lieCallback:body_karin']).toBeUndefined();
+    expect(decided.pendingFx.some((fx) => fx.kind === 'TRUTH_WHISPER')).toBe(false);
+  });
+
   it('unlocks truth relics only for bodies recovered at the configured depth', () => {
     const deepLoot = Array.from({ length: 100 }, (_, seed) =>
       reducer(autopsyState(300 + seed, 'INTACT', content.balance.autopsy.truthRelicMinFloor), { type: 'AUTOPSY/DECIDE', grade: 'DAMAGED' }).corpses[0]!.loot,

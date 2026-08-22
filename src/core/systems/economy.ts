@@ -79,8 +79,12 @@ export function damageAutopsyCorpse(state: GameState, starId: string): GameState
   const [countRoll, afterCount] = draw(state);
   const lootCount = Math.min(relicCount, rules.lootMin + Math.floor(countRoll * (rules.lootMax - rules.lootMin + 1)));
   const [loot, next] = drawUniqueRelics(afterCount, lootCount, corpse.diedFloor);
+  const flags = { ...next.flags };
+  // A damaged body cannot return to LIVE, so its deferred lie callback must not survive disposal.
+  delete flags[`lieCallback:${starId}`];
   return {
     ...next,
+    flags,
     inventory: addLootToInventory(next, loot),
     corpses: next.corpses.map((candidate) => candidate === corpse ? { ...candidate, grade: 'DAMAGED' as const, loot } : candidate),
     stars: next.stars.map((candidate) => candidate.id === starId ? { ...candidate, status: 'DISCARDED' as const, witnessed: [] } : candidate),
