@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { PALETTE } from '../render/palette';
 import { key, hasTexture } from '../render/assets';
+import { playSfx } from '../audio/Sfx';
 import { L } from './layout';
 
 /**
@@ -67,6 +68,7 @@ export function sealStamp(scene: Phaser.Scene, opts: SealOpts): void {
 
   // hitStop — 아무것도 움직이지 않는 120ms 가 타격을 만든다
   scene.time.delayedCall(HIT_STOP_MS, () => {
+    playSfx(scene, 'sfx.stamp', 0.8);
     scene.cameras.main.shake(260, 0.003);
     const tick = scene.time.addEvent({
       delay: FRAME_MS,

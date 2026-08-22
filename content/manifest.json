@@ -459,12 +459,44 @@
         "sfx.stamp": {
           "type": "audio",
           "file": "sfx/stamp.wav",
-          "desc": "봉랍 찍는 소리"
+          "desc": "봉랍 도장 — 검시 판정·폐기 확정"
         },
         "sfx.superchat": {
           "type": "audio",
           "file": "sfx/superchat.wav",
           "desc": "슈퍼챗 알림"
+        },
+        "sfx.death": {
+          "type": "audio",
+          "file": "sfx/death.wav",
+          "desc": "신호 두절 — 방송 끊김음 + 저역 험 (M06 §8 「소리가 절반이다」)"
+        },
+        "sfx.revive": {
+          "type": "audio",
+          "file": "sfx/revive.wav",
+          "desc": "소생 — 수조에서 몸이 일어난다"
+        },
+        "sfx.click": {
+          "type": "audio",
+          "file": "sfx/click.wav",
+          "desc": "버튼 누름"
+        },
+        "sfx.record": {
+          "type": "audio",
+          "file": "sfx/record.wav",
+          "desc": "신기록 갱신"
+        },
+        "bgm.shop": {
+          "type": "audio",
+          "file": "bgm/shop.wav",
+          "loop": true,
+          "desc": "상점 BGM — 소생실·편성실 (낮고 느리게)"
+        },
+        "bgm.live": {
+          "type": "audio",
+          "file": "bgm/live.wav",
+          "loop": true,
+          "desc": "생방송 BGM — 하강 중 (긴장)"
         }
       }
     },

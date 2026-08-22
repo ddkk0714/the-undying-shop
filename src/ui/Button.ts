@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { PALETTE, css } from '../render/palette';
 import { FONT } from '../render/font';
 import { firstTexture, slice } from '../render/assets';
+import { playSfx } from '../audio/Sfx';
 import { L } from './layout';
 
 export type ButtonVariant = 'default' | 'danger' | 'ghost';
@@ -80,12 +81,15 @@ export class Button extends Phaser.GameObjects.Container {
       this.on('pointerdown', () => this.setVisualState('press'));
       this.on('pointerup', () => {
         this.setVisualState('hover');
+        playSfx(scene, 'sfx.click', 0.35);
         opts.onClick();
       });
 
       if (opts.hotkey) {
         scene.input.keyboard?.on(`keydown-${keyCodeFor(opts.hotkey)}`, () => {
-          if (this.visual !== 'disabled' && this.active) opts.onClick();
+          if (this.visual === 'disabled' || !this.active) return;
+          playSfx(scene, 'sfx.click', 0.35);
+          opts.onClick();
         });
       }
     }

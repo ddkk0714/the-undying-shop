@@ -5,6 +5,7 @@ import { FONT, FONT_TITLE } from '../render/font';
 import { Button } from '../ui/Button';
 import { panel } from '../ui/Panel';
 import { reducedMotion, speedMul } from '../ui/options';
+import { muted, setMuted } from '../audio/Sfx';
 
 /**
  * 05-PRIORITY P0 #16 — 옵션(타이머 끄기, 속도).
@@ -47,12 +48,24 @@ export class OptionsScene extends Phaser.Scene {
       },
     });
 
-    this.add.text(160, 584, 'v3 에는 제한시간이 없다.', { ...FONT, color: css('dust') });
-    this.add.text(160, 664, '연출 감소를 켜면 화면 흔들림·노이즈가 꺼진다.', { ...FONT, color: css('dust') });
+    // 소리 — 심사자가 조용히 보고 싶을 수 있다
+    const off = muted(this.registry);
+    this.add.text(160, 568, '소리', { ...FONT, color: css('dust') });
+    new Button(this, {
+      x: 960, y: 552, w: 400, h: 96,
+      label: off ? '꺼짐' : '켜짐', hotkey: '3',
+      onClick: () => {
+        setMuted(this, !off);
+        this.scene.restart();
+      },
+    });
+
+    this.add.text(160, 700, 'v3 에는 제한시간이 없다.', { ...FONT, color: css('dust') });
+    this.add.text(160, 748, '연출 감소를 켜면 화면 흔들림·노이즈가 꺼진다.', { ...FONT, color: css('dust') });
 
     new Button(this, {
       x: BASE_W / 2 - 264, y: BASE_H - 136, w: 528, h: 96,
-      label: '돌아가기', hotkey: '3',
+      label: '돌아가기', hotkey: '4',
       onClick: () => this.scene.start(SCENES.TITLE),
     });
     this.input.keyboard?.once('keydown-ESC', () => this.scene.start(SCENES.TITLE));

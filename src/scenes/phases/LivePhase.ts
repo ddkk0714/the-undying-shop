@@ -7,6 +7,7 @@ import { L } from '../../ui/layout';
 import { Button } from '../../ui/Button';
 import { Ticker } from '../../ui/Ticker';
 import { onboard } from '../../ui/Onboarding';
+import { playBgm, playSfx } from '../../audio/Sfx';
 import { reducedMotion, speedMul } from '../../ui/options';
 import { PhaseScene } from './PhaseScene';
 import type { ChatMessage, CombatChoice, ForkRecord, GameState } from '../../core/types';
@@ -93,6 +94,7 @@ export class LivePhase extends PhaseScene {
     this.keepAlive(...this.chat.objects());
 
     super.create();
+    playBgm(this, 'bgm.live');
     const stepMs = Math.round((content.balance.dive.floorSeconds * 1000) / speedMul(this.registry));
     this.ticker = this.time.addEvent({ delay: stepMs, loop: true, callback: () => this.step() });
 
@@ -205,7 +207,11 @@ export class LivePhase extends PhaseScene {
     }
 
     // 사망 — DayScene 이 단계 교체를 DEATH_CURTAIN_MS 만큼 늦춰 준다 (M06 §8)
-    if (s.phase !== 'LIVE' && this.deathAt === null) this.deathAt = now;
+    // 「소리가 절반이다」 — 지지직과 함께 방송이 끊기는 소리가 난다
+    if (s.phase !== 'LIVE' && this.deathAt === null) {
+      this.deathAt = now;
+      playSfx(this, 'sfx.death', 0.9);
+    }
 
     // 지체 페널티는 수치로 알리지 않는다. 시청자 수 옆 ▼ 한 글자만 (M06 §3)
     if (this.lastFans >= 0 && s.fans < this.lastFans) this.fanDropUntil = now + 900;
@@ -476,6 +482,7 @@ export class LivePhase extends PhaseScene {
       if (this.flownSuperchats.has(msg.id)) continue;
       this.flownSuperchats.add(msg.id);
 
+      playSfx(this, 'sfx.superchat', 0.5);
       const from = { x: L.live.chat.x + L.pad, y: L.live.chat.y + L.live.chat.h - 120 };
       const to = { x: L.live.portrait.x + L.pad, y: L.live.portrait.y + 252 };
       const label = this.text(from.x, from.y, `+${msg.amount} G`, 'wax');

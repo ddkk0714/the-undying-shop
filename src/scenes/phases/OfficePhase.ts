@@ -4,6 +4,7 @@ import { starArt } from '../../render/assets';
 import { L, slotX, actionX, ACTION_W } from '../../ui/layout';
 import { Button } from '../../ui/Button';
 import { onboard } from '../../ui/Onboarding';
+import { playBgm } from '../../audio/Sfx';
 import { PhaseScene } from './PhaseScene';
 import type { Contract, GameState } from '../../core/types';
 
@@ -37,6 +38,7 @@ export class OfficePhase extends PhaseScene {
     this.contractIndex = 0;
     this.mode = 'SHELF';
     super.create();
+    playBgm(this, 'bgm.shop');
   }
 
   protected build(s: Readonly<GameState>): void {

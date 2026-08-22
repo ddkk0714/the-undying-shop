@@ -5,6 +5,7 @@ import { PALETTE } from '../../render/palette';
 import { L } from '../../ui/layout';
 import { Button } from '../../ui/Button';
 import { reducedMotion } from '../../ui/options';
+import { playSfx } from '../../audio/Sfx';
 import { PhaseScene } from './PhaseScene';
 import type { GameState } from '../../core/types';
 
@@ -156,6 +157,7 @@ export class DeathPhase extends PhaseScene {
     if (this.reduced || this.flashes > 0) return;
     // 화면 전체 wax 플래시 3회 + 카메라 흔들림
     this.flashes = 3;
+    playSfx(this, 'sfx.record', 0.9);
     const cam = this.cameras.main;
     for (let i = 0; i < 3; i += 1) {
       this.time.delayedCall(i * 220, () => cam.flash(140, 192, 57, 47, false));

@@ -8,6 +8,7 @@ import { reducedMotion } from '../../ui/options';
 import { sealStamp } from '../../ui/SealStamp';
 import { degradeOverlay, portrait } from '../../ui/Portrait';
 import { onboard } from '../../ui/Onboarding';
+import { playBgm, playSfx } from '../../audio/Sfx';
 import { PhaseScene } from './PhaseScene';
 import type { Corpse, GameState, Persona, Star } from '../../core/types';
 
@@ -42,6 +43,7 @@ export class RevivePhase extends PhaseScene {
     this.inheriting = false;
     this.heirIndex = 0;
     super.create();
+    playBgm(this, 'bgm.shop');
   }
 
   protected build(s: Readonly<GameState>): void {
@@ -322,7 +324,11 @@ export class RevivePhase extends PhaseScene {
       label: quote === null ? '蘇生 소생' : `蘇生 ${fmtGold(quote.cost)}G`,
       hotkey: '1', variant: 'danger',
       enabled: quote?.affordable === true,
-      onClick: () => corpse && this.store.dispatch({ type: 'REVIVE/PAY', starId: corpse.starId }),
+      onClick: () => {
+        if (corpse === undefined) return;
+        playSfx(this, 'sfx.revive', 0.8);
+        this.store.dispatch({ type: 'REVIVE/PAY', starId: corpse.starId });
+      },
     });
     new Button(this, {
       x: actionX(1), y, w: ACTION_W, h,
