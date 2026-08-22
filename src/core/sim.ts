@@ -51,6 +51,18 @@ export const proactivePolicy: Policy = (state) => {
   return conservativePolicy(state);
 };
 
+/** Uses attack on every encounter to model a player who almost never appeals. */
+export const lowAppealPolicy: Policy = (state) => {
+  if (state.phase === 'LIVE' && state.today?.encounter !== null && state.today?.encounter !== undefined) return { type: 'COMBAT/CHOOSE', choice: 'ATTACK' };
+  return conservativePolicy(state);
+};
+
+/** Uses appeal on every encounter to measure the short-term-income temptation. */
+export const alwaysAppealPolicy: Policy = (state) => {
+  if (state.phase === 'LIVE' && state.today?.encounter !== null && state.today?.encounter !== undefined) return { type: 'COMBAT/CHOOSE', choice: 'APPEAL' };
+  return conservativePolicy(state);
+};
+
 export function simulateState(seed: number, policy: Policy): GameState {
   const store = createStore(createInitialState(seed), reducer);
   const maxSteps = 1000;

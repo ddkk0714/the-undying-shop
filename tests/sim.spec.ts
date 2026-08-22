@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { conservativePolicy, proactivePolicy, randomPolicy, simulate, simulateState } from '../src/core/sim';
+import { alwaysAppealPolicy, conservativePolicy, lowAppealPolicy, proactivePolicy, randomPolicy, simulate, simulateState } from '../src/core/sim';
 import { content } from '../src/core/content';
 import { createInitialState } from '../src/core/state';
 
@@ -42,4 +42,22 @@ describe('headless simulation', () => {
     expect(state.gold).not.toBe(content.balance.start.gold);
     expect(state.fans).not.toBe(content.balance.start.fans);
   });
+
+  it('makes always appealing richer but keeps it shallower than low-appeal play across 1000 seeds', () => {
+    let lowAppealGold = 0;
+    let lowAppealFloor = 0;
+    let alwaysAppealGold = 0;
+    let alwaysAppealFloor = 0;
+    for (let seed = 1; seed <= 1000; seed += 1) {
+      const lowAppeal = simulateState(seed, lowAppealPolicy);
+      const alwaysAppeal = simulateState(seed, alwaysAppealPolicy);
+      lowAppealGold += lowAppeal.gold;
+      lowAppealFloor += lowAppeal.maxFloor;
+      alwaysAppealGold += alwaysAppeal.gold;
+      alwaysAppealFloor += alwaysAppeal.maxFloor;
+      expect(alwaysAppeal.maxFloor).toBeLessThan(content.balance.start.targetFloor);
+    }
+    expect(alwaysAppealGold).toBeGreaterThan(lowAppealGold);
+    expect(lowAppealFloor).toBeGreaterThan(alwaysAppealFloor);
+  }, 15_000);
 });
