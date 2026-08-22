@@ -2,12 +2,12 @@ import { content } from '../content';
 import { draw } from '../rng';
 import { combatLine, createEncounter, createHero, isEncounterFloor, resolveCombatChoice, type CombatLineTone } from './combat';
 import { addAppealChat, awardSuperchat } from './opinion';
-import type { CombatChoice, Combatant, GameState, ItemDef, Star } from '../types';
+import type { CombatChoice, Combatant, GameState, ItemDef, ItemId, Star } from '../types';
 
 function equippedItems(state: GameState): ItemDef[] {
   return state.shelf.flatMap((id) => {
     const item = content.items.find((candidate) => candidate.id === id);
-    return item === undefined ? [] : [item];
+    return item?.kind === 'GEAR' ? [item] : [];
   });
 }
 
@@ -186,5 +186,21 @@ export function chooseCombat(state: GameState, choice: CombatChoice): GameState 
     ...withAppeal,
     waitingSince: result.enemyDefeated ? null : withAppeal.phaseStartedAt,
     pendingFx: [...withAppeal.pendingFx, { kind: choice === 'APPEAL' ? 'APPEAL_POSE' : choice === 'DEFEND' ? 'GUARD' : 'HIT' }],
+  };
+}
+
+export function useCombatItem(state: GameState, itemId: ItemId): GameState {
+  if (state.phase !== 'LIVE' || state.today === null || state.today.hero.hp >= state.today.hero.maxHp) return state;
+  const item = content.items.find((candidate) => candidate.id === itemId && candidate.kind === 'POTION');
+  const stack = state.inventory.find((candidate) => candidate.id === itemId && candidate.qty > 0);
+  if (item === undefined || stack === undefined || item.healing <= 0) return state;
+  const inventory = state.inventory.flatMap((candidate) => {
+    if (candidate.id !== itemId) return [candidate];
+    return candidate.qty <= 1 ? [] : [{ ...candidate, qty: candidate.qty - 1 }];
+  });
+  return {
+    ...state,
+    inventory,
+    today: { ...state.today, hero: { ...state.today.hero, hp: Math.min(state.today.hero.maxHp, state.today.hero.hp + item.healing) } },
   };
 }

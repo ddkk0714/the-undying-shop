@@ -1,8 +1,8 @@
 import { content } from './content';
 import { createInitialState } from './state';
-import { answerRadio, chooseCombat, startLive, tickLive } from './systems/dive';
+import { answerRadio, chooseCombat, startLive, tickLive, useCombatItem } from './systems/dive';
 import { damageAutopsyCorpse, discardReviveCorpse, reviveQuote } from './systems/economy';
-import { acceptContract, confirmOffice, pickStar, populateVisitors, rejectContract } from './systems/office';
+import { acceptContract, confirmOffice, pickStar, placeOfficeItem, populateVisitors, rejectContract, sellOfficeItem } from './systems/office';
 import { inherit } from './systems/roster';
 import { awardSuperchat, expireChats, moderateChat, spawnChat } from './systems/opinion';
 import { isEarlyClosure, judgeEnding } from './systems/narrative';
@@ -127,15 +127,12 @@ export function reducer(state: GameState, action: Action): GameState {
     case 'OFFICE/CONTRACT_ACCEPT': return acceptContract(state, action.starId);
     case 'OFFICE/CONTRACT_REJECT': return rejectContract(state, action.starId);
     case 'OFFICE/PICK_STAR': return pickStar(state, action.starId);
-    case 'OFFICE/PLACE': {
-      if (state.phase !== 'OFFICE' || action.slot < 0 || action.slot >= state.shelf.length) return state;
-      const shelf = [...state.shelf];
-      shelf[action.slot] = action.itemId;
-      return { ...state, shelf };
-    }
+    case 'OFFICE/PLACE': return placeOfficeItem(state, action.slot, action.itemId);
+    case 'OFFICE/SELL': return sellOfficeItem(state, action.itemId);
     case 'OFFICE/CONFIRM': return state.phase === 'OFFICE' ? advance(state) : state;
     case 'LIVE/TICK': return expireChats(concludeRunIfDead(tickLive(state, action.dt)));
     case 'COMBAT/CHOOSE': return concludeRunIfDead(chooseCombat(state, action.choice));
+    case 'COMBAT/USE_ITEM': return useCombatItem(state, action.itemId);
     case 'RADIO/ANSWER': return answerRadio(state, action.dir);
     case 'CHAT/SPAWN': return spawnChat(state);
     case 'CHAT/DELETE': return moderateChat(state, action.id, false);

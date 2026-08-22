@@ -31,9 +31,11 @@ export type Action =
   | { type: 'OFFICE/CONTRACT_REJECT'; starId: StarId }
   | { type: 'OFFICE/PICK_STAR'; starId: StarId }
   | { type: 'OFFICE/PLACE'; slot: number; itemId: ItemId | null }
+  | { type: 'OFFICE/SELL'; itemId: ItemId }
   | { type: 'OFFICE/CONFIRM' }
   | { type: 'LIVE/TICK'; dt: number }
   | { type: 'COMBAT/CHOOSE'; choice: CombatChoice }
+  | { type: 'COMBAT/USE_ITEM'; itemId: ItemId }
   | { type: 'RADIO/ANSWER'; dir: 'A' | 'B' | 'UNKNOWN' }
   | { type: 'CHAT/SPAWN' }
   | { type: 'CHAT/DELETE'; id: string }

@@ -14,6 +14,16 @@ const emptyStats = (): RunStats => ({
   deepestFloor: content.balance.start.maxFloor,
 });
 
+function startingInventory(): GameState['inventory'] {
+  const inventory: GameState['inventory'] = [];
+  for (const itemId of content.balance.start.inventory) {
+    const index = inventory.findIndex((stack) => stack.id === itemId);
+    if (index < 0) inventory.push({ id: itemId, qty: 1 });
+    else inventory[index] = { ...inventory[index]!, qty: inventory[index]!.qty + 1 };
+  }
+  return inventory;
+}
+
 export function createInitialState(seed: number): GameState {
   const stars = structuredClone(content.stars.slice(0, 2));
   const recruitPool = structuredClone(content.stars.slice(2)).map((star) => ({ ...star, status: 'HIDDEN' as const, personaId: null }));
@@ -41,7 +51,7 @@ export function createInitialState(seed: number): GameState {
     corpses: [],
     today: null,
     shelf: [null, null, null],
-    inventory: [],
+    inventory: startingInventory(),
     seenWitnessFloors: [],
     witnessLog: [],
     flags: {},

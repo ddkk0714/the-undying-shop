@@ -9,7 +9,7 @@ import narrativeJson from '../../content/narrative.ko.json';
 import type { ForkOutcome, ItemDef, Persona, Star } from './types';
 
 export interface Balance {
-  start: { gold: number; fans: number; reputation: number; maxFloor: number; days: number; targetFloor: number };
+  start: { gold: number; fans: number; reputation: number; maxFloor: number; days: number; targetFloor: number; inventory: string[] };
   revive: { base: number; floorExp: number; gradeMul: Record<'INTACT' | 'DAMAGED', number>; degradeExp: number; decayPerDay: number; roundTo: number; discardLoot: number };
   dive: { floorSeconds: number; encounterEvery: number; delayGraceSeconds: number; delayFanLossPerSec: number; delayFanLossCap: number };
   combat: CombatBalance;
@@ -42,6 +42,7 @@ export interface Balance {
     moderationBanCost: number;
     leakPerWitnessRevive: Record<string, number>;
     leakPerIgnoredChat: number;
+    leakPerTruthRelicSale: number;
     leakPerFakeSuccess: number;
     leakEndingThreshold: number;
     viewerFatigueOn28F: number;
@@ -167,8 +168,10 @@ function makeItems(raw: unknown): ItemDef[] {
     assertNumber(value.atk, `items[${index}].atk`);
     assertNumber(value.def, `items[${index}].def`);
     assertNumber(value.price, `items[${index}].price`);
+    assertNumber(value.healing, `items[${index}].healing`);
     assertShape(typeof value.tier === 'string' && typeof value.isRelic === 'boolean', `items[${index}] tier/relic missing`);
-    return { id: value.id, name: value.name, iconKey: `item.${value.id}`, hp: value.hp, atk: value.atk, def: value.def, price: value.price, tier: value.tier as ItemDef['tier'], isRelic: value.isRelic };
+    assertShape(value.kind === 'GEAR' || value.kind === 'POTION' || value.kind === 'RELIC', `items[${index}].kind invalid`);
+    return { id: value.id, name: value.name, iconKey: `item.${value.id}`, hp: value.hp, atk: value.atk, def: value.def, price: value.price, tier: value.tier as ItemDef['tier'], kind: value.kind as ItemDef['kind'], healing: value.healing, isRelic: value.isRelic };
   });
 }
 
@@ -213,6 +216,7 @@ export function loadContent(): Content {
   assertShape(isRecord(balanceJson) && isRecord(balanceJson.start) && isRecord(balanceJson.revive) && isRecord(balanceJson.dive) && isRecord(balanceJson.combat) && isRecord(balanceJson.degrade) && isRecord(balanceJson.income), 'balance sections missing');
   const items = makeItems(itemsJson);
   for (const key of ['gold', 'fans', 'reputation', 'maxFloor', 'days', 'targetFloor'] as const) assertNumber(balanceJson.start[key], `balance.start.${key}`);
+  assertShape(Array.isArray(balanceJson.start.inventory) && balanceJson.start.inventory.every((itemId) => typeof itemId === 'string' && items.some((item) => item.id === itemId)), 'balance.start.inventory invalid');
   for (const key of ['base', 'floorExp', 'degradeExp', 'decayPerDay', 'roundTo', 'discardLoot'] as const) assertNumber(balanceJson.revive[key], `balance.revive.${key}`);
   assertShape(balanceJson.revive.discardLoot > 0, 'balance.revive.discardLoot must be positive');
   assertShape(isRecord(balanceJson.revive.gradeMul), 'balance.revive.gradeMul missing');
@@ -232,7 +236,7 @@ export function loadContent(): Content {
   assertShape(isRecord(balanceJson.fans), 'balance.fans missing');
   for (const key of ['base', 'depthPivot', 'depthMul', 'recordBonus', 'shallowLiePenalty', 'appealMul'] as const) assertNumber(balanceJson.fans[key], `balance.fans.${key}`);
   assertShape(isRecord(balanceJson.opinion) && isRecord(balanceJson.opinion.leakPerWitnessRevive), 'balance.opinion.leakPerWitnessRevive missing');
-  for (const key of ['chatLifetimeSeconds', 'chatMaxVisible', 'nickPoolSize', 'midLeakThreshold', 'truthChanceAtMidLeak', 'hypeChance', 'casualChance', 'truthLeakPower', 'slowAfterSeconds', 'backlashIntervalSeconds', 'moderationDeleteCost', 'moderationBanCost', 'leakPerIgnoredChat', 'leakPerFakeSuccess', 'leakEndingThreshold', 'moderationFreeCount', 'moderationRepPenalty'] as const) assertNumber(balanceJson.opinion[key], `balance.opinion.${key}`);
+  for (const key of ['chatLifetimeSeconds', 'chatMaxVisible', 'nickPoolSize', 'midLeakThreshold', 'truthChanceAtMidLeak', 'hypeChance', 'casualChance', 'truthLeakPower', 'slowAfterSeconds', 'backlashIntervalSeconds', 'moderationDeleteCost', 'moderationBanCost', 'leakPerIgnoredChat', 'leakPerTruthRelicSale', 'leakPerFakeSuccess', 'leakEndingThreshold', 'moderationFreeCount', 'moderationRepPenalty'] as const) assertNumber(balanceJson.opinion[key], `balance.opinion.${key}`);
   assertNumber(balanceJson.opinion.viewerFatigueOn28F, 'balance.opinion.viewerFatigueOn28F');
   assertShape(isRecord(balanceJson.reputation) && Array.isArray(balanceJson.reputation.grades), 'balance.reputation.grades missing');
   assertNumber(balanceJson.reputation.onSuccessAnnounce, 'balance.reputation.onSuccessAnnounce');

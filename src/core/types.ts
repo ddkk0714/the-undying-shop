@@ -198,6 +198,7 @@ export interface ForkOutcome {
 /* ── 4. 아이템 ─────────────────────────────────────────────── */
 
 export type ItemId = string;
+export type ItemKind = 'GEAR' | 'POTION' | 'RELIC';
 
 export interface ItemDef {
   id: ItemId;
@@ -210,6 +211,8 @@ export interface ItemDef {
   /** 판매가. 진열대에 올리면 이 값만큼 골드가 즉시 들어온다 */
   price: number;
   tier: 'S'|'A'|'B'|'C'|'F';
+  kind: ItemKind;
+  healing: number;
   /** 유품 여부 — 시체에서 나온 것 */
   isRelic: boolean;
 }

@@ -49,7 +49,11 @@ describe('revive economy', () => {
     const initial = { ...base, phase: 'REVIVE' as const, stars: base.stars.map((star) => star.id === body.starId ? { ...star, status: 'DEAD' as const } : star), corpses: [body] };
     const discarded = discardReviveCorpse(initial, body.starId);
     expect(discarded.stars.find((star) => star.id === body.starId)?.status).toBe('DISCARDED');
-    expect(discarded.inventory).toEqual([{ id: 'mask_bone', qty: 2 }, { id: 'ring_rust', qty: 1 }]);
+    expect(discarded.inventory).toEqual([
+      ...initial.inventory,
+      { id: 'mask_bone', qty: 2 },
+      { id: 'ring_rust', qty: 1 },
+    ]);
     expect(discarded.corpses).toEqual([body]);
     expect(discarded.stats.totalDiscarded).toBe(1);
     expect(discarded.pendingFx.at(-1)).toMatchObject({ kind: 'SEAL_STAMP', payload: { starId: body.starId } });
@@ -67,7 +71,7 @@ describe('revive economy', () => {
     expect(new Set(loot).size).toBe(loot.length);
     expect(loot.every((itemId) => content.items.some((item) => item.id === itemId && item.isRelic))).toBe(true);
     expect(loot.some((itemId) => content.balance.autopsy.truthRelicIds.includes(itemId))).toBe(false);
-    expect(discarded.inventory.reduce((total, stack) => total + stack.qty, 0)).toBe(loot.length);
+    expect(discarded.inventory.reduce((total, stack) => total + stack.qty, 0)).toBe(initial.inventory.reduce((total, stack) => total + stack.qty, 0) + loot.length);
     expect(discarded.rngCursor).toBe(initial.rngCursor + loot.length);
     expect(discardReviveCorpse(initial, body.starId)).toEqual(discarded);
   });

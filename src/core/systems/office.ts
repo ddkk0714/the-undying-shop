@@ -51,8 +51,43 @@ export function populateVisitors(state: GameState): GameState {
 function equippedItems(state: GameState): ItemDef[] {
   return state.shelf.flatMap((id) => {
     const item = content.items.find((candidate) => candidate.id === id);
-    return item === undefined ? [] : [item];
+    return item?.kind === 'GEAR' ? [item] : [];
   });
+}
+
+function removeInventoryItem(inventory: GameState['inventory'], itemId: string): GameState['inventory'] {
+  return inventory.flatMap((stack) => {
+    if (stack.id !== itemId) return [stack];
+    return stack.qty <= 1 ? [] : [{ ...stack, qty: stack.qty - 1 }];
+  });
+}
+
+export function placeOfficeItem(state: GameState, slot: number, itemId: string | null): GameState {
+  if (state.phase !== 'OFFICE' || slot < 0 || slot >= state.shelf.length) return state;
+  if (itemId !== null) {
+    const item = content.items.find((candidate) => candidate.id === itemId);
+    const available = state.inventory.some((stack) => stack.id === itemId && stack.qty > 0);
+    if (item?.kind !== 'GEAR' || !available || state.shelf.includes(itemId)) return state;
+  }
+  const shelf = [...state.shelf];
+  shelf[slot] = itemId;
+  return { ...state, shelf };
+}
+
+export function sellOfficeItem(state: GameState, itemId: string): GameState {
+  if (state.phase !== 'OFFICE' || state.shelf.includes(itemId)) return state;
+  const item = content.items.find((candidate) => candidate.id === itemId);
+  const available = state.inventory.some((stack) => stack.id === itemId && stack.qty > 0);
+  if (item === undefined || !available) return state;
+  const truthRelic = item.id === 'soil_deep' || item.id === 'page_torn';
+  return {
+    ...state,
+    gold: state.gold + item.price,
+    inventory: removeInventoryItem(state.inventory, itemId),
+    leak: truthRelic ? Math.min(100, state.leak + content.balance.opinion.leakPerTruthRelicSale) : state.leak,
+    stats: { ...state.stats, goldEarned: state.stats.goldEarned + item.price },
+    today: state.today === null ? null : { ...state.today, income: { ...state.today.income, shelf: state.today.income.shelf + item.price } },
+  };
 }
 
 function degradationMultiplier(star: Star): number {
@@ -114,15 +149,5 @@ export function rejectContract(state: GameState, starId: string): GameState {
 }
 
 export function confirmOffice(state: GameState): GameState {
-  if (state.phase !== 'OFFICE') return state;
-  const sold = equippedItems(state);
-  const goldEarned = sold.reduce((total, item) => total + item.price, 0);
-  const truthRelics = sold.filter((item) => item.id === 'soil_deep' || item.id === 'page_torn').length;
-  return {
-    ...state,
-    gold: state.gold + goldEarned,
-    leak: Math.min(100, state.leak + truthRelics * 10),
-    stats: { ...state.stats, goldEarned: state.stats.goldEarned + goldEarned },
-    today: state.today === null ? null : { ...state.today, income: { ...state.today.income, shelf: state.today.income.shelf + goldEarned } },
-  };
+  return state;
 }

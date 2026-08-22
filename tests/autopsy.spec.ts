@@ -87,7 +87,7 @@ describe('autopsy and announcement combinations', () => {
     expect(corpse.loot.length).toBeGreaterThanOrEqual(content.balance.autopsy.lootMin);
     expect(corpse.loot.length).toBeLessThanOrEqual(content.balance.autopsy.lootMax);
     expect(corpse.loot.some((itemId) => content.balance.autopsy.truthRelicIds.includes(itemId))).toBe(false);
-    expect(decided.inventory.reduce((total, stack) => total + stack.qty, 0)).toBe(corpse.loot.length);
+    expect(decided.inventory.reduce((total, stack) => total + stack.qty, 0)).toBe(initial.inventory.reduce((total, stack) => total + stack.qty, 0) + corpse.loot.length);
     expect(decided.witnessLog.every((entry) => entry.suppressed)).toBe(true);
     expect(decided.stars[0]?.witnessed).toEqual([]);
     expect(decided.pendingFx.at(-1)?.kind).toBe('SEAL_STAMP');

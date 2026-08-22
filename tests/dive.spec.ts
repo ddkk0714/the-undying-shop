@@ -115,6 +115,22 @@ describe('live dive', () => {
     expect(state.stars.find((star) => star.id === 'body_karin')?.status).toBe('DEAD');
   });
 
+  it('consumes one potion in LIVE to restore health without consuming a combat turn', () => {
+    const initial = liveState(145, 3);
+    const state = {
+      ...initial,
+      inventory: [{ id: 'potion_crimson', qty: 1 }],
+      today: { ...initial.today!, hero: { ...initial.today!.hero, hp: 20 }, encounter: createEncounter(3, 'NONE', 0) },
+    };
+    const healed = reducer(state, { type: 'COMBAT/USE_ITEM', itemId: 'potion_crimson' });
+
+    expect(healed.today?.hero.hp).toBe(44);
+    expect(healed.today?.encounter).toEqual(state.today.encounter);
+    expect(healed.inventory).toEqual([]);
+    expect(healed.rngCursor).toBe(state.rngCursor);
+    expect(reducer(healed, { type: 'COMBAT/USE_ITEM', itemId: 'potion_crimson' })).toEqual(healed);
+  });
+
   it('forces a descent death at the claimed ceiling plus three floors', () => {
     let state = liveState(15, 6, 4);
     state = reducer(state, { type: 'LIVE/TICK', dt: content.balance.dive.floorSeconds });

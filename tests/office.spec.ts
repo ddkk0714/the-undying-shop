@@ -28,6 +28,11 @@ describe('office', () => {
     expect(state.recruitPool).toHaveLength(3);
     expect(state.recruitPool.every((star) => star.status === 'HIDDEN')).toBe(true);
     expect(state.recruitPool.some((candidate) => state.stars.some((star) => star.id === candidate.id))).toBe(false);
+    expect(state.inventory).toEqual([
+      { id: 'lantern_old', qty: 1 },
+      { id: 'dagger_crack', qty: 1 },
+      { id: 'potion_crimson', qty: 1 },
+    ]);
   });
 
   it('offers a unique, affordable visitor when no living star remains', () => {
@@ -88,14 +93,23 @@ describe('office', () => {
     expect(followingDay.visitors.some((visitor) => visitor.starId === applicant.id)).toBe(false);
   });
 
-  it('sells shelf equipment, updates live stats, and leaks truth relic sales', () => {
-    let state = { ...officeState(), shelf: ['cloak_ash', 'soil_deep', null] };
+  it('keeps equipped gear, while selling stock grants gold and leaks truth relics', () => {
+    let state = { ...officeState(), inventory: [{ id: 'cloak_ash', qty: 1 }, { id: 'soil_deep', qty: 1 }] };
+    state = reducer(state, { type: 'OFFICE/PLACE', slot: 0, itemId: 'cloak_ash' });
+    expect(state.shelf).toEqual(['cloak_ash', null, null]);
+    expect(reducer(state, { type: 'OFFICE/PLACE', slot: 1, itemId: 'cloak_ash' })).toEqual(state);
+    expect(reducer(state, { type: 'OFFICE/SELL', itemId: 'cloak_ash' })).toEqual(state);
+
     state = reducer(state, { type: 'OFFICE/PICK_STAR', starId: 'body_karin' });
-    state = reducer(state, { type: 'OFFICE/CONFIRM' });
-    expect(state.gold).toBe(12840 + 1340 + 4400);
-    expect(state.stats.goldEarned).toBe(5740);
-    expect(state.today?.income).toEqual({ superchat: 0, shelf: 5740, goods: 0 });
+    state = reducer(state, { type: 'OFFICE/SELL', itemId: 'soil_deep' });
+    expect(state.gold).toBe(content.balance.start.gold + 4400);
+    expect(state.stats.goldEarned).toBe(4400);
+    expect(state.today?.income).toEqual({ superchat: 0, shelf: 4400, goods: 0 });
     expect(state.leak).toBe(10);
+    expect(state.inventory).toEqual([{ id: 'cloak_ash', qty: 1 }]);
+
+    state = reducer(state, { type: 'OFFICE/CONFIRM' });
+    expect(state.gold).toBe(content.balance.start.gold + 4400);
     expect(state.today?.hero).toEqual({ hp: 94, maxHp: 94, atk: 13, def: 9 });
   });
 });
