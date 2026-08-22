@@ -125,6 +125,16 @@ describe('live dive', () => {
     expect(state.maxFloor).toBe(26);
   });
 
+  it('settles a forced shallow death with a negative fan delta', () => {
+    const initial = liveState(151, 3, 1);
+    const state = reducer(initial, { type: 'LIVE/TICK', dt: content.balance.dive.floorSeconds });
+
+    expect(state.phase).toBe('DEATH');
+    expect(state.today?.diedFloor).toBe(4);
+    expect(state.today?.fansDelta).toBeLessThan(0);
+    expect(state.fans).toBeLessThan(initial.fans);
+  });
+
   it('settles record, fan, goods, and corpse state only once on death', () => {
     let state = liveState(16, 28, 26);
     state = reducer(state, { type: 'LIVE/TICK', dt: content.balance.dive.floorSeconds });

@@ -36,7 +36,7 @@
   },
   "fans": {
     "base": 800,
-    "depthPivot": 15,
+    "depthPivot": 18,
     "depthMul": 0.08,
     "recordBonus": 1.5,
     "shallowLiePenalty": -0.4,
