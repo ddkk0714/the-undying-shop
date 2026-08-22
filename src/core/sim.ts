@@ -1,6 +1,7 @@
 import { createStore } from './store';
 import { reducer } from './reducer';
 import { createInitialState } from './state';
+import { content } from './content';
 import { mulberry32 } from './rng';
 import { reviveQuote } from './systems/economy';
 import type { Action } from './actions';
@@ -61,6 +62,40 @@ export const lowAppealPolicy: Policy = (state) => {
 export const alwaysAppealPolicy: Policy = (state) => {
   if (state.phase === 'LIVE' && state.today?.encounter !== null && state.today?.encounter !== undefined) return { type: 'COMBAT/CHOOSE', choice: 'APPEAL' };
   return conservativePolicy(state);
+};
+
+function shouldDamageForRecovery(state: Readonly<GameState>): boolean {
+  if (state.phase !== 'AUTOPSY') return false;
+  const corpse = state.corpses.find((candidate) => candidate.diedDay === state.day && candidate.grade === 'INTACT');
+  const star = corpse === undefined ? undefined : state.stars.find((candidate) => candidate.id === corpse.starId && candidate.status === 'DEAD');
+  if (corpse === undefined || star === undefined) return false;
+  const nextDay = { ...state, day: state.day + 1 };
+  const immediate = reviveQuote(nextDay, corpse, star);
+  if (!immediate.affordable) return true;
+  const laterCorpse = { ...corpse, diedDay: state.day + 1 };
+  const laterStar = { ...star, reviveCount: star.reviveCount + 1 };
+  const followingCost = reviveQuote({ ...state, day: state.day + 2 }, laterCorpse, laterStar).cost;
+  const conservativeNextIncome = Math.floor(state.fans * content.balance.income.goodsPerFan);
+  return nextDay.gold - immediate.cost + conservativeNextIncome < followingCost;
+}
+
+function newDamageLootForSale(state: Readonly<GameState>): string | undefined {
+  const corpse = state.corpses.find((candidate) => candidate.grade === 'DAMAGED' && candidate.diedDay === state.day - 1);
+  return corpse?.loot.find((itemId) => !state.shelf.includes(itemId));
+}
+
+/**
+ * Uses the M09 recovery branch when a next-day revive, or the required next two revives after baseline goods income, cannot be funded.
+ * This lets balance simulations measure the cost of keeping a shop alive through disposal.
+ */
+export const damageAwarePolicy: Policy = (state) => {
+  if (shouldDamageForRecovery(state)) return { type: 'AUTOPSY/DECIDE', grade: 'DAMAGED' };
+  if (state.phase === 'OFFICE' && state.today === null) {
+    const emptySlot = state.shelf.findIndex((itemId) => itemId === null);
+    const loot = newDamageLootForSale(state);
+    if (emptySlot >= 0 && loot !== undefined) return { type: 'OFFICE/PLACE', slot: emptySlot, itemId: loot };
+  }
+  return lowAppealPolicy(state);
 };
 
 export function simulateState(seed: number, policy: Policy): GameState {

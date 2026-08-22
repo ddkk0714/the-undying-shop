@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { alwaysAppealPolicy, conservativePolicy, lowAppealPolicy, proactivePolicy, randomPolicy, simulate, simulateState } from '../src/core/sim';
+import { alwaysAppealPolicy, conservativePolicy, damageAwarePolicy, lowAppealPolicy, proactivePolicy, randomPolicy, simulate, simulateState } from '../src/core/sim';
 import { content } from '../src/core/content';
 import { createInitialState } from '../src/core/state';
+import { reviveQuote } from '../src/core/systems/economy';
 
 describe('headless simulation', () => {
   it('prioritizes an affordable revival when no star can enter OFFICE', () => {
@@ -60,4 +61,29 @@ describe('headless simulation', () => {
     expect(alwaysAppealGold).toBeGreaterThan(lowAppealGold);
     expect(lowAppealFloor).toBeGreaterThan(alwaysAppealFloor);
   }, 15_000);
+
+  it('chooses damage only when the next intact revival is unaffordable, then sells that recovery loot once', () => {
+    const initial = createInitialState(19);
+    const star = initial.stars[0]!;
+    const corpse = { starId: star.id, diedFloor: 26, diedDay: 1, grade: 'INTACT' as const, announced: null, loot: [] };
+    const autopsy = { ...initial, phase: 'AUTOPSY' as const, gold: 0, stars: initial.stars.map((candidate) => candidate.id === star.id ? { ...candidate, status: 'DEAD' as const } : candidate), corpses: [corpse] };
+    expect(damageAwarePolicy(autopsy)).toEqual({ type: 'AUTOPSY/DECIDE', grade: 'DAMAGED' });
+
+    const deadStar = autopsy.stars[0]!;
+    const immediate = reviveQuote({ ...autopsy, day: 2 }, corpse, deadStar).cost;
+    const following = reviveQuote({ ...autopsy, day: 3 }, { ...corpse, diedDay: 2 }, { ...deadStar, reviveCount: 1 }).cost;
+    const forecastLimited = { ...autopsy, gold: immediate + following - Math.floor(autopsy.fans * content.balance.income.goodsPerFan) - 1 };
+    expect(reviveQuote({ ...forecastLimited, day: 2 }, corpse, deadStar).affordable).toBe(true);
+    expect(damageAwarePolicy(forecastLimited)).toEqual({ type: 'AUTOPSY/DECIDE', grade: 'DAMAGED' });
+
+    const office = {
+      ...initial,
+      day: 2,
+      phase: 'OFFICE' as const,
+      inventory: [{ id: 'soil_deep', qty: 1 }],
+      corpses: [{ ...corpse, diedDay: 1, grade: 'DAMAGED' as const, loot: ['soil_deep'] }],
+    };
+    expect(damageAwarePolicy(office)).toEqual({ type: 'OFFICE/PLACE', slot: 0, itemId: 'soil_deep' });
+    expect(damageAwarePolicy({ ...office, day: 3 })).not.toMatchObject({ type: 'OFFICE/PLACE' });
+  });
 });
