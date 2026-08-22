@@ -83,7 +83,31 @@ describe('headless simulation', () => {
       inventory: [{ id: 'soil_deep', qty: 1 }],
       corpses: [{ ...corpse, diedDay: 1, grade: 'DAMAGED' as const, loot: ['soil_deep'] }],
     };
-    expect(damageAwarePolicy(office)).toEqual({ type: 'OFFICE/PLACE', slot: 0, itemId: 'soil_deep' });
-    expect(damageAwarePolicy({ ...office, day: 3 })).not.toMatchObject({ type: 'OFFICE/PLACE' });
+    expect(damageAwarePolicy(office)).toEqual({ type: 'OFFICE/SELL', itemId: 'soil_deep' });
+    expect(damageAwarePolicy({ ...office, inventory: [], day: 3 })).not.toMatchObject({ type: 'OFFICE/SELL' });
   });
+
+  it('uses one appeal per encounter day before returning to low-risk combat', () => {
+    const initial = createInitialState(20);
+    const live = {
+      ...initial,
+      phase: 'LIVE' as const,
+      today: {
+        starId: initial.stars[0]!.id, personaId: null, currentFloor: 3,
+        hero: { hp: 82, maxHp: 82, atk: 13, def: 2 }, encounter: { floor: 3, enemyKey: 'enemy', enemy: { hp: 10, maxHp: 10, atk: 1, def: 0 }, turn: 0, line: '', guarding: false, log: [] },
+        appealCount: 0, claimedCeiling: 30, forks: [], superchat: 0, income: { superchat: 0, shelf: 0, goods: 0 }, fansDelta: 0, chatQueue: [], deletedCount: 0, diedFloor: null, deathCause: null,
+      },
+    };
+    expect(damageAwarePolicy(live)).toEqual({ type: 'COMBAT/CHOOSE', choice: 'APPEAL' });
+    expect(damageAwarePolicy({ ...live, today: { ...live.today, appealCount: 1 } })).toEqual({ type: 'COMBAT/CHOOSE', choice: 'ATTACK' });
+  });
+
+  it('finishes 1000 seeded runs with starter stock, potion use, and emergency sales enabled', () => {
+    for (let seed = 1; seed <= 1000; seed += 1) {
+      const state = simulateState(seed, damageAwarePolicy);
+      expect(state.isOver).toBe(true);
+      expect(state.day).toBeLessThanOrEqual(content.balance.start.days);
+      expect(Number.isFinite(state.gold)).toBe(true);
+    }
+  }, 15_000);
 });

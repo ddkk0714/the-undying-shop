@@ -66,3 +66,127 @@
 ## D1 8/21 · HO-004 reputation API
 
 **Project**: Exposed and validated the balance reputation table in core, with a shared numeric-to-grade helper for HUD consumers.
+
+## D2 8/21 쨌 M06 dive fork, witness, and descent-limit core
+
+**Project**: Completed deterministic radio-fork resolution and witness/descent state transitions in the headless LIVE core.
+**Deliverables**: `systems/dive.ts`, `reducer.ts` radio dispatch, `sim.ts` fork policy, balance validation, and dive acceptance tests.
+**Validation**: `npm run typecheck` and `npm test` passed (7 files, 26 tests). Tests cover seed-stable fork-side swaps, single-fire 18/23/28F witnesses with 28F fatigue, and forced death at claimed ceiling + 3. The 1,000-seed headless simulation remains green.
+
+## D2 8/21 · M06 delayed lie callback
+
+**Project**: A shallow route deliberately ordered at a fork is retained as a per-star delayed consequence.
+**Deliverables**: Seeded fork lie classification, `liesTold` accounting, one-shot next-LIVE `TRUTH_WHISPER` radio payload, and a regression test.
+**Validation**: The test proves that a lied-to star emits exactly one callback after revival and never repeats it on a later LIVE start.
+
+## D2 8/21 · CCR approved · REVIVE/DISCARD
+
+**Project**: Added the approved discard action to the shared contract and implemented the revive-room discard outcome.
+**Deliverables**: `REVIVE/DISCARD`, `discardReviveCorpse()`, reducer integration, inventory transfer, one-shot protection, and discarded-body persona inheritance tests.
+**Validation**: `npm run typecheck` and `npm test` passed (7 files, 29 tests).
+
+## D2 8/21 · HO-010 death conclusion and daily settlement
+
+**Project**: Unified combat death and descent-limit death through one idempotent core conclusion path.
+**Deliverables**: corpse creation, DEAD status, record/deepest-floor updates, record FX, fan settlement, goods income, and announcement reputation updates.
+**Validation**: `npm run typecheck` and `npm test` passed (7 files, 31 tests). Eight-day headless runs now retain deaths and economic settlement instead of leaving all state at initial values.
+
+## D2 8/21 · M05 contract visitors / HO-011
+
+**Project**: Restored the daily applicant path so an all-dead roster can recover by signing a visitor contract instead of looping between the revive room and office.
+**Decision**: Persona inheritance targets only a signed, ALIVE `stars` body; an applicant must be accepted first, then can receive a persona in the revive room.
+**Deliverables**: Two initial stars plus three hidden applicants, seeded daily 0–2 visitor generation, balance-driven fees/claims/honesty, rejection exclusion, and a simulation policy that signs an affordable applicant before selecting a star.
+**Validation**: `npm run typecheck` and `npm test` passed (7 files, 36 tests), including 1,000 seeds for both conservative and proactive recruitment policies. A survival-combat balance sweep measured conservative/proactive averages of 6,102G/9,181G and 29F/30F; their minimum final gold was 1,819G/1,925G.
+
+## D2 8/22 · M11 early-closure safety guard
+
+**Project**: Added the last-resort terminal guard for an unwinnable shop loop without changing the shared action/state contract.
+**Decision**: When no ALIVE star remains, no dead body has an affordable revive quote, and the recruit pool is empty, core ends with the existing `B_CONTINUE` ID. Scenes can distinguish the early closure by `isOver && day < 8` and own the bankruptcy copy.
+**Deliverables**: `isEarlyClosure()` in narrative core, common REVIVE/OFFICE transition coverage, and three regression cases.
+**Validation**: `npm run typecheck` and `npm test` passed (10 files, 53 tests), including both 1,000-seed simulation policies. The tests prove the blocked Day 5 state exits, while an affordable revival or a remaining applicant remains playable.
+
+## D2 8/22 · HO-009 reduced-motion core option
+
+**Project**: Connected the approved `OPTION/SET` action to the core-only delay-penalty flag.
+**Deliverables**: Reducer support for boolean `reducedMotion` and a LIVE wait-penalty regression test.
+**Validation**: The test proves the flag preserves fans during a 10-second unresolved encounter, then resumes the configured penalty when turned off. `npm run typecheck` and `npm test` passed (10 files, 54 tests), including both 1,000-seed policies.
+
+## D3 8/22 · M11 gatekeeper trigger
+
+**Project**: Added the core-side signal for the 34F gatekeeper cutscene without extending the shared state or action contract.
+**Deliverables**: The gatekeeper fork records `flags.gatekeeperCutscene` exactly when first entered; the scene can consume that state to present its cutscene.
+**Validation**: A deterministic dive test reaches the configured gatekeeper fork, verifies the selection wait state and signal, and prevents numeric floor duplication in core. `npm run typecheck` and `npm test` passed (10 files, 55 tests).
+
+## D3 8/22 · HO-012 daily income ledger (CCR approved)
+
+**Project**: Added the approved `TodayRun.income` contract for exact day-end settlement values.
+**Deliverables**: `income: { superchat, shelf, goods }`, initialized when a star is selected and incremented only at the corresponding payment source.
+**Validation**: Shelf-sale, superchat, and goods-income tests each verify their own ledger field; death settlement verifies goods plus superchat equals the actual gold increase. `npm run typecheck` and `npm test` passed (10 files, 55 tests), including both 1,000-seed policies.
+
+## D3 8/22 · HO-013 direct-discard relic loot
+
+**Project**: Restored the material reward for discarding an ordinary dead body, while retaining M09 damage-autopsy's existing 2–3 relic reward.
+**Deliverables**: Balance-driven `revive.discardLoot`, deterministic unique relic selection, inventory transfer, and a direct-discard regression test.
+**Validation**: Tests prove an empty corpse receives the configured number of valid, non-duplicated relics; the result is seed-stable, advances only `rngCursor`, and cannot be claimed twice. `npm run typecheck`, `npm test` (56 tests), and `npm run build` passed.
+
+## D3 8/22 · HO-005 combat dialogue
+
+**Project**: Filled `Encounter.line` with seeded, contextual combat dialogue so the live battle has a speaker from entry through each surviving turn.
+**Deliverables**: Localized healthy/half-health/danger/appeal dialogue arrays, degradation-4 reuse, content validation, seeded selection on encounter entry and combat resolution, and regression tests.
+**Validation**: `npm run typecheck`, all 58 tests, and `npm run build` passed after the parallel UI edit settled. Tests cover healthy entry, appeal, and degradation dialogue; all selection is seeded through `rngCursor`.
+
+## D4 8/22 · M05 truth relic depth gate
+
+**Project**: Bound the two truth relics to the deep-body condition specified for M05, so their high cash value and leak tradeoff cannot appear on shallow runs.
+**Deliverables**: Balance-driven 28F threshold and truth-relic IDs, content validation, depth-aware direct-discard and autopsy loot pools, plus shallow/deep drop tests.
+**Validation**: Shallow bodies cannot produce either truth relic; deterministic deep-body runs do produce them. The full suite passed 59 tests, including both 1,000-seed policies; `npm run typecheck` and `npm run build` passed.
+
+## D3 audit · M08 shallow-death settlement
+
+**Project**: Completed the last unproven D3 acceptance condition for death settlement.
+**Decision**: The forced-descent minimum is 4F, so the documented 15F depth pivot could not produce a negative shallow result. The balance pivot is therefore 18F; the documented formula itself is unchanged.
+**Validation**: A forced 4F descent now records a negative `fansDelta` and lowers fans. M09's four announcement paths, HIDDEN transition, damaged-witness suppression, and M11's A/B ending thresholds already have regression coverage. `npm run typecheck`, all 60 tests (including 1,000-seed policies), and `npm run build` passed.
+
+## D5 audit · M10 appeal economy simulation
+
+**Project**: Added deterministic policy pairs that isolate the economic tension between attacking and always appealing.
+**Deliverables**: `lowAppealPolicy`, `alwaysAppealPolicy`, and a 1,000-seed regression asserting that constant appeal produces more gold while yielding a lower maximum floor and never reaches 40F.
+**Measured result**: Low appeal averaged 8,161G / 28.67F; always appeal averaged 48,273G / 26F. Neither policy hit an early closure.
+**Validation**: `npm run typecheck`, all 61 tests, and `npm run build` passed.
+
+## D4 8/22 — M07 moderation and M06 damaged-body callback
+
+**Project**: Closed the remaining core regressions without altering scene/UI ownership or the shared action/state contracts.
+**Deliverables**: High-leak moderation now has an explicit regression proving deletion does not lower leak and the next chat remains `TRUTH`; damaged autopsy disposal clears that body's deferred lie callback.
+**Validation**: The D4 target suites pass (31 tests). `npm run typecheck`, the full suite (10 files, 62 tests), and `npm run build` all passed. Existing coverage also proves six-second ignored-chat leak, deletion preventing that leak, six-plus moderation backlash/reputation loss, pay-pool depletion, lied-to revived callback, and inheritance fandom -15% / generation +1.
+
+## D5 8/22 — M10 balance audit (no balance change retained)
+
+**Method**: Ran the existing conservative headless policy for 1,000 fixed seeds after each single-knob trial; no repository test or core code was added.
+**Trials**: `revive.floorExp 1.055 → 1.060` kept completion at 100% but Day 5 was still +3,307G and violated all three M04 reference-cost upper bounds. `1.055 → 1.056` preserved M04 and produced Day 5 +3,361G. `balance.combat.enemy.atkPerFloor 0.55 → 0.80` produced no state change because combat reads `content.floors.enemy`, not the balance field; it was immediately restored.
+**Blocker**: The target curve requires ~6,100G Day-5 revival cost and 20–38F runs. The current policy averages 6–9F combat deaths and a 1,432G Day-5 revival cost at the highest M04-safe exponent. Its Day-5 income is 2,494G goods + 2,300G superchat. Therefore no `balance.json`-only, M04-safe adjustment can both retain the Day-1 income target and reach the required Day-5 -1,700G pivot. The baseline was restored pending authorization to align the active combat source / simulation policy with M10.
+
+## D5 8/22 — approved floors.json scope trial (no content change retained)
+
+**Scope**: With approval, tested the active combat data source one field at a time and restored every non-qualifying value.
+**Trials**: `floors.enemy.atkPerFloor 0.55 → 0.15` made the conservative policy Day-5 +4,325G; low-appeal reached Day-5 -1,803G but only 89.4% completion. `floors.enemy.hpPerFloor 1.60 → 0.80` yielded conservative 100% completion / Day-5 +3,258G and low-appeal 98.6% completion / Day-5 -1,819G. Economy and existing 1,000-seed sim tests remained green on each trial.
+**Remaining blocker**: No committed sim policy ever chooses `AUTOPSY/DECIDE: DAMAGED` or `REVIVE/DISCARD`. Therefore the acceptance pair “100% completion” and “70% of runs cannot continue without damage” has no executable policy path: an unaffordable intact revival only causes the existing policy to skip it. A small, approved simulation-policy addition is required before the 70% condition can be measured and balance-tuned honestly.
+
+## D5 8/22 — M10 damage-aware simulation policy (approved scope)
+
+**Project**: Added the approved headless-only policy that exercises M09 disposal when consecutive intact revivals cannot be funded after baseline goods income, then sells only the immediately preceding damaged body's loot.
+**Deliverables**: `damageAwarePolicy`, deterministic two-revival affordability forecast, one-day-only damaged-loot placement, and unit regressions for immediate insolvency, forecast insolvency, and no repeated sale.
+**Tuning record**: With temporary `goodsPerFan=0.010`, `start.gold=8,000`, the policy completed 1,000/1,000 seeds, had zero pre-Day-5 closures, Day-5 average -1,629G, and reached a damaged-recovery decision in 93.8% of runs on Days 5–7. The M10 target table still diverges on Days 2–4 because the existing headless loop lacks its assumed early shelf income / progressive daily depth; these temporary balance values were restored rather than retained.
+**Validation**: `npm run typecheck` and the full 63-test suite passed. The policy and tests are ready as a separate local M10 commit; production build follows before commit.
+
+## D5 8/22 — CCR-003 starter stock and shop economy simulation
+
+**Decision**: Approved inventory contract separates persistent `GEAR`, consumable `POTION`, and sell-only `RELIC` behavior. The initial shop holds `lantern_old`, `dagger_crack`, and one `potion_crimson`.
+
+**Deliverables**: `OFFICE/PLACE` now equips only an owned, unique gear item; `OFFICE/SELL` removes one unequipped stock item for its configured price; `COMBAT/USE_ITEM` consumes a potion during LIVE without RNG or turn cost. Every item carries content-defined `kind` and `healing`; two potion definitions were added. The headless policy equips starter gear, uses the potion at half health, sells recovery stock when required, and sells stock to fund an otherwise unaffordable contract.
+
+**Balance trial retained**: One income knob changed: `income.goodsPerFan 0.020 -> 0.005`. The unchanged `start.gold` trial at 20,000 was measured and restored because it was not needed for terminal completion.
+
+**1,000-seed result**: 1,000/1,000 terminal endings; B_CONTINUE 625, A_OPEN 213, B_REVEAL 162. Average final gold 6,631G, max floor 36.10, revivals 4.84, damaged disposals 2.20. Income per run: superchat 6,098G (60.8%), goods 3,559G (35.5%), stock sales 369G (3.7%); potion uses: 1,000. This makes superchat the primary income source while stock sales remain an emergency/relic path.
+
+**Validation**: `npm run typecheck`, full `npm test` (10 files, 66 tests), and `npm run build` all passed. HO-017 documents the new action semantics for Claude's UI wiring.

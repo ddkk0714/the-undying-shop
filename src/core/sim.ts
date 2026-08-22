@@ -24,7 +24,9 @@ export const randomPolicy: Policy = (state) => {
     if (choices.length === 0) {
       const affordable = state.visitors.filter((visitor) => state.gold >= visitor.fee);
       const visitor = affordable[Math.floor(roll * affordable.length)] ?? affordable[0];
-      return visitor === undefined ? { type: 'OFFICE/CONFIRM' } : { type: 'OFFICE/CONTRACT_ACCEPT', starId: visitor.starId };
+      if (visitor !== undefined) return { type: 'OFFICE/CONTRACT_ACCEPT', starId: visitor.starId };
+      const emergencyStock = mostValuableSellableItem(state);
+      return emergencyStock === undefined ? { type: 'OFFICE/CONFIRM' } : { type: 'OFFICE/SELL', itemId: emergencyStock };
     }
     return { type: 'OFFICE/PICK_STAR', starId: choices[Math.floor(roll * choices.length)]?.id ?? choices[0]!.id };
   }
@@ -81,7 +83,40 @@ function shouldDamageForRecovery(state: Readonly<GameState>): boolean {
 
 function newDamageLootForSale(state: Readonly<GameState>): string | undefined {
   const corpse = state.corpses.find((candidate) => candidate.grade === 'DAMAGED' && candidate.diedDay === state.day - 1);
-  return corpse?.loot.find((itemId) => !state.shelf.includes(itemId));
+  return corpse?.loot.find((itemId) => !state.shelf.includes(itemId) && state.inventory.some((stack) => stack.id === itemId && stack.qty > 0));
+}
+
+function mostValuableSellableItem(state: Readonly<GameState>): string | undefined {
+  return state.inventory
+    .filter((stack) => stack.qty > 0 && !state.shelf.includes(stack.id))
+    .map((stack) => content.items.find((item) => item.id === stack.id))
+    .filter((item): item is NonNullable<typeof item> => item !== undefined)
+    .sort((a, b) => b.price - a.price)[0]?.id;
+}
+
+function equippedGearForSale(state: Readonly<GameState>): string | undefined {
+  const deadCorpses = state.corpses.filter((corpse) => state.stars.some((star) => star.id === corpse.starId && star.status === 'DEAD'));
+  const needsCash = deadCorpses.some((corpse) => {
+    const star = state.stars.find((candidate) => candidate.id === corpse.starId);
+    return star !== undefined && !reviveQuote(state, corpse, star).affordable;
+  });
+  if (!needsCash) return undefined;
+  return mostValuableSellableItem(state);
+}
+
+function gearToEquip(state: Readonly<GameState>): string | undefined {
+  return state.inventory
+    .filter((stack) => stack.qty > 0 && !state.shelf.includes(stack.id))
+    .map((stack) => content.items.find((item) => item.id === stack.id && item.kind === 'GEAR'))
+    .find((item): item is NonNullable<typeof item> => item !== undefined)?.id;
+}
+
+function potionToUse(state: Readonly<GameState>): string | undefined {
+  if (state.phase !== 'LIVE' || state.today === null || state.today.hero.hp * 2 > state.today.hero.maxHp) return undefined;
+  return state.inventory
+    .filter((stack) => stack.qty > 0)
+    .map((stack) => content.items.find((item) => item.id === stack.id && item.kind === 'POTION'))
+    .find((item): item is NonNullable<typeof item> => item !== undefined)?.id;
 }
 
 /**
@@ -90,10 +125,19 @@ function newDamageLootForSale(state: Readonly<GameState>): string | undefined {
  */
 export const damageAwarePolicy: Policy = (state) => {
   if (shouldDamageForRecovery(state)) return { type: 'AUTOPSY/DECIDE', grade: 'DAMAGED' };
-  if (state.phase === 'OFFICE' && state.today === null) {
+  const potion = potionToUse(state);
+  if (potion !== undefined) return { type: 'COMBAT/USE_ITEM', itemId: potion };
+  if (state.phase === 'OFFICE') {
+    const recoveryLoot = newDamageLootForSale(state);
+    if (recoveryLoot !== undefined) return { type: 'OFFICE/SELL', itemId: recoveryLoot };
+    const emergencyItem = equippedGearForSale(state);
+    if (emergencyItem !== undefined) return { type: 'OFFICE/SELL', itemId: emergencyItem };
     const emptySlot = state.shelf.findIndex((itemId) => itemId === null);
-    const loot = newDamageLootForSale(state);
-    if (emptySlot >= 0 && loot !== undefined) return { type: 'OFFICE/PLACE', slot: emptySlot, itemId: loot };
+    const gear = gearToEquip(state);
+    if (emptySlot >= 0 && gear !== undefined) return { type: 'OFFICE/PLACE', slot: emptySlot, itemId: gear };
+  }
+  if (state.phase === 'LIVE' && state.today?.encounter !== null && state.today?.encounter !== undefined && state.today.appealCount === 0) {
+    return { type: 'COMBAT/CHOOSE', choice: 'APPEAL' };
   }
   return lowAppealPolicy(state);
 };

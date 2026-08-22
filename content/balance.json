@@ -5,7 +5,8 @@
     "reputation": 62,
     "maxFloor": 26,
     "days": 8,
-    "targetFloor": 40
+    "targetFloor": 40,
+    "inventory": ["lantern_old", "dagger_crack", "potion_crimson"]
   },
   "revive": {
     "base": 400,
@@ -45,7 +46,7 @@
     "inheritLoss": 0.15
   },
   "income": {
-    "goodsPerFan": 0.02,
+    "goodsPerFan": 0.005,
     "superchat": {
       "poolPerFan": 0.004,
       "fork": [40, 120],
