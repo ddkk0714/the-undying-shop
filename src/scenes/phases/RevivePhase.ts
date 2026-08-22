@@ -1,12 +1,14 @@
 import { SCENES } from '../../config';
+import { content } from '../../core/content';
 import { reviveQuote } from '../../core/systems/economy';
 import { starArt } from '../../render/assets';
 import { L, actionX, ACTION_W } from '../../ui/layout';
 import { Button } from '../../ui/Button';
 import { reducedMotion } from '../../ui/options';
 import { sealStamp } from '../../ui/SealStamp';
+import { degradeOverlay, portrait } from '../../ui/Portrait';
 import { PhaseScene } from './PhaseScene';
-import type { Corpse, GameState, Star } from '../../core/types';
+import type { Corpse, GameState, Persona, Star } from '../../core/types';
 
 /**
  * M04 ① 소생실 — 이 게임의 유일한 지출.
@@ -20,6 +22,10 @@ export class RevivePhase extends PhaseScene {
   private index = 0;
   /** 도장이 찍히는 동안 다시 누르지 못하게 */
   private discarding = false;
+  /** 페르소나 승계 화면을 열어 둔 상태 */
+  private inheriting = false;
+  /** 씌울 대상이 여럿일 때 보고 있는 사람 */
+  private heirIndex = 0;
 
   constructor() {
     super(SCENES.PHASE_REVIVE);
@@ -32,11 +38,20 @@ export class RevivePhase extends PhaseScene {
    */
     this.index = 0;
     this.discarding = false;
+    this.inheriting = false;
+    this.heirIndex = 0;
     super.create();
   }
 
   protected build(s: Readonly<GameState>): void {
     this.stageBackdrop();
+
+    // 「한 화면에 끝낸다」 (M03 §승계 UI). 덮기만 하면 아래 버튼이 그대로 눌리므로
+    // 아예 다른 것을 그리지 않는다.
+    if (this.inheriting) {
+      this.buildInherit(s);
+      return;
+    }
 
     // 소생 대상 = 아직 살아 있지 않은 몸의 시체. 살릴 수 있는지 판정은 리듀서가 한다.
     const waiting = s.corpses.filter((c) =>
@@ -50,6 +65,7 @@ export class RevivePhase extends PhaseScene {
     this.buildGuest(s, star, waiting.length);
     this.buildBench(s, corpse, star);
     this.buildPager(waiting.length);
+    this.buildInheritButton(s);
     this.buildActions(s, corpse, star);
   }
 
@@ -82,12 +98,12 @@ export class RevivePhase extends PhaseScene {
     const y = g.y + g.h - h - 24;
     // 전신은 좌측 칸과 1:1 이다 (752x792). 이름 글자는 그 위에 얹는다
     const full = { x: g.x, y: g.y, w: g.w, h: g.h };
-    if (!this.spriteFit(full, [art.body]) && !this.spriteFit({ x, y, w, h }, [art.portrait, 'star.silhouette'])) {
-      this.rect(x, y, w, h, 'mid');
-    }
-    // 열화 균열 — 소생 횟수만큼. 진짜 오버레이는 M03
-    for (let i = 0; i < Math.min(star.reviveCount, 5); i += 1) {
-      this.rect(x + 56 + i * 64, y + 64 + i * 24, L.line, h - 160, 'ink');
+    const reduced = reducedMotion(this.registry);
+    // 열화는 숫자가 아니라 몸으로 보여준다 (M03 §열화)
+    if (this.spriteFit(full, [art.body])) {
+      degradeOverlay(this, full, star.reviveCount, reduced);
+    } else {
+      portrait(this, { x, y, w, h }, star, { reduced });
     }
 
     const persona = s.personas.find((p) => p.id === star.personaId);
@@ -133,6 +149,126 @@ export class RevivePhase extends PhaseScene {
     this.label(b.x + b.w - L.pad * 3 - 200, py, '보유', 'dust');
     this.textRight(b.x + b.w - L.pad * 3, py + 32, `${fmtGold(s.gold)} G`, 'dust');
     if (!quote.affordable) this.text(ox + 320, py + 32, '자금이 부족합니다', 'wax');
+  }
+
+  /* ── 페르소나 승계 (M03) ─────────────────────────────── */
+
+  /**
+   * 씌울 수 있는 조합. core 의 `inherit()` 가드를 그대로 읽는다 —
+   * 이름이 붙어 있던 몸이 더는 살아 있지 않고 시체가 남아 있을 때,
+   * 이름 없는 산 몸에 옮겨 씌울 수 있다.
+   */
+  private inheritable(s: Readonly<GameState>): { persona: Persona; from: Star; heirs: Star[] } | null {
+    for (const persona of s.personas) {
+      const from = s.stars.find((x) => x.personaId === persona.id && x.status !== 'ALIVE');
+      if (from === undefined) continue;
+      if (!s.corpses.some((c) => c.starId === from.id)) continue;
+      const heirs = s.stars.filter((x) => x.status === 'ALIVE' && x.personaId === null);
+      if (heirs.length === 0) continue;
+      return { persona, from, heirs };
+    }
+    return null;
+  }
+
+  private buildInheritButton(s: Readonly<GameState>): void {
+    const ready = this.inheritable(s);
+    if (ready === null || this.inheriting) return;
+    const b = L.bench;
+    new Button(this, {
+      x: b.x + b.w - 300, y: b.y + b.h - 96, w: 260, h: 64,
+      label: '継承 승계', hotkey: '6', variant: 'danger',
+      onClick: () => {
+        this.inheriting = true;
+        this.heirIndex = 0;
+        this.redraw();
+      },
+    });
+  }
+
+  /**
+   * M03 §승계 UI — 「한 화면에 끝낸다」.
+   * 마지막 줄 **「팬들은 대부분 모른다.」** 이 한 문장이 이 화면의 전부다.
+   */
+  private buildInherit(s: Readonly<GameState>): void {
+    const ready = this.inheritable(s);
+    if (ready === null) {
+      this.inheriting = false;
+      return;
+    }
+    const { persona, from, heirs } = ready;
+    if (this.heirIndex >= heirs.length) this.heirIndex = 0;
+    const heir = heirs[this.heirIndex]!;
+
+    const w = 1280;
+    const h = 700;
+    const x = Math.round((L.W - w) / 2);
+    const y = L.stage.y + 56;
+    this.rect(x, y, w, h, 'ink');
+    this.frame(x, y, w, h, 'bone');
+
+    this.label(x + L.pad * 2, y + L.pad, '페르소나 승계', 'dust');
+    this.title(x + L.pad * 2, y + 44, `「${persona.displayName}」  ${persona.generation}대 → ${persona.generation + 1}대`);
+
+    // 왼쪽 · 이름을 잃는 몸  →  오른쪽 · 이름을 받는 몸
+    // 세로 예산: 초상 310..650 · 이름 666 · 계보 706 · 문장 740 · 버튼 812..884 (카드 900 끝)
+    const slot = { w: 300, h: 340 };
+    const ly = y + 110;
+    const lx = x + 96;
+    const rx = x + w - 96 - slot.w;
+    const reduced = reducedMotion(this.registry);
+    portrait(this, { x: lx, y: ly, w: slot.w, h: slot.h }, from, { reduced });
+    this.frame(lx, ly, slot.w, slot.h, 'dust');
+    portrait(this, { x: rx, y: ly, w: slot.w, h: slot.h }, heir, { reduced });
+    this.frame(rx, ly, slot.w, slot.h, 'bone');
+
+    this.text(lx, ly + slot.h + 16, this.clip(from.bodyName, slot.w), 'dust');
+    // 아직 죽지 않은 대는 0F 로 들어 있다. 계보에 0F 를 적지 않는다
+    const line = persona.lineage.filter((entry) => entry.diedFloor > 0).map((entry) => `${entry.diedFloor}F`).join(' · ');
+    this.label(lx, ly + slot.h + 56, line === '' ? '계보 없음' : line, 'dust');
+
+    this.text(rx, ly + slot.h + 16, this.clip(heir.bodyName, slot.w));
+    this.label(rx, ly + slot.h + 56, `grit ${heir.stats.grit}  cha ${heir.stats.charisma}  luck ${heir.stats.luck}`, 'dust');
+
+    // 가운데 — 이름이 건너가는 자리. 팬덤이 얼마나 떨어져 나가는지 여기서 말한다
+    const mx = lx + slot.w + 24;
+    const mw = rx - mx - 24;
+    this.title(mx + Math.round(mw / 2) - 24, ly + 130, '→', 'wax');
+
+    const loss = content.balance.roster.inheritFandomLoss;
+    const after = Math.floor(persona.fandom * (1 - loss));
+    this.text(mx, ly + 210, `팬덤 ${fmtGold(persona.fandom)}`, 'dust');
+    this.text(mx, ly + 250, `  → ${fmtGold(after)}  (-${Math.round(loss * 100)}%)`, 'wax');
+
+    // 이 한 문장이 이 화면의 전부다 (M03). 이름·계보 아래, 버튼 위에 혼자 놓는다
+    this.title(x + L.pad * 2, ly + slot.h + 100, '팬들은 대부분 모른다.', 'bone');
+
+    const by = y + h - 88;
+    new Button(this, {
+      x: x + L.pad * 2, y: by, w: 320, h: 72,
+      label: '씌운다', hotkey: '1', variant: 'danger',
+      onClick: () => {
+        this.inheriting = false;
+        this.store.dispatch({ type: 'REVIVE/INHERIT', personaId: persona.id, toStarId: heir.id });
+      },
+    });
+    new Button(this, {
+      x: x + L.pad * 2 + 344, y: by, w: 320, h: 72,
+      label: '그만둔다', hotkey: '2', variant: 'ghost',
+      onClick: () => {
+        this.inheriting = false;
+        this.redraw();
+      },
+    });
+    if (heirs.length > 1) {
+      new Button(this, {
+        x: x + w - L.pad * 2 - 260, y: by, w: 260, h: 72,
+        label: `次 ${this.heirIndex + 1}/${heirs.length}`, hotkey: '3', variant: 'ghost',
+        onClick: () => {
+          this.heirIndex = (this.heirIndex + 1) % heirs.length;
+          this.redraw();
+        },
+      });
+    }
   }
 
   /** 대기 중인 시체가 여럿이면 작업대 위에서 넘긴다. 하단 네 자리는 3택 + 편성실이 쓴다 */
