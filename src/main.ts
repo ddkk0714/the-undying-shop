@@ -9,6 +9,7 @@ import { HelpScene } from './scenes/HelpScene';
 import { OptionsScene } from './scenes/OptionsScene';
 import { DayScene } from './scenes/DayScene';
 import { EndingScene } from './scenes/EndingScene';
+import { WipeScene } from './scenes/WipeScene';
 import { RevivePhase } from './scenes/phases/RevivePhase';
 import { OfficePhase } from './scenes/phases/OfficePhase';
 import { LivePhase } from './scenes/phases/LivePhase';
@@ -36,6 +37,7 @@ const game = new Phaser.Game({
   scene: [
     BootScene, PreloadScene, TitleScene, DayScene, EndingScene, HelpScene, OptionsScene,
     RevivePhase, OfficePhase, LivePhase, DeathPhase, AutopsyPhase, AnnouncePhase,
+    WipeScene, // 항상 맨 위 — 디더 와이프
   ],
 });
 

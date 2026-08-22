@@ -12,6 +12,7 @@ export const SCENES = {
   TITLE: 'Title',
   DAY: 'Day',
   ENDING: 'Ending',
+  WIPE: 'Wipe',
   HELP: 'Help',
   OPTIONS: 'Options',
 

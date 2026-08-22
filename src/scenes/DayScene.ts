@@ -7,6 +7,7 @@ import { Button } from '../ui/Button';
 import { label } from '../ui/Label';
 import { reducedMotion } from '../ui/options';
 import { DEATH_CURTAIN_MS } from './phases/LivePhase';
+import type { WipeScene } from './WipeScene';
 import { content, reputationGrade } from '../core/content';
 import { currentRun, newRun } from './run';
 import type { Store } from '../core/store';
@@ -89,6 +90,9 @@ export class DayScene extends Phaser.Scene {
     this.gaugeFlashUntil = 0;
     this.hudValues = [];
     this.fallback = [];
+
+    // 와이프는 항상 맨 위에 떠 있어야 한다. Phaser 는 목록의 첫 씬만 자동 시작한다
+    if (!this.scene.isActive(SCENES.WIPE)) this.scene.launch(SCENES.WIPE);
 
     // TitleScene 의 '새로 시작' 이 이미 만들어 뒀다. 씬을 직접 열었으면 여기서 만든다.
     this.store = currentRun(this.game) ?? newRun(this.game);
@@ -312,6 +316,18 @@ export class DayScene extends Phaser.Scene {
       this.swapAt = 0;
       this.skipCurtain = false;
     }
+    if (want === this.launched) return;
+
+    // 디더 와이프로 덮은 뒤에 갈아끼운다 (04-UI-KIT). 첫 진입은 덮을 것이 없으니 그냥 연다
+    const wipe = this.scene.get(SCENES.WIPE) as WipeScene | null;
+    if (this.launched === null || wipe === null) {
+      this.doSwap(want);
+      return;
+    }
+    wipe.run(() => this.doSwap(want));
+  }
+
+  private doSwap(want: string | undefined): void {
     if (want === this.launched) return;
     if (this.launched !== null) this.scene.stop(this.launched);
     if (want !== undefined) this.scene.launch(want);

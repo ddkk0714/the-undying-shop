@@ -444,6 +444,16 @@ function makeImage(key, entry = {}) {
     return img;
   }
   if (key.startsWith('enemy.')) return enemyBlob(w, h, name);
+  if (key === 'ui.cursor') {
+    // 봉랍 도장 — 좌상단이 찍히는 지점이다
+    const img = new Img(w, h);
+    img.disc(15, 15, 13, P.wax);
+    img.disc(15, 15, 9, P.ink);
+    img.disc(15, 15, 5, P.wax);
+    img.rect(0, 0, 8, 2, P.bone);
+    img.rect(0, 0, 2, 8, P.bone);
+    return img;
+  }
   if (key === 'ui.logo') {
     const img = new Img(w, h, P.ink);
     img.frame(0, 0, w, h, P.bone);

@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { BASE_W, BASE_H, SCENES } from '../config';
 import { PALETTE, css } from '../render/palette';
 import { FONT_TITLE } from '../render/font';
-import { queuePack, swallowLoadErrors, allKeys } from '../render/assets';
+import { queuePack, swallowLoadErrors, allKeys, key, hasTexture } from '../render/assets';
 
 /** content/*.json 을 번들에 포함시킨다. 런타임 fetch 가 아니라 빌드 타임 인라인이라 404 가 없다. */
 const CONTENT = import.meta.glob('../../content/*.json', { eager: true, import: 'default' }) as Record<
@@ -51,6 +51,7 @@ export class PreloadScene extends Phaser.Scene {
       else bad++;
     }
     this.registry.set('content', content);
+    this.applySealCursor();
     this.registry.set('assetsFailed', this.failed);
 
     if (import.meta.env.DEV) {
@@ -65,6 +66,21 @@ export class PreloadScene extends Phaser.Scene {
     this.time.delayedCall(Math.max(0, MIN_SHOW_MS - elapsed), () => {
       this.scene.start(SCENES.TITLE);
     });
+  }
+
+  /**
+   * 04-UI-KIT — 봉랍 커서.
+   * 텍스처를 data URL 로 뽑아 캔버스 커서로 건다. 아트가 오면 같은 자리에 그대로 들어간다.
+   * 그림이 없으면 기본 커서를 그대로 둔다 — 커서 하나 때문에 게임이 멈추지 않는다.
+   */
+  private applySealCursor(): void {
+    if (!hasTexture(this, 'ui.cursor')) return;
+    try {
+      const url = this.textures.getBase64(key('ui.cursor'));
+      this.input.setDefaultCursor(`url(${url}) 2 2, auto`);
+    } catch {
+      // 텍스처를 못 뽑았다. 기본 커서로 간다
+    }
   }
 
   private drawChrome(): void {

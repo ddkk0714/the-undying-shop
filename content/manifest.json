@@ -118,6 +118,15 @@
           ],
           "desc": "타이틀 로고"
         },
+        "ui.cursor": {
+          "type": "image",
+          "file": "ui/cursor.png",
+          "size": [
+            32,
+            32
+          ],
+          "desc": "마우스 커서 — 봉랍 도장. 뾰족한 끝이 좌상단(0,0)에 오게 그려라"
+        },
         "bg.title": {
           "type": "image",
           "file": "bg/title.png",
