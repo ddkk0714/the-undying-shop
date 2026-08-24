@@ -97,11 +97,41 @@ describe('opinion and superchat core', () => {
     expect(paid.today?.superchat).toBe(paid.stats.goldEarned);
     expect(paid.today?.income.superchat).toBe(paid.today?.superchat);
     expect(paid.today?.chatQueue.some((entry) => entry.tone === 'SUPERCHAT' && entry.amount !== undefined)).toBe(true);
-    expect(paid.pendingFx.at(-1)).toMatchObject({ kind: 'SUPERCHAT_POP', payload: { trigger: 'appeal' } });
+    expect(paid.pendingFx.at(-1)).toMatchObject({ kind: 'SUPERCHAT_POP', payload: { trigger: 'appeal', expression: 'SMILE' } });
+    const appealResponses = (content.chat as Record<string, Record<string, string[]>>).STREAMER_REACTION.appeal;
+    expect(appealResponses).toContain(paid.pendingFx.at(-1)?.payload?.reaction);
     expect(awardSuperchat(appealed, 'appeal')).toEqual(paid);
 
     const paidAgain = awardSuperchat(paid, 'appeal');
     expect((paidAgain.today?.superchat ?? 0) - (paid.today?.superchat ?? 0)).toBeLessThan(paid.today?.superchat ?? 0);
+  });
+
+  it('uses the LIVE situation for chat copy and gives each superchat a streamer reaction payload', () => {
+    const fork = content.floors.forks[0]!;
+    const forkWait: GameState = {
+      ...liveState(304),
+      waitingSince: 0,
+      today: {
+        ...liveState(304).today!,
+        currentFloor: fork.atFloor,
+        forks: [{ floor: fork.atFloor, truth: { a: fork.a, b: fork.b }, told: 'UNKNOWN', wasLie: false }],
+      },
+    };
+    const generated = Array.from({ length: 12 }).reduce<GameState>((state) => spawnChat(state), forkWait);
+    const forkHype = (content.chat as Record<string, string[]>).FORK;
+    const forkDoubt = (content.chat as Record<string, string[]>).FORK_DOUBT;
+    for (const entry of generated.today?.chatQueue ?? []) {
+      if (entry.tone === 'HYPE') expect(forkHype).toContain(entry.text);
+      if (entry.tone === 'DOUBT') expect(forkDoubt).toContain(entry.text);
+    }
+
+    const paid = awardSuperchat(liveState(305), 'witness');
+    const event = paid.pendingFx.at(-1);
+    const witnessResponses = (content.chat as Record<string, Record<string, string[]>>).STREAMER_REACTION.witness;
+    expect(event).toMatchObject({ kind: 'SUPERCHAT_POP', payload: { trigger: 'witness', expression: 'UNEASY' } });
+    expect(witnessResponses).toContain(event?.payload?.reaction);
+    const superchat = paid.today?.chatQueue.at(-1);
+    expect((content.chat as Record<string, string[]>).SUPERCHAT_WITNESS).toContain(superchat?.text);
   });
 
   it('pays the appeal superchat through the LIVE combat reducer path', () => {

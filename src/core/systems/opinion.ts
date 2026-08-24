@@ -16,6 +16,40 @@ function lines(sourceKey: string, state: GameState): string[] {
   return sourceKey === 'TRUTH' ? value?.[`f${floor}`] ?? value?.relic ?? [] : [];
 }
 
+/**
+ * 채팅은 단순한 랜덤 잡담이 아니라 지금 방송에서 벌어진 일을 따라간다.
+ * 톤(색·삭제 규칙)은 그대로 두고, 같은 톤 안에서만 상황별 코퍼스를 고른다.
+ */
+function contextualSource(state: GameState, tone: ChatTone): string {
+  const run = state.today;
+  if (run === null) return tone;
+  const isForkWait = run.encounter === null && state.waitingSince !== null && run.forks.at(-1)?.told === 'UNKNOWN';
+  const isDanger = run.hero.maxHp > 0 && run.hero.hp / run.hero.maxHp <= 0.5;
+  if (tone === 'HYPE' && run.encounter !== null) return 'COMBAT';
+  if (tone === 'HYPE' && isForkWait) return 'FORK';
+  if (tone === 'HYPE' && isDanger) return 'DANGER';
+  if (tone === 'DOUBT' && isForkWait) return 'FORK_DOUBT';
+  if (tone === 'DOUBT' && isDanger) return 'DANGER_DOUBT';
+  return tone;
+}
+
+function streamerReaction(trigger: SuperchatTrigger, roll: number): string {
+  const source = corpus().STREAMER_REACTION;
+  if (Array.isArray(source)) return source[Math.floor(roll * source.length)] ?? source[0] ?? '';
+  const options = source?.[trigger] ?? [];
+  return options[Math.floor(roll * options.length)] ?? options[0] ?? '';
+}
+
+function streamerExpression(trigger: SuperchatTrigger): string {
+  switch (trigger) {
+    case 'appeal': return 'SMILE';
+    case 'record': return 'TRIUMPH';
+    case 'death': return 'SHOCK';
+    case 'witness': return 'UNEASY';
+    case 'fork': return 'FOCUSED';
+  }
+}
+
 function availableNick(state: GameState, roll: number): string | undefined {
   const { nickPoolSize } = content.balance.opinion;
   const first = Math.floor(roll * nickPoolSize);
@@ -67,7 +101,7 @@ export function spawnChat(state: GameState): GameState {
   const tone: ChatTone = withTone.leak >= rules.leakEndingThreshold || (withTone.leak >= rules.midLeakThreshold && toneRoll < rules.truthChanceAtMidLeak)
     ? 'TRUTH'
     : toneRoll < rules.hypeChance ? 'HYPE' : toneRoll < rules.casualChance ? 'CASUAL' : 'DOUBT';
-  return appendMessage(withTone, tone, tone, tone === 'TRUTH' ? rules.truthLeakPower : tone === 'DOUBT' ? rules.leakPerIgnoredChat : 0);
+  return appendMessage(withTone, tone, contextualSource(withTone, tone), tone === 'TRUTH' ? rules.truthLeakPower : tone === 'DOUBT' ? rules.leakPerIgnoredChat : 0);
 }
 
 export function expireChats(state: GameState): GameState {
@@ -117,6 +151,8 @@ export function awardSuperchat(state: GameState, trigger: SuperchatTrigger): Gam
       income: { ...withRoll.today!.income, superchat: withRoll.today!.income.superchat + amount },
     },
   };
-  const withMessage = appendMessage(paid, 'SUPERCHAT', 'SUPERCHAT', 0, amount);
-  return { ...withMessage, pendingFx: [...withMessage.pendingFx, { kind: 'SUPERCHAT_POP', payload: { amount, trigger } }] };
+  const withMessage = appendMessage(paid, 'SUPERCHAT', `SUPERCHAT_${trigger.toUpperCase()}`, 0, amount);
+  const reaction = streamerReaction(trigger, amountRoll);
+  const expression = streamerExpression(trigger);
+  return { ...withMessage, pendingFx: [...withMessage.pendingFx, { kind: 'SUPERCHAT_POP', payload: { amount, trigger, reaction, expression } }] };
 }

@@ -198,3 +198,9 @@
 **Acceptance**: Across 1,000 seeded `damageAwarePolicy` runs, every run reaches a terminal ending; Superchat is 50–70% of all counted income, goods are 25–40%, and stock sales are at most 15%.
 
 **Validation**: Added a 1,000-seed regression that records settlement income plus pre-run stock sales. It passed with the retained balance at Superchat 60.8%, goods 35.5%, stock 3.7% and 1,000/1,000 terminal endings. `npm run typecheck` and `tests/sim.spec.ts` passed (9 tests).
+
+## D5 8/24 — M07 contextual chat and superchat reaction signal
+
+**Project**: Made LIVE chat react to the actual broadcast state instead of using only generic chatter, without changing the shared core contracts.
+**Deliverables**: Contextual combat/fork/danger chat corpora; superchat copy keyed to fork, record, death, witness, and appeal; deterministic `SUPERCHAT_POP` payload fields `reaction` (spoken line) and `expression` (`FOCUSED`, `TRIUMPH`, `SHOCK`, `UNEASY`, or `SMILE`) for the portrait/UI to consume.
+**Validation**: Regression coverage proves a waiting fork selects the fork-specific HYPE/DOUBT corpus and a witness superchat emits both its matching message and its streamer reaction payload. `npm run typecheck`, full `npm test` (10 files, 68 tests), and `npm run build` passed.
