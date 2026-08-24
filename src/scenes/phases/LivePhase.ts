@@ -10,7 +10,7 @@ import { onboard } from '../../ui/Onboarding';
 import { playBgm, playSfx } from '../../audio/Sfx';
 import { reducedMotion, speedMul } from '../../ui/options';
 import { PhaseScene } from './PhaseScene';
-import type { ChatMessage, CombatChoice, ForkRecord, GameState } from '../../core/types';
+import type { ChatMessage, CombatChoice, ForkRecord, GameState, ItemDef } from '../../core/types';
 
 /**
  * M06 생방송 — 5분할 화면 (04-UI-KIT §1 의 `L.live`).
@@ -471,6 +471,33 @@ export class LivePhase extends PhaseScene {
     this.text(v.x + L.pad, v.y + 148, `소생 ${star.reviveCount}회`, star.reviveCount >= 3 ? 'wax' : 'dust');
     this.text(v.x + L.pad, v.y + 200, `어필 ${run.appealCount}회`, 'dust');
     this.text(v.x + L.pad, v.y + 252, `+${run.superchat} G`, 'bone');
+
+    this.buildPotions(s, run.hero.hp < run.hero.maxHp);
+  }
+
+  /**
+   * HO-017 (CCR-003) — 방송 중 물약. 턴도 RNG 도 쓰지 않으므로 언제 눌러도 된다.
+   * 다 찼을 때는 잠근다 — 눌러도 아무 일이 안 일어나는 버튼을 두지 않는다.
+   */
+  private buildPotions(s: Readonly<GameState>, hurt: boolean): void {
+    const v = L.live.portrait;
+    const potions = s.inventory
+      .filter((stack) => stack.qty > 0)
+      .map((stack) => ({ stack, def: content.items.find((item) => item.id === stack.id) }))
+      .filter((row): row is { stack: typeof row.stack; def: ItemDef } => row.def?.kind === 'POTION' && row.def.healing > 0)
+      .slice(0, 2);
+    if (potions.length === 0) return;
+
+    this.label(v.x + L.pad, v.y + 288, '물약', 'dust');
+    potions.forEach(({ stack, def }, i) => {
+      new Button(this, {
+        x: v.x + L.pad + i * 164, y: v.y + 312, w: 152, h: 56,
+        label: this.clip(`+${def.healing}${stack.qty > 1 ? ` x${stack.qty}` : ''}`, 120),
+        hotkey: String(4 + i),
+        enabled: hurt,
+        onClick: () => this.store.dispatch({ type: 'COMBAT/USE_ITEM', itemId: def.id }),
+      });
+    });
   }
 
   /* ── ⑧ 채팅 ────────────────────────────────────────── */
