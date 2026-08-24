@@ -26,7 +26,7 @@ export type OnboardTag =
 const LINES: Record<OnboardTag, string> = {
   REVIVE: '어제 리온이 죽었다. 살릴 것인가.',
   OFFICE_CONTRACT: '그가 적어온 숫자다. 사실인지는 아무도 모른다.',
-  OFFICE_SHELF: '장비를 진열하면 팔리고, 동시에 그의 무기가 된다.',
+  OFFICE_SHELF: '진열한 장비는 그의 무기가 된다. 파는 것은 따로다.',
   LIVE_COMBAT: '어필하면 돈이 된다. 그리고 그가 더 다친다.',
   LIVE_RADIO: '갈림길이다. 진짜 지도는 당신만 본다.',
   AUTOPSY: '온전하면 되살아난다. 그리고 본 것을 말한다.',
