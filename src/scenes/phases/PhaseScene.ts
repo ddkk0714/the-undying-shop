@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { PALETTE, css, type PaletteName } from '../../render/palette';
 import { FONT, FONT_LABEL, FONT_TITLE } from '../../render/font';
 import { key, firstTexture, hasTexture } from '../../render/assets';
+import { scrimTexture, SCRIM_TILE, type ScrimWeight } from '../../render/scrim';
 import { L } from '../../ui/layout';
 import { currentRun, newRun } from '../run';
 import type { Store } from '../../core/store';
@@ -117,6 +118,61 @@ export abstract class PhaseScene extends Phaser.Scene {
         g.fillRect(px, py, step / 2, step / 2);
       }
     }
+  }
+
+  /**
+   * 그림 위에 글을 얹는 자리에 까는 판 (`render/scrim.ts`).
+   * 색은 ink 하나뿐이고 덮는 비율만 바뀐다 — 반투명을 쓰면 중간 계조가 생겨 팔레트가 깨진다.
+   * 위상은 화면 좌표에 맞춘다. 그래야 나란히 깐 판의 무늬가 이음매에서 어긋나지 않는다.
+   */
+  protected scrim(x: number, y: number, w: number, h: number, weight: ScrimWeight = 3): void {
+    if (w <= 0 || h <= 0) return;
+    const X = Math.round(x);
+    const Y = Math.round(y);
+    this.add
+      .tileSprite(X, Y, Math.round(w), Math.round(h), scrimTexture(this, weight))
+      .setOrigin(0, 0)
+      .setTilePosition(X % SCRIM_TILE, Y % SCRIM_TILE);
+  }
+
+  /**
+   * 본문 한 덩어리를 위한 판. 글이 앉는 자리는 ink 로 꽉 채우고,
+   * 오른쪽 끝만 75% → 50% → 25% 로 솎아 배경 그림에 이어 붙인다.
+   * 하드 엣지 하나로 잘라내면 오려 붙인 티가 난다.
+   */
+  protected scrimBlock(x: number, y: number, w: number, h: number): void {
+    this.fade(x, y, w, h, 'x');
+  }
+
+  /** 글줄 하나를 위한 띠. 좌우 폭을 다 쓰므로 위아래로 솎아 나간다 */
+  protected scrimRow(x: number, y: number, w: number, h: number): void {
+    this.fade(x, y, w, h, 'y');
+  }
+
+  /** ink 로 채운 심(心) + 한 축으로 옅어지는 꼬리 */
+  private fade(x: number, y: number, w: number, h: number, axis: 'x' | 'y'): void {
+    const weights = [3, 2, 1] as const;
+
+    if (axis === 'x') {
+      const band = 72;
+      const core = Math.max(0, w - band * weights.length);
+      this.rect(x, y, core, h, 'ink');
+      weights.forEach((weight, i) => {
+        const left = x + core + band * i;
+        this.scrim(left, y, Math.min(band, Math.max(0, x + w - left)), h, weight);
+      });
+      return;
+    }
+
+    // 세로: 심을 가운데 두고 위아래로 같이 옅어진다
+    const band = 16;
+    const edge = band * weights.length;
+    const core = Math.max(0, h - edge * 2);
+    this.rect(x, y + edge, w, core, 'ink');
+    weights.forEach((weight, i) => {
+      this.scrim(x, y + edge - band * (i + 1), w, band, weight);
+      this.scrim(x, y + edge + core + band * i, w, band, weight);
+    });
   }
 
   /**

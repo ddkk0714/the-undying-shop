@@ -89,6 +89,8 @@ export class OfficePhase extends PhaseScene {
       this.rect(x, y, w, h, 'mid');
     }
 
+    // 배경이 밝은 곳(문·벽)에 이름이 걸리면 안 읽힌다. 이름이 앉는 자리만 덮는다
+    this.scrimBlock(g.x + L.line, g.y + L.line, 560, 96);
     this.title(g.x + L.pad, g.y + L.pad, this.clip(name, g.w - L.pad * 2, 'title'));
 
     // 대사 — 좌하단 한 줄 + ▼ (말풍선을 쓰지 않는다)
@@ -190,6 +192,7 @@ export class OfficePhase extends PhaseScene {
     // 오늘의 출연자 — 램프와 장부 사이. 소품 자리를 침범하지 않는다
     const by = L.slot3.y + L.slot3.h + 40;
     const colW = 240;
+    this.scrimBlock(L.bench.x + 356, by - 20, L.bench.w - 356 - L.pad, 216);
     this.label(L.bench.x + 380, by, '오늘의 출연자', 'dust');
     alive.slice(0, 3).forEach((star, i) => {
       const picked = s.today?.starId === star.id;

@@ -361,6 +361,11 @@ export class LivePhase extends PhaseScene {
     const v = L.live.combat;
     this.rect(v.x, v.y, v.w, v.h, 'ink');
     this.spriteCover(v, ['bg.tower']);
+    // 탑 배경이 들어오면 그 위의 층수·대사·HP 가 묻힌다. 글이 놓이는 두 띠만 덮는다.
+    // 가운데(적이 서는 자리)는 건드리지 않는다 — 거기가 이 칸의 그림이다
+    this.scrimBlock(v.x, v.y, 480, 104);
+    // 아래 띠는 3택 패널까지 48px 넘겨 깐다 — 거기는 곧 3택이 덮으므로 이음매가 보이지 않는다
+    this.scrimRow(v.x, v.y + 424, v.w, v.h - 424 + 48);
     const run = s.today ?? null;
     if (run === null) {
       this.text(v.x + L.pad, v.y + L.pad, '방송 준비 중', 'dust');

@@ -82,13 +82,12 @@ export class RevivePhase extends PhaseScene {
     this.spriteCover(g, ['bg.revive.room', 'bg.shop.room']);
     this.frame(g.x, g.y, g.w, g.h, 'dust');
 
-    this.title(g.x + L.pad, g.y + L.pad, '소생실');
-    this.text(g.x + L.pad, g.y + 96, `대기 ${count}구`, 'dust');
-
     const d = L.dialogue;
     this.rect(d.x, d.y, d.w, d.h, 'ink');
 
     if (star === undefined) {
+      this.buildRoomLabel(count);
+      this.scrimBlock(g.x + L.line, g.y + 184, 560, 56);
       this.text(g.x + L.pad, g.y + 200, '소생 수조가 비어 있다.', 'dust');
       this.title(d.x + L.pad, d.y + 40, '...오늘은 아무도 없다', 'dust');
       return;
@@ -110,8 +109,19 @@ export class RevivePhase extends PhaseScene {
       portrait(this, { x, y, w, h }, star, { reduced });
     }
 
+    // 방 이름은 전신 CG 위에 얹는다 — 먼저 그리면 몸에 가려진다
+    this.buildRoomLabel(count);
+
     const persona = s.personas.find((p) => p.id === star.personaId);
     this.title(d.x + L.pad, d.y + 40, this.clip(persona?.displayName ?? '무명', d.w - 96, 'title'));
+  }
+
+  /** 좌측 칸 좌상단의 방 이름 — 배경이 밝은 곳에 걸려도 읽히게 판을 깐다 */
+  private buildRoomLabel(count: number): void {
+    const g = L.guest;
+    this.scrimBlock(g.x + L.line, g.y + L.line, 460, 136);
+    this.title(g.x + L.pad, g.y + L.pad, '소생실');
+    this.text(g.x + L.pad, g.y + 96, `대기 ${count}구`, 'dust');
   }
 
   /* ── 우 · 작업대에 올린 시체 기록 ─────────────────────── */
@@ -132,6 +142,10 @@ export class RevivePhase extends PhaseScene {
     const quote = reviveQuote(s, corpse, star);
     const when = s.day - corpse.diedDay === 1 ? '어제' : `${corpse.diedDay}일차`;
 
+    // 작업대 배경이 고주파 디더라 그 위의 본문이 읽히지 않는다. 기록이 놓이는 만큼만 덮는다
+    const rows = 96 + 132 + (quote.witnessWarning ? 160 : 0);
+    this.scrimBlock(b.x + L.pad, oy - L.pad, b.w - L.pad * 2, rows + L.pad * 2);
+
     this.title(ox, oy, `${when}, ${corpse.diedFloor}F에서 죽었습니다.`);
     oy += 96;
     this.text(ox, oy, `시체 상태 : ${corpse.grade === 'INTACT' ? '온전' : '훼손'}`, 'dust');
@@ -148,6 +162,7 @@ export class RevivePhase extends PhaseScene {
 
     // 비용 — 작업대 아래쪽 가격표 자리
     const py = b.y + b.h - 160;
+    this.scrimRow(b.x + L.pad, py - 56, b.w - L.pad * 2, 176);
     this.label(ox, py, '소생 비용', 'dust');
     this.title(ox, py + 28, `${fmtGold(quote.cost)} G`);
     this.label(b.x + b.w - L.pad * 3 - 200, py, '보유', 'dust');
