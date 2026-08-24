@@ -209,7 +209,7 @@ export class OfficePhase extends PhaseScene {
     // 빈 칸을 그냥 두면 왜 출격이 잠겼는지 알 길이 없다
     if (cols === 0) {
       this.text(L.bench.x + 380, by + 40, '세울 사람이 없다.', 'wax');
-      this.text(L.bench.x + 380, by + 84, '蘇生(1) 으로 되살리거나 交渉(3) 으로 계약해라.', 'dust');
+      this.text(L.bench.x + 380, by + 84, '蘇生(1) 되살리기 · 交渉(3) 계약 · 돈이 없으면 賣却(7) 판다.', 'dust');
     }
     alive.slice(0, 3).forEach((star, i) => {
       const picked = s.today?.starId === star.id;
