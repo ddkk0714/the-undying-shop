@@ -204,3 +204,9 @@
 **Project**: Made LIVE chat react to the actual broadcast state instead of using only generic chatter, without changing the shared core contracts.
 **Deliverables**: Contextual combat/fork/danger chat corpora; superchat copy keyed to fork, record, death, witness, and appeal; deterministic `SUPERCHAT_POP` payload fields `reaction` (spoken line) and `expression` (`FOCUSED`, `TRIUMPH`, `SHOCK`, `UNEASY`, or `SMILE`) for the portrait/UI to consume.
 **Validation**: Regression coverage proves a waiting fork selects the fork-specific HYPE/DOUBT corpus and a witness superchat emits both its matching message and its streamer reaction payload. `npm run typecheck`, full `npm test` (10 files, 68 tests), and `npm run build` passed.
+
+## D5 8/24 — M07 broadcast audience pacing and nickname corpus
+
+**Project**: Added a deterministic presentation model for a quiet broadcast opening that gains viewers and chat density from depth, appeal, superchat, record progress, and danger.
+**Deliverables**: Balance-configured `audienceSnapshot()` returns current viewers and recommended chat interval without mutating game state; 40 seeded fantasy/comedy nicknames; early-broadcast copy; and expanded combat, fork, and danger chat sets. Bans still suppress the same nickname deterministically.
+**Validation**: Regressions prove a strong broadcast has more viewers and a shorter chat interval than its opening, and banned fantasy nicknames do not return. `npm run typecheck`, full `npm test` (10 files, 70 tests), and `npm run build` passed.

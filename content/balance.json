@@ -78,7 +78,23 @@
     "leakEndingThreshold": 70,
     "moderationFreeCount": 5,
     "moderationRepPenalty": 1,
-    "viewerFatigueOn28F": 25
+    "viewerFatigueOn28F": 25,
+    "audience": {
+      "minViewers": 180,
+      "earlyFloorMax": 6,
+      "basePerFan": 0.004,
+      "maxPerFan": 0.03,
+      "viewersPerFloor": 24,
+      "appealViewerBoost": 110,
+      "superchatViewerPerGold": 0.12,
+      "recordViewerBoost": 55,
+      "dangerHealthRatio": 0.5,
+      "dangerViewerBoost": 140,
+      "viewersPerChatStep": 220,
+      "firstChatIntervalMs": 1500,
+      "chatIntervalStepMs": 90,
+      "minChatIntervalMs": 520
+    }
   },
   "reputation": {
     "onSuccessAnnounce": 2,

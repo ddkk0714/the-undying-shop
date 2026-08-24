@@ -4,6 +4,11 @@ import type { ChatMessage, ChatTone, GameState } from '../types';
 
 type Corpus = Record<string, string[] | Record<string, string[]>>;
 export type SuperchatTrigger = 'fork' | 'record' | 'death' | 'witness' | 'appeal';
+export interface AudienceSnapshot {
+  viewers: number;
+  /** UI가 CHAT/SPAWN 타이머에 쓰는 권장 주기. 낮을수록 채팅이 빠르다. */
+  chatIntervalMs: number;
+}
 
 const corpus = (): Corpus => content.chat as Corpus;
 const moderationKey = 'opinion:moderation';
@@ -30,6 +35,8 @@ function contextualSource(state: GameState, tone: ChatTone): string {
   if (tone === 'HYPE' && isDanger) return 'DANGER';
   if (tone === 'DOUBT' && isForkWait) return 'FORK_DOUBT';
   if (tone === 'DOUBT' && isDanger) return 'DANGER_DOUBT';
+  if (tone === 'HYPE' && run.currentFloor <= content.balance.opinion.audience.earlyFloorMax) return 'EARLY_HYPE';
+  if (tone === 'CASUAL' && run.currentFloor <= content.balance.opinion.audience.earlyFloorMax) return 'EARLY_CASUAL';
   return tone;
 }
 
@@ -51,6 +58,15 @@ function streamerExpression(trigger: SuperchatTrigger): string {
 }
 
 function availableNick(state: GameState, roll: number): string | undefined {
+  const fantasyNicks = lines('NICKS', state);
+  if (fantasyNicks.length > 0) {
+    const first = Math.floor(roll * fantasyNicks.length);
+    for (let offset = 0; offset < fantasyNicks.length; offset += 1) {
+      const nick = fantasyNicks[(first + offset) % fantasyNicks.length]!;
+      if (state.flags[bannedNickKey(nick)] !== true) return nick;
+    }
+    return undefined;
+  }
   const { nickPoolSize } = content.balance.opinion;
   const first = Math.floor(roll * nickPoolSize);
   for (let offset = 0; offset < nickPoolSize; offset += 1) {
@@ -58,6 +74,26 @@ function availableNick(state: GameState, roll: number): string | undefined {
     if (state.flags[bannedNickKey(nick)] !== true) return nick;
   }
   return undefined;
+}
+
+/**
+ * 방송 시작은 조용하고, 층·어필·후원·위기가 쌓일수록 시청자와 채팅 박자가 올라간다.
+ * 저장 상태를 바꾸지 않는 표시 전용 계산이라 UI가 매 프레임 안전하게 읽을 수 있다.
+ */
+export function audienceSnapshot(state: GameState): AudienceSnapshot {
+  const rules = content.balance.opinion.audience;
+  const run = state.today;
+  if (run === null) return { viewers: rules.minViewers, chatIntervalMs: rules.firstChatIntervalMs };
+  const healthRatio = run.hero.maxHp <= 0 ? 0 : run.hero.hp / run.hero.maxHp;
+  const raw = state.fans * rules.basePerFan
+    + run.currentFloor * rules.viewersPerFloor
+    + run.appealCount * rules.appealViewerBoost
+    + run.superchat * rules.superchatViewerPerGold
+    + Math.max(0, run.currentFloor - state.maxFloor) * rules.recordViewerBoost
+    + (healthRatio <= rules.dangerHealthRatio ? rules.dangerViewerBoost : 0);
+  const viewers = Math.max(rules.minViewers, Math.min(Math.floor(state.fans * rules.maxPerFan), Math.floor(raw)));
+  const chatSteps = Math.floor(Math.max(0, viewers - rules.minViewers) / rules.viewersPerChatStep);
+  return { viewers, chatIntervalMs: Math.max(rules.minChatIntervalMs, rules.firstChatIntervalMs - chatSteps * rules.chatIntervalStepMs) };
 }
 
 function appendMessage(state: GameState, tone: ChatTone, sourceKey: string, leakPower: number, amount?: number): GameState {

@@ -48,6 +48,22 @@ export interface Balance {
     viewerFatigueOn28F: number;
     moderationFreeCount: number;
     moderationRepPenalty: number;
+    audience: {
+      minViewers: number;
+      earlyFloorMax: number;
+      basePerFan: number;
+      maxPerFan: number;
+      viewersPerFloor: number;
+      appealViewerBoost: number;
+      superchatViewerPerGold: number;
+      recordViewerBoost: number;
+      dangerHealthRatio: number;
+      dangerViewerBoost: number;
+      viewersPerChatStep: number;
+      firstChatIntervalMs: number;
+      chatIntervalStepMs: number;
+      minChatIntervalMs: number;
+    };
   };
   fans: { base: number; depthPivot: number; depthMul: number; recordBonus: number; shallowLiePenalty: number; appealMul: number };
   reputation: { onSuccessAnnounce: number; onFailureAnnounce: number; grades: [number, string][] };
@@ -238,6 +254,8 @@ export function loadContent(): Content {
   assertShape(isRecord(balanceJson.opinion) && isRecord(balanceJson.opinion.leakPerWitnessRevive), 'balance.opinion.leakPerWitnessRevive missing');
   for (const key of ['chatLifetimeSeconds', 'chatMaxVisible', 'nickPoolSize', 'midLeakThreshold', 'truthChanceAtMidLeak', 'hypeChance', 'casualChance', 'truthLeakPower', 'slowAfterSeconds', 'backlashIntervalSeconds', 'moderationDeleteCost', 'moderationBanCost', 'leakPerIgnoredChat', 'leakPerTruthRelicSale', 'leakPerFakeSuccess', 'leakEndingThreshold', 'moderationFreeCount', 'moderationRepPenalty'] as const) assertNumber(balanceJson.opinion[key], `balance.opinion.${key}`);
   assertNumber(balanceJson.opinion.viewerFatigueOn28F, 'balance.opinion.viewerFatigueOn28F');
+  assertShape(isRecord(balanceJson.opinion.audience), 'balance.opinion.audience missing');
+  for (const key of ['minViewers', 'earlyFloorMax', 'basePerFan', 'maxPerFan', 'viewersPerFloor', 'appealViewerBoost', 'superchatViewerPerGold', 'recordViewerBoost', 'dangerHealthRatio', 'dangerViewerBoost', 'viewersPerChatStep', 'firstChatIntervalMs', 'chatIntervalStepMs', 'minChatIntervalMs'] as const) assertNumber(balanceJson.opinion.audience[key], `balance.opinion.audience.${key}`);
   assertShape(isRecord(balanceJson.reputation) && Array.isArray(balanceJson.reputation.grades), 'balance.reputation.grades missing');
   assertNumber(balanceJson.reputation.onSuccessAnnounce, 'balance.reputation.onSuccessAnnounce');
   assertNumber(balanceJson.reputation.onFailureAnnounce, 'balance.reputation.onFailureAnnounce');

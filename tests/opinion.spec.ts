@@ -4,7 +4,7 @@ import { reducer } from '../src/core/reducer';
 import { createInitialState } from '../src/core/state';
 import { createEncounter } from '../src/core/systems/combat';
 import { answerRadio } from '../src/core/systems/dive';
-import { addAppealChat, awardSuperchat, expireChats, moderateChat, spawnChat } from '../src/core/systems/opinion';
+import { addAppealChat, audienceSnapshot, awardSuperchat, expireChats, moderateChat, spawnChat } from '../src/core/systems/opinion';
 import type { ChatMessage, GameState } from '../src/core/types';
 
 function liveState(seed = 71): GameState {
@@ -132,6 +132,35 @@ describe('opinion and superchat core', () => {
     expect(witnessResponses).toContain(event?.payload?.reaction);
     const superchat = paid.today?.chatQueue.at(-1);
     expect((content.chat as Record<string, string[]>).SUPERCHAT_WITNESS).toContain(superchat?.text);
+  });
+
+  it('starts a broadcast quieter, then grows the audience and chat density with good LIVE moments', () => {
+    const opening = audienceSnapshot(liveState(306));
+    const thriving: GameState = {
+      ...liveState(306),
+      maxFloor: 26,
+      today: {
+        ...liveState(306).today!,
+        currentFloor: 31,
+        hero: { hp: 30, maxHp: 82, atk: 13, def: 2 },
+        appealCount: 3,
+        superchat: 900,
+      },
+    };
+    const peak = audienceSnapshot(thriving);
+    expect(opening.viewers).toBeGreaterThanOrEqual(content.balance.opinion.audience.minViewers);
+    expect(peak.viewers).toBeGreaterThan(opening.viewers);
+    expect(peak.chatIntervalMs).toBeLessThan(opening.chatIntervalMs);
+    expect(audienceSnapshot(thriving)).toEqual(peak);
+  });
+
+  it('uses seeded fantasy nicknames and respects a ban', () => {
+    const first = spawnChat(liveState(307));
+    const nicknames = (content.chat as Record<string, string[]>).NICKS;
+    const nick = first.today?.chatQueue[0]?.nick;
+    expect(nicknames).toContain(nick);
+    const banned = moderateChat({ ...first, today: { ...first.today!, chatQueue: [{ ...first.today!.chatQueue[0]!, tone: 'DOUBT', leakPower: 1 }] } }, first.today!.chatQueue[0]!.id, true);
+    expect(spawnChat(banned).today?.chatQueue.at(-1)?.nick).not.toBe(nick);
   });
 
   it('pays the appeal superchat through the LIVE combat reducer path', () => {
