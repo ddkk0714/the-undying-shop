@@ -192,7 +192,9 @@ export class OfficePhase extends PhaseScene {
     // 오늘의 출연자 — 램프와 장부 사이. 소품 자리를 침범하지 않는다
     const by = L.slot3.y + L.slot3.h + 40;
     const colW = 240;
-    this.scrimBlock(L.bench.x + 356, by - 20, L.bench.w - 356 - L.pad, 216);
+    // 판은 실제로 쓰는 칸만큼만 깐다. 출연자가 없는 날 빈 검은 상자가 남으면 안 된다
+    const cols = Math.min(3, alive.length);
+    if (cols > 0) this.scrimBlock(L.bench.x + 356, by - 20, colW * cols + 16 * (cols - 1) + 48, 216);
     this.label(L.bench.x + 380, by, '오늘의 출연자', 'dust');
     alive.slice(0, 3).forEach((star, i) => {
       const picked = s.today?.starId === star.id;
