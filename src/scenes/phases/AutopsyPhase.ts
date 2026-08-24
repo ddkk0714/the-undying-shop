@@ -66,7 +66,8 @@ export class AutopsyPhase extends PhaseScene {
 
     // 목격 기록 — 이게 딜레마의 전부다
     this.buildWitnessLog(star?.witnessed ?? []);
-    onboard(this, s.day, 'AUTOPSY', { x: L.pad * 4, y: L.stage.y + 44, w: 1100 });
+    // 단계 제목과 같은 줄에, 제목 오른쪽으로 비켜 앉는다 (겹치면 둘 다 못 읽는다)
+    onboard(this, s.day, 'AUTOPSY', { x: 320, y: L.stage.y + L.pad, w: 1000 });
 
     // 2택 카드
     const cardW = 560;

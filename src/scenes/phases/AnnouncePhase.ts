@@ -86,6 +86,7 @@ export class AnnouncePhase extends PhaseScene {
     });
 
     this.text(ox, L.actionsFull.y + 48, `거짓 공표 ${s.stats.falseAnnouncements}회`, 'dust');
-    onboard(this, s.day, 'ANNOUNCE', { x: L.pad * 4, y: L.stage.y + 44, w: 1100 });
+    // 단계 제목과 같은 줄에, 제목 오른쪽으로 비켜 앉는다 (겹치면 둘 다 못 읽는다)
+    onboard(this, s.day, 'ANNOUNCE', { x: 320, y: L.stage.y + L.pad, w: 1000 });
   }
 }
