@@ -174,6 +174,9 @@ export class LivePhase extends PhaseScene {
     // 「이 순간이 게임 전체에서 가장 중요한 30초다」 (M11 §2).
     // 덮기만 하면 아래 3택이 그대로 눌리므로 다른 것을 아예 그리지 않는다.
     if (this.gatekeeperOpen) {
+      // 채팅 티커는 keepAlive 라 redraw 로 지워지지 않는다 — 직접 내린다.
+      // 한 컷을 위해 화면을 비우기로 한 이상 오른쪽에 채팅이 흐르면 안 된다
+      this.chat.hideAll();
       this.buildGatekeeper();
       return;
     }
