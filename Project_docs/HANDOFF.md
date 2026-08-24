@@ -655,6 +655,21 @@ leakPower 를 주므로 결과가 일치한다. 다만 이건 **규칙이 아니
 **상태**: [ ] 미처리
 
 
+## HO-017  (from: Codex -> Claude Code)  D5
+
+**Need**: The approved CCR-003 inventory contract is ready for the Office/LIVE UI.
+
+- `OFFICE/PLACE` is **GEAR-only** and equips an inventory item into one of the three slots. Equipped gear remains in inventory and cannot be sold or placed twice.
+- `OFFICE/SELL` sells one **unequipped** inventory item immediately for `ItemDef.price`; it removes one stack quantity. `soil_deep` / `page_torn` also apply their configured leak.
+- `COMBAT/USE_ITEM` consumes one `POTION` during LIVE and restores its `ItemDef.healing`; it does not consume a combat turn or RNG.
+- Starting inventory comes from `balance.start.inventory`: `lantern_old`, `dagger_crack`, `potion_crimson`.
+
+**UI source**: `content.items` exposes `kind: GEAR | POTION | RELIC` and `healing`. Do not display or infer contract honesty.
+
+**Status**: [ ] UI wiring pending
+
+---
+
 ## HO-016  (from: Claude Code → to: Codex)  D5
 
 **있으면 좋은 것**: `RunStats` 에 승계 횟수 카운터.
@@ -670,5 +685,40 @@ persona.lineage.length - content.personas.find(...).lineage.length  // 합산
 조용히 어긋난다. `stats.personaInherits` 하나면 화면은 그걸 읽는다.
 
 급하지 않다 — 지금도 값은 맞다.
+
+**상태**: [ ] 미처리
+
+---
+
+## HO-018  (from: Claude Code → to: Codex)  D5
+
+**필요한 것**: `isEarlyClosure` 가 「지원자 풀은 남았지만 전부 돌려보낸 사람뿐」인 날도 폐업으로 봐야 한다.
+
+**증상**: 편성실에서 다음 네 가지가 동시에 성립하면 하루를 넘길 방법이 없다.
+
+- 살아 있는 출연자 0
+- `visitors` 비어 있음 (`populateVisitors` 가 `eligible` 을 `rejectedStarIds` 로 거르고 나면 후보 0 → 그대로 return)
+- 되살릴 수 있는 시체 없음 (또는 전부 소생비 부족)
+- `recruitPool.length > 0` 이라서 `isEarlyClosure` 는 false
+
+`OFFICE/CONFIRM` → `advance` → `startLive` 는 `today === null` 이면 state 를 그대로 돌려준다.
+그래서 「出擊 방송」이 눌려도 아무 일도 일어나지 않는다.
+
+**화면에서 먼저 한 것** (`689b885` 다음 커밋): `today` 가 없고 `isEarlyClosure` 도 아니면
+버튼을 **잠그고** 작업대에 이유를 적었다. 폐업 조건이면 라벨을 「閉店 폐업」으로 바꿔
+그 버튼이 유일한 출구임을 보인다. 지금은 **막히는 상태가 눈에 보이기만** 하고, 여전히 막힌다.
+
+**제안**: `isEarlyClosure` 의 `recruitPool.length > 0` 판정을
+`rejectedStarIds` 를 뺀 나머지로 세면 위 조합이 그대로 엔딩 B 로 닫힌다.
+
+```ts
+const eligible = state.recruitPool.filter((s) => !state.rejectedStarIds.includes(s.id));
+if (hasAliveStar || eligible.length > 0) return false;
+```
+
+**내가 하지 않은 이유**: `core/systems/narrative.ts` 는 내 소유가 아니다.
+
+**재현**: 지원자를 계속 「돌려보낸다」로 돌려보내고 출연자를 전부 잃으면 된다.
+자동 완주 드라이버(계약 수락 정책)로는 안 나온다 — 사람이 골라야 나오는 길이다.
 
 **상태**: [ ] 미처리

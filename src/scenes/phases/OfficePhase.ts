@@ -1,12 +1,14 @@
 import { SCENES } from '../../config';
 import { content } from '../../core/content';
+import { isEarlyClosure } from '../../core/systems/narrative';
+import { officeHero } from '../../core/systems/office';
 import { starArt } from '../../render/assets';
 import { L, slotX, actionX, ACTION_W } from '../../ui/layout';
 import { Button } from '../../ui/Button';
 import { onboard } from '../../ui/Onboarding';
 import { playBgm } from '../../audio/Sfx';
 import { PhaseScene } from './PhaseScene';
-import type { Contract, GameState } from '../../core/types';
+import type { Contract, GameState, Star } from '../../core/types';
 
 /**
  * M05 편성실 — **상점 화면** (v3.1 레퍼런스 정본, 04-UI-KIT §1 · 00-OVERVIEW §8-2).
@@ -25,6 +27,8 @@ export class OfficePhase extends PhaseScene {
   private mode: BenchMode = 'SHELF';
   /** 계약서가 2장 올 수 있다 (M05). 지금 보고 있는 장 */
   private contractIndex = 0;
+  /** 인벤토리에서 지금 보고 있는 물건 (HO-017 · CCR-003) */
+  private itemIndex = 0;
 
   constructor() {
     super(SCENES.PHASE_OFFICE);
@@ -36,6 +40,7 @@ export class OfficePhase extends PhaseScene {
    * 어제 남긴 필드를 지우지 않으면 다음 날 화면이 어제 상태로 시작한다.
    */
     this.contractIndex = 0;
+    this.itemIndex = 0;
     this.mode = 'SHELF';
     super.create();
     playBgm(this, 'bgm.shop');
@@ -186,7 +191,12 @@ export class OfficePhase extends PhaseScene {
       this.text(ix, y + 56, this.clip(def.name, inner));
       this.text(ix, y + 104, `HP+${def.hp}`, 'dust');
       this.text(ix, y + 144, `공+${def.atk} 방+${def.def}`, 'dust');
-      this.text(ix, y + 200, `${def.price.toLocaleString('en-US')} G`);
+      // CCR-003 — 진열은 판매가 아니라 장착이다. 값을 적으면 파는 것처럼 읽힌다
+      new Button(this, {
+        x: ix, y: y + L.slot3.h - 76, w: inner, h: 56,
+        label: '내린다', variant: 'ghost',
+        onClick: () => this.store.dispatch({ type: 'OFFICE/PLACE', slot: i, itemId: null }),
+      });
     }
 
     // 오늘의 출연자 — 램프와 장부 사이. 소품 자리를 침범하지 않는다
@@ -194,8 +204,13 @@ export class OfficePhase extends PhaseScene {
     const colW = 240;
     // 판은 실제로 쓰는 칸만큼만 깐다. 출연자가 없는 날 빈 검은 상자가 남으면 안 된다
     const cols = Math.min(3, alive.length);
-    if (cols > 0) this.scrimBlock(L.bench.x + 356, by - 20, colW * cols + 16 * (cols - 1) + 48, 216);
+    this.scrimBlock(L.bench.x + 356, by - 20, cols > 0 ? colW * cols + 16 * (cols - 1) + 48 : 700, 216);
     this.label(L.bench.x + 380, by, '오늘의 출연자', 'dust');
+    // 빈 칸을 그냥 두면 왜 출격이 잠겼는지 알 길이 없다
+    if (cols === 0) {
+      this.text(L.bench.x + 380, by + 40, '세울 사람이 없다.', 'wax');
+      this.text(L.bench.x + 380, by + 84, '蘇生(1) 으로 되살리거나 交渉(3) 으로 계약해라.', 'dust');
+    }
     alive.slice(0, 3).forEach((star, i) => {
       const picked = s.today?.starId === star.id;
       const x = L.bench.x + 380 + i * (colW + 16);
@@ -209,6 +224,101 @@ export class OfficePhase extends PhaseScene {
         enabled: !picked,
         onClick: () => this.store.dispatch({ type: 'OFFICE/PICK_STAR', starId: star.id }),
       });
+    });
+
+    this.buildInventory(s, alive[0]);
+  }
+
+  /* ── 작업대 B · 인벤토리 (HO-017 · CCR-003) ───────────── */
+
+  /**
+   * 진열은 **판매가 아니라 장착**이다. 올린 물건은 인벤토리에 남고, 내리기 전에는 팔 수 없다.
+   * 파는 것은 따로다 — 그리고 진실 유품 2종은 팔면 `leak` 이 오른다 (M05 §5).
+   *
+   * 물건을 하나씩 넘겨 보고(5) 올리거나 내리고(6) 판다(7). 3칸은 눌러서도 내려진다.
+   */
+  private buildInventory(s: Readonly<GameState>, star: Star | undefined): void {
+    const b = L.bench;
+    const iy = b.y + 600;          // 「오늘의 출연자」 줄 아래, Day1 온보딩 띠(884) 위
+    const ih = 128;
+    const px = b.x + L.pad;
+    const pw = b.w - L.pad * 2;
+    const ox = b.x + L.pad * 2;
+
+    // 위아래로 옅어지는 판 — 위는 넓게, 아래는 작업대 끝이라 짧게 끊는다
+    ([3, 2, 1] as const).forEach((weight, i) => {
+      // 위 꼬리는 「이 사람으로」 버튼(720 에서 끝난다)을 덮지 않는 만큼만 쓴다
+      this.scrim(px, iy - 8 * (i + 1), pw, 8, weight);
+      this.scrim(px, iy + ih + 8 * i, pw, 8, weight);
+    });
+    this.rect(px, iy, pw, ih, 'ink');
+
+    const stacks = s.inventory.filter((stack) => stack.qty > 0);
+    if (this.itemIndex >= stacks.length) this.itemIndex = 0;
+    const stack = stacks[this.itemIndex];
+    const def = stack === undefined ? undefined : content.items.find((item) => item.id === stack.id);
+    const shelved = def !== undefined && s.shelf.includes(def.id);
+
+    const head = stacks.length === 0
+      ? '인벤토리'
+      : `인벤토리 ${this.itemIndex + 1} / ${stacks.length}${shelved ? '  ·  진열 중' : ''}`;
+    this.label(ox, iy + 8, head, shelved ? 'wax' : 'dust');
+
+    // 진열의 결과를 숫자로 보여준다 — 「진열 확정 시 출연자 스탯이 갱신된다」(M05 §8)
+    const totals = s.shelf.reduce(
+      (sum, id) => {
+        const item = id === null ? undefined : content.items.find((candidate) => candidate.id === id);
+        return item === undefined ? sum : { hp: sum.hp + item.hp, atk: sum.atk + item.atk, def: sum.def + item.def };
+      },
+      { hp: 0, atk: 0, def: 0 },
+    );
+    if (star !== undefined) {
+      const hero = officeHero(s, star);
+      this.label(ox + 320, iy + 8,
+        `장비 HP+${totals.hp} 공+${totals.atk} 방+${totals.def}   →   출연자 ${hero.maxHp} · 공 ${hero.atk} · 방 ${hero.def}`,
+        'dust');
+    }
+
+    if (def === undefined || stack === undefined) {
+      this.text(ox, iy + 36, '팔 것도 올릴 것도 없다.', 'dust');
+      this.text(ox, iy + 80, '시체를 훼손하면 유품이 들어온다.', 'dust');
+      return;
+    }
+
+    const gear = def.kind === 'GEAR';
+    const full = s.shelf.every((slot) => slot !== null);
+    const spec = gear
+      ? `HP+${def.hp} 공+${def.atk} 방+${def.def}`
+      : def.kind === 'POTION' ? `방송 중 회복 +${def.healing}` : '전투에는 쓸모가 없다';
+
+    this.text(ox, iy + 36, this.clip(`${def.name}${stack.qty > 1 ? ` x${stack.qty}` : ''}`, 380));
+    this.text(ox, iy + 80, this.clip(spec, 300), 'dust');
+    this.text(ox + 320, iy + 80, `${def.price.toLocaleString('en-US')} G`, def.isRelic ? 'wax' : 'bone');
+
+    const bw = 200;
+    const bx = b.x + b.w - L.pad * 2 - bw;
+    const by2 = iy + 32;
+    new Button(this, {
+      x: bx - (bw + 12) * 2, y: by2, w: bw, h: 64,
+      label: '次 다음', hotkey: '5', variant: 'ghost',
+      enabled: stacks.length > 1,
+      onClick: () => { this.itemIndex = (this.itemIndex + 1) % stacks.length; this.redraw(); },
+    });
+    new Button(this, {
+      x: bx - (bw + 12), y: by2, w: bw, h: 64,
+      label: shelved ? '陳列 내린다' : '陳列 진열', hotkey: '6',
+      enabled: gear && (shelved || !full),
+      onClick: () => {
+        const slot = shelved ? s.shelf.indexOf(def.id) : s.shelf.indexOf(null);
+        if (slot < 0) return;
+        this.store.dispatch({ type: 'OFFICE/PLACE', slot, itemId: shelved ? null : def.id });
+      },
+    });
+    new Button(this, {
+      x: bx, y: by2, w: bw, h: 64,
+      label: '賣却 판매', hotkey: '7', variant: 'danger',
+      enabled: !shelved,
+      onClick: () => this.store.dispatch({ type: 'OFFICE/SELL', itemId: def.id }),
     });
   }
 
@@ -242,9 +352,14 @@ export class OfficePhase extends PhaseScene {
       variant: this.mode === 'CONTRACT' ? 'default' : 'ghost',
       onClick: () => this.switchMode('CONTRACT'),
     });
+    // 세울 사람이 없으면 core 의 `startLive` 가 state 를 그대로 돌려준다 —
+    // 즉 눌러도 아무 일이 안 일어난다. 그건 이 화면에서 제일 나쁜 버튼이므로 잠근다.
+    // 단 「더는 세울 수도 되살릴 수도 없는」 날은 이 버튼이 가게를 닫는 유일한 출구다.
+    const closing = s.today === null && isEarlyClosure(s);
     new Button(this, {
       x: actionX(3), y, w: ACTION_W, h,
-      label: '出撃 방송', hotkey: '4', variant: 'danger',
+      label: closing ? '閉店 폐업' : '出撃 방송', hotkey: '4', variant: 'danger',
+      enabled: s.today !== null || closing,
       onClick: () => this.store.dispatch({ type: 'OFFICE/CONFIRM' }),
     });
 
