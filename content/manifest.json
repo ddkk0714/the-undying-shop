@@ -512,7 +512,248 @@
     "final": {
       "root": "assets/packs/final/",
       "inherit": "placeholder",
-      "entries": {}
+      "entries": {
+        "bg.shop.room": {
+          "type": "image",
+          "file": "bg/shop_room.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "② 편성실 좌측 — 방문자가 서는 자리"
+        },
+        "bg.shop.bench": {
+          "type": "image",
+          "file": "bg/shop_bench.png",
+          "size": [
+            1152,
+            792
+          ],
+          "desc": "② 편성실 우측 — 작업대"
+        },
+        "bg.revive.room": {
+          "type": "image",
+          "file": "bg/revive_room.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "① 소생실 좌측 (없으면 bg.shop.room 을 쓴다)"
+        },
+        "bg.revive.bench": {
+          "type": "image",
+          "file": "bg/revive_bench.png",
+          "size": [
+            1152,
+            792
+          ],
+          "desc": "① 소생실 우측 (없으면 bg.shop.bench 를 쓴다)"
+        },
+        "bg.tower": {
+          "type": "image",
+          "file": "bg/tower.png",
+          "size": [
+            744,
+            720
+          ],
+          "desc": "③ 생방송 전투 칸 배경 (던전)"
+        },
+        "star.body.karin": {
+          "type": "image",
+          "file": "star/body_karin.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "카린 전신 (상점 좌측)"
+        },
+        "star.body.juno": {
+          "type": "image",
+          "file": "star/body_juno.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "주노 전신"
+        },
+        "star.body.sela": {
+          "type": "image",
+          "file": "star/body_sela.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "셀라 전신"
+        },
+        "star.body.ilan": {
+          "type": "image",
+          "file": "star/body_ilan.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "일란 전신"
+        },
+        "star.body.mor": {
+          "type": "image",
+          "file": "star/body_mor.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "모르 전신"
+        },
+        "star.portrait.karin": {
+          "type": "image",
+          "file": "star/karin.png",
+          "size": [
+            384,
+            480
+          ],
+          "desc": "카린 초상 (생방송 우상단)",
+          "display": "192×240 생방송(1/2) · 384×480 상점(1:1)"
+        },
+        "star.portrait.juno": {
+          "type": "image",
+          "file": "star/juno.png",
+          "size": [
+            384,
+            480
+          ],
+          "desc": "주노 초상",
+          "display": "192×240 생방송(1/2) · 384×480 상점(1:1)"
+        },
+        "star.portrait.sela": {
+          "type": "image",
+          "file": "star/sela.png",
+          "size": [
+            384,
+            480
+          ],
+          "desc": "셀라 초상",
+          "display": "192×240 생방송(1/2) · 384×480 상점(1:1)"
+        },
+        "star.portrait.ilan": {
+          "type": "image",
+          "file": "star/ilan.png",
+          "size": [
+            384,
+            480
+          ],
+          "desc": "일란 초상",
+          "display": "192×240 생방송(1/2) · 384×480 상점(1:1)"
+        },
+        "star.portrait.mor": {
+          "type": "image",
+          "file": "star/mor.png",
+          "size": [
+            384,
+            480
+          ],
+          "desc": "모르 초상",
+          "display": "192×240 생방송(1/2) · 384×480 상점(1:1)"
+        },
+        "star.appeal.karin": {
+          "type": "image",
+          "file": "star/karin_appeal.png",
+          "size": [
+            384,
+            480
+          ],
+          "desc": "카린 어필 컷 — 억지 웃음 + 카메라를 본다 (M06 §7 최우선 컷)",
+          "display": "192×240 (1/2)"
+        },
+        "star.appeal.juno": {
+          "type": "image",
+          "file": "star/juno_appeal.png",
+          "size": [
+            384,
+            480
+          ],
+          "desc": "주노 어필 컷",
+          "display": "192×240 (1/2)"
+        },
+        "star.appeal.sela": {
+          "type": "image",
+          "file": "star/sela_appeal.png",
+          "size": [
+            384,
+            480
+          ],
+          "desc": "셀라 어필 컷",
+          "display": "192×240 (1/2)"
+        },
+        "star.appeal.ilan": {
+          "type": "image",
+          "file": "star/ilan_appeal.png",
+          "size": [
+            384,
+            480
+          ],
+          "desc": "일란 어필 컷",
+          "display": "192×240 (1/2)"
+        },
+        "star.appeal.mor": {
+          "type": "image",
+          "file": "star/mor_appeal.png",
+          "size": [
+            384,
+            480
+          ],
+          "desc": "모르 어필 컷",
+          "display": "192×240 (1/2)"
+        },
+        "enemy.rat": {
+          "type": "image",
+          "file": "enemy/rat.png",
+          "size": [
+            512,
+            512
+          ],
+          "desc": "쥐 — 22F 이하",
+          "display": "256×256 (1/2)"
+        },
+        "enemy.husk": {
+          "type": "image",
+          "file": "enemy/husk.png",
+          "size": [
+            512,
+            512
+          ],
+          "desc": "껍데기 — 22F 이하",
+          "display": "256×256 (1/2)"
+        },
+        "enemy.beast": {
+          "type": "image",
+          "file": "enemy/beast.png",
+          "size": [
+            512,
+            512
+          ],
+          "desc": "짐승 — 23~30F",
+          "display": "256×256 (1/2)"
+        },
+        "enemy.flame": {
+          "type": "image",
+          "file": "enemy/flame.png",
+          "size": [
+            512,
+            512
+          ],
+          "desc": "화염 — 23~30F",
+          "display": "256×256 (1/2)"
+        },
+        "enemy.gatekeeper": {
+          "type": "image",
+          "file": "enemy/gatekeeper.png",
+          "size": [
+            512,
+            512
+          ],
+          "desc": "문지기 — 31F 이상",
+          "display": "256×256 (1/2)"
+        }
+      }
     }
   }
 }
