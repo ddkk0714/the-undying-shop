@@ -4,7 +4,7 @@ import { content } from '../../core/content';
 import { isEarlyClosure } from '../../core/systems/narrative';
 import { officeHero } from '../../core/systems/office';
 import { key, starArt } from '../../render/assets';
-import { L, slotX, actionX, ACTION_W } from '../../ui/layout';
+import { L, actionX, ACTION_W } from '../../ui/layout';
 import { Button } from '../../ui/Button';
 import { onboard } from '../../ui/Onboarding';
 import { playBgm } from '../../audio/Sfx';
@@ -27,6 +27,12 @@ type BenchMode = 'CONTRACT' | 'SHELF';
 const SLOT_NAMES = ['무기', '방어구', '기타'] as const;
 const INVENTORY_COLUMNS = 4;
 const INVENTORY_VISIBLE_ROWS = 2;
+// 새 작업대 원화의 세 사각 홈을 1920×1080 편성실 좌표로 옮긴 값.
+const SHELF_SLOTS = [
+  { x: 1013, y: 227, w: 226, h: 218 },
+  { x: 1247, y: 227, w: 214, h: 218 },
+  { x: 1473, y: 227, w: 214, h: 218 },
+] as const;
 
 export class OfficePhase extends PhaseScene {
   private mode: BenchMode = 'SHELF';
@@ -210,38 +216,36 @@ export class OfficePhase extends PhaseScene {
     const alive = s.stars.filter((star) => star.status === 'ALIVE');
 
     this.label(
-      L.slot3.x,
-      L.slot3.y - 28,
+      SHELF_SLOTS[0].x,
+      SHELF_SLOTS[0].y - 28,
       this.inventoryOpen ? '장비를 끌거나 선택한 뒤, 맞는 진열대를 누르세요.' : '하단 진열을 눌러 인벤토리를 여세요.',
       'dust',
     );
     for (let i = 0; i < 3; i += 1) {
-      const x = slotX(i);
-      const y = L.slot3.y;
+      const slot = SHELF_SLOTS[i]!;
+      const { x, y, w, h } = slot;
       const itemId = s.shelf[i] ?? null;
       const def = itemId === null ? undefined : content.items.find((item) => item.id === itemId);
 
-      // 카드가 아니라 작업대 위의 실제 놓는 자리다. 배경 그림을 가리지 않고 테두리만 남긴다.
+      // 원화에 그려진 사각 홈이 곧 놓는 자리다. 별도의 카드·배경은 덮지 않는다.
       const selected = this.selectedItemId === null ? undefined : content.items.find((item) => item.id === this.selectedItemId);
       const acceptsSelected = selected !== undefined && content.balance.equipment.slotByItem[selected.id] === i;
-      // 작업대의 질감은 살리고, 장비를 두는 면만 읽히도록 반투명 잉크를 깐다.
-      this.add.rectangle(x + 10, y + 28, L.slot3.w - 20, L.slot3.h - 40, 0x07110b, 0.42).setOrigin(0, 0);
-      this.frame(x + 10, y + 28, L.slot3.w - 20, L.slot3.h - 40, acceptsSelected ? 'wax' : def === undefined ? 'dust' : 'bone');
-      const dropZone = this.add.zone(x + 10, y + 28, L.slot3.w - 20, L.slot3.h - 40).setOrigin(0, 0);
+      if (acceptsSelected) this.frame(x, y, w, h, 'wax');
+      const dropZone = this.add.zone(x, y, w, h).setOrigin(0, 0);
       dropZone.setInteractive({ cursor: acceptsSelected ? 'pointer' : 'default' });
       dropZone.on('pointerup', () => this.placeSelected(i));
-      this.label(x + L.pad, y + 4, SLOT_NAMES[i]!);
+      this.label(x + 12, y + 10, SLOT_NAMES[i]!);
       if (def === undefined) {
-        this.label(x + L.pad, y + 56, '여기로 끌기', 'dust');
-        this.label(x + L.pad, y + 80, i === 0 ? '무기' : i === 1 ? '방어구' : '물약·유물', 'dust');
+        this.label(x + 12, y + 72, '여기로 끌기', 'dust');
+        this.label(x + 12, y + 96, i === 0 ? '무기' : i === 1 ? '방어구' : '물약·유물', 'dust');
         continue;
       }
 
-      const art = this.itemArt(def, { x: x + 26, y: y + 50, w: L.slot3.w - 52, h: 132 });
+      const art = this.itemArt(def, { x: x + 14, y: y + 34, w: w - 28, h: 100 });
       if (art !== null) this.wireShelfDrag(art, i, { x: art.x, y: art.y });
-      this.label(x + L.pad, y + 190, this.clip(def.name, L.slot3.w - L.pad * 2, 'label'), def.isRelic ? 'wax' : 'bone');
-      this.label(x + L.pad, y + 216, this.itemStats(def), 'dust');
-      this.label(x + L.pad, y + 240, '인벤토리로 끌어 회수', 'dust');
+      this.label(x + 12, y + 142, this.clip(def.name, w - 24, 'label'), def.isRelic ? 'wax' : 'bone');
+      this.label(x + 12, y + 164, this.itemStats(def), 'dust');
+      this.label(x + 12, y + 188, '인벤토리로 끌어 회수', 'dust');
     }
 
     // 오늘의 출연자 — 램프와 장부 사이. 소품 자리를 침범하지 않는다
@@ -490,8 +494,8 @@ export class OfficePhase extends PhaseScene {
 
   private shelfSlotAt(x: number, y: number): number | null {
     for (let i = 0; i < 3; i += 1) {
-      const left = slotX(i);
-      if (x >= left && x <= left + L.slot3.w && y >= L.slot3.y && y <= L.slot3.y + L.slot3.h) return i;
+      const slot = SHELF_SLOTS[i]!;
+      if (x >= slot.x && x <= slot.x + slot.w && y >= slot.y && y <= slot.y + slot.h) return i;
     }
     return null;
   }
