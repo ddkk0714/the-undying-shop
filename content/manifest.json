@@ -253,6 +253,15 @@
           ],
           "desc": "인벤토리 선택 장비 프레임 (우측 하단 없음)"
         },
+        "ui.guest.cover": {
+          "type": "image",
+          "file": "ui/character_cover.png",
+          "size": [
+            1087,
+            258
+          ],
+          "desc": "편성실 좌측 캐릭터 전경 가리개 — 대사 배치용"
+        },
         "ui.inventory.info": {
           "type": "image",
           "file": "ui/item_info_window.png",
@@ -1046,6 +1055,15 @@
             240
           ],
           "desc": "인벤토리 선택 장비 프레임 (우측 하단 없음)"
+        },
+        "ui.guest.cover": {
+          "type": "image",
+          "file": "ui/character_cover.png",
+          "size": [
+            1087,
+            258
+          ],
+          "desc": "편성실 좌측 캐릭터 전경 가리개 — 대사 배치용"
         },
         "ui.inventory.info": {
           "type": "image",

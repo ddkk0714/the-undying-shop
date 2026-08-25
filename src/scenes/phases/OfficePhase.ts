@@ -86,7 +86,7 @@ export class OfficePhase extends PhaseScene {
     }
     this.buildActions(s);
     onboard(this, s.day, this.mode === 'CONTRACT' ? 'OFFICE_CONTRACT' : 'OFFICE_SHELF',
-      { x: L.pad, y: L.actionsFull.y - 52, w: L.W - L.pad * 2 });
+      { x: L.dialogue.x, y: L.dialogue.y + 44, w: L.dialogue.w });
   }
 
   /* ── 좌 · 방문자 / 출연자 ─────────────────────────────── */
@@ -126,12 +126,17 @@ export class OfficePhase extends PhaseScene {
     this.scrimBlock(g.x + L.line, g.y + L.line, 560, 96);
     this.title(g.x + L.pad, g.y + L.pad, this.clip(name, g.w - L.pad * 2, 'title'));
 
-    // 대사 — 좌하단 한 줄 + ▼ (말풍선을 쓰지 않는다)
+    // 캐릭터보다 앞에 가리개를 얹고 그 안에 대사를 둔다.
+    const coverW = g.w;
+    const coverH = Math.round(258 * (coverW / 1087));
+    const coverX = g.x;
+    const coverY = g.y + g.h - coverH;
+    this.sprite(coverX, coverY, 'ui.guest.cover', coverW, coverH);
     const d = L.dialogue;
     this.rect(d.x, d.y, d.w, d.h, 'ink');
     const line = this.mode === 'CONTRACT' ? '...일할 자리 있나요?' : '...강한 무기 있나요?';
-    this.title(d.x + L.pad, d.y + 40, this.clip(line, d.w - 96, 'title'), 'bone');
-    this.text(d.x + d.w - 48, d.y + 52, '▼', 'dust');
+    this.title(coverX + L.pad, coverY + 52, this.clip(line, coverW - 96, 'title'), 'bone');
+    this.text(coverX + coverW - 48, coverY + 64, '▼', 'dust');
   }
 
   /* ── 우 · 작업대 배경 ─────────────────────────────────── */
