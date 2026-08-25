@@ -264,22 +264,20 @@ export class OfficePhase extends PhaseScene {
   /* ── 작업대 B · 인벤토리 ───────────────────────────────── */
 
   private buildInventory(s: Readonly<GameState>): void {
-    const b = L.bench;
-    // 진열대 아래에 고정하지 않는다. 열었을 때만 출연자 줄 위를 덮는 서랍이다.
-    const iy = b.y + 438;
-    const ih = 336;
-    const px = b.x + L.pad;
-    const pw = b.w - L.pad * 2;
-    const ox = px + L.pad;
-
-    this.rect(px, iy, pw, ih, 'ink');
-    this.frame(px, iy, pw, ih, 'bone');
+    const panel = this.inventoryRect();
+    const ix = panel.x + 28;
+    // 받은 장비창 원본(1452×831)의 비율을 보존한다. 진열대 바로 아래에서만
+    // 열리므로 실제 장비를 놓는 상단 작업대는 가리지 않는다.
+    if (!this.spriteFit(panel, ['ui.inventory.window'])) {
+      this.rect(panel.x, panel.y, panel.w, panel.h, 'ink');
+      this.frame(panel.x, panel.y, panel.w, panel.h, 'bone');
+    }
 
     const stacks = s.inventory.filter((stack) => stack.qty > 0);
-    this.title(ox, iy + 12, `인벤토리  ${stacks.length}종`);
-    const hint = this.label(ox, iy + 76, '장비 도트를 끌거나 클릭해 선택하세요. 진열대에 놓으면 장착됩니다.', 'dust');
+    this.text(ix, panel.y + 16, `인벤토리  ${stacks.length}종`, 'ink');
+    const hint = this.label(ix, panel.y + 70, '장비를 끌거나 클릭해 고른 뒤, 맞는 진열대를 누르세요.', 'dust');
     new Button(this, {
-      x: px + pw - 172, y: iy + 20, w: 140, h: 56,
+      x: panel.x + panel.w - 156, y: panel.y + 62, w: 128, h: 52,
       label: '닫기',
       onClick: () => {
         this.inventoryOpen = false;
@@ -299,36 +297,36 @@ export class OfficePhase extends PhaseScene {
     const star = s.stars.find((candidate) => candidate.status === 'ALIVE');
     if (star !== undefined) {
       const hero = officeHero(s, star);
-      this.label(ox + 480, iy + 76,
+      this.label(ix + 330, panel.y + 104,
         `장비 HP+${totals.hp} 공+${totals.atk} 방+${totals.def} → 출연자 ${hero.maxHp}·공${hero.atk}·방${hero.def}`,
         'dust');
     }
 
     if (stacks.length === 0) {
-      this.text(ox, iy + 132, '팔 것도 올릴 것도 없다.', 'dust');
-      this.text(ox, iy + 180, '시체를 훼손하면 유품이 들어온다.', 'dust');
+      this.text(ix, panel.y + 150, '팔 것도 올릴 것도 없다.', 'dust');
+      this.text(ix, panel.y + 198, '시체를 훼손하면 유품이 들어온다.', 'dust');
       return;
     }
 
-    const cellW = Math.floor((pw - L.pad * 2) / INVENTORY_COLUMNS);
+    const cellW = Math.floor((panel.w - 56) / INVENTORY_COLUMNS);
     stacks.slice(0, INVENTORY_COLUMNS * 2).forEach((stack, index) => {
       const def = content.items.find((item) => item.id === stack.id);
       if (def === undefined) return;
       const col = index % INVENTORY_COLUMNS;
       const row = Math.floor(index / INVENTORY_COLUMNS);
-      const cellX = ox + col * cellW;
-      const cellY = iy + 120 + row * 92;
+      const cellX = ix + col * cellW;
+      const cellY = panel.y + 142 + row * 124;
       const equipped = s.shelf.includes(def.id);
       const selected = this.selectedItemId === def.id;
-      const art = this.itemArt(def, { x: cellX, y: cellY, w: cellW - 16, h: 40 });
+      if (selected) this.sprite(cellX - 4, cellY - 6, 'ui.inventory.selected', 88, 93);
+      const art = this.itemArt(def, { x: cellX + 4, y: cellY + 8, w: cellW - 12, h: 54 });
       if (art !== null) {
         if (equipped) art.setAlpha(0.38);
         else this.wireInventoryDrag(art, def, { x: art.x, y: art.y });
         this.wireItemHint(art, def, hint);
       }
-      if (selected) this.frame(cellX - 8, cellY - 8, cellW - 4, 82, 'wax');
-      this.label(cellX, cellY + 42, this.clip(def.name, cellW - 16, 'label'), equipped ? 'wax' : 'bone');
-      this.label(cellX, cellY + 56, equipped ? '진열 중' : `${this.itemStats(def)}${stack.qty > 1 ? ` ×${stack.qty}` : ''}`, 'dust');
+      this.label(cellX, cellY + 68, this.clip(def.name, cellW - 10, 'label'), equipped ? 'wax' : 'bone');
+      this.label(cellX, cellY + 86, equipped ? '진열 중' : `${this.itemStats(def)}${stack.qty > 1 ? ` ×${stack.qty}` : ''}`, 'dust');
     });
   }
 
@@ -407,8 +405,15 @@ export class OfficePhase extends PhaseScene {
   }
 
   private inInventory(x: number, y: number): boolean {
+    const panel = this.inventoryRect();
+    return x >= panel.x && x <= panel.x + panel.w && y >= panel.y && y <= panel.y + panel.h;
+  }
+
+  private inventoryRect(): { x: number; y: number; w: number; h: number } {
     const b = L.bench;
-    return x >= b.x + L.pad && x <= b.x + b.w - L.pad && y >= b.y + 438 && y <= b.y + 438 + 336;
+    const w = 736;
+    const h = 420;
+    return { x: b.x + Math.round((b.w - w) / 2), y: b.y + b.h - h, w, h };
   }
 
   /* ── 하단 4택 ─────────────────────────────────────────── */

@@ -235,6 +235,24 @@
           ],
           "desc": "의심도 5/5 — 눈이 떠지는 5단 (5장 다 있어야 승계 화면에 뜬다)"
         },
+        "ui.inventory.window": {
+          "type": "image",
+          "file": "ui/inventory_window.png",
+          "size": [
+            1452,
+            831
+          ],
+          "desc": "편성실 인벤토리 창"
+        },
+        "ui.inventory.selected": {
+          "type": "image",
+          "file": "ui/item_selected.png",
+          "size": [
+            228,
+            240
+          ],
+          "desc": "인벤토리 선택 장비 프레임 (우측 하단 없음)"
+        },
         "ui.cursor": {
           "type": "image",
           "file": "ui/cursor.png",
@@ -956,6 +974,24 @@
             128
           ],
           "desc": "의심도 5/5 — 눈이 떠지는 5단 (5장 다 있어야 승계 화면에 뜬다)"
+        },
+        "ui.inventory.window": {
+          "type": "image",
+          "file": "ui/inventory_window.png",
+          "size": [
+            1452,
+            831
+          ],
+          "desc": "편성실 인벤토리 창"
+        },
+        "ui.inventory.selected": {
+          "type": "image",
+          "file": "ui/item_selected.png",
+          "size": [
+            228,
+            240
+          ],
+          "desc": "인벤토리 선택 장비 프레임 (우측 하단 없음)"
         },
         "bg.title": {
           "type": "image",
