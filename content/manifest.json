@@ -478,6 +478,42 @@
           ],
           "desc": "③ 던전 · 최종 구역 (31F~)"
         },
+        "bg.live.screen.stone": {
+          "type": "image",
+          "file": "bg/live_screen_stone.png",
+          "size": [
+            462,
+            452
+          ],
+          "desc": "③ 방송화면 액자 · 돌 구역 — 적 스프라이트 뒤에 깔린다"
+        },
+        "bg.live.screen.ice": {
+          "type": "image",
+          "file": "bg/live_screen_ice.png",
+          "size": [
+            462,
+            452
+          ],
+          "desc": "③ 방송화면 액자 · 얼음 구역"
+        },
+        "bg.live.screen.flame": {
+          "type": "image",
+          "file": "bg/live_screen_flame.png",
+          "size": [
+            462,
+            452
+          ],
+          "desc": "③ 방송화면 액자 · 화염 구역"
+        },
+        "bg.live.screen.final": {
+          "type": "image",
+          "file": "bg/live_screen_final.png",
+          "size": [
+            462,
+            452
+          ],
+          "desc": "③ 방송화면 액자 · 최종 구역"
+        },
         "ui.live.floors": {
           "type": "image",
           "file": "ui/live_floors.png",
@@ -834,6 +870,96 @@
           ],
           "desc": "모르 전신"
         },
+        "star.dialogue.karin": {
+          "type": "image",
+          "file": "star/karin_dialogue.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "카린 대사 전신"
+        },
+        "star.expression.karin": {
+          "type": "image",
+          "file": "star/karin_expression.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "카린 표정 전신"
+        },
+        "star.dialogue.juno": {
+          "type": "image",
+          "file": "star/juno_dialogue.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "주노 대사 전신"
+        },
+        "star.expression.juno": {
+          "type": "image",
+          "file": "star/juno_expression.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "주노 큰웃음 표정 전신"
+        },
+        "star.dialogue.sela": {
+          "type": "image",
+          "file": "star/sela_dialogue.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "세라 대사 전신"
+        },
+        "star.expression.sela": {
+          "type": "image",
+          "file": "star/sela_expression.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "세라 표정 전신"
+        },
+        "star.dialogue.ilan": {
+          "type": "image",
+          "file": "star/ilan_dialogue.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "일란 대사 전신"
+        },
+        "star.expression.ilan": {
+          "type": "image",
+          "file": "star/ilan_expression.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "일란 표정 전신"
+        },
+        "star.dialogue.mor": {
+          "type": "image",
+          "file": "star/mor_dialogue.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "모르 대사 전신"
+        },
+        "star.expression.mor": {
+          "type": "image",
+          "file": "star/mor_expression.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "모르 표정 전신"
+        },
         "star.portrait.karin": {
           "type": "image",
           "file": "star/karin.png",
@@ -1003,6 +1129,11 @@
           "type": "audio",
           "file": "sfx/revive.mp3",
           "desc": "소생 — 수조에서 몸이 일어난다"
+        },
+        "sfx.revive.knock": {
+          "type": "audio",
+          "file": "sfx/revive_knock.mp3",
+          "desc": "빈 소생실에서 2초 뒤 들리는 편성실 쪽 노크"
         },
         "sfx.click": {
           "type": "audio",
@@ -1458,6 +1589,42 @@
           ],
           "desc": "③ 던전 · 최종 구역 (31F~)"
         },
+        "bg.live.screen.stone": {
+          "type": "image",
+          "file": "bg/live_screen_stone.png",
+          "size": [
+            462,
+            452
+          ],
+          "desc": "③ 방송화면 액자 · 돌 구역 — 적 스프라이트 뒤에 깔린다"
+        },
+        "bg.live.screen.ice": {
+          "type": "image",
+          "file": "bg/live_screen_ice.png",
+          "size": [
+            462,
+            452
+          ],
+          "desc": "③ 방송화면 액자 · 얼음 구역"
+        },
+        "bg.live.screen.flame": {
+          "type": "image",
+          "file": "bg/live_screen_flame.png",
+          "size": [
+            462,
+            452
+          ],
+          "desc": "③ 방송화면 액자 · 화염 구역"
+        },
+        "bg.live.screen.final": {
+          "type": "image",
+          "file": "bg/live_screen_final.png",
+          "size": [
+            462,
+            452
+          ],
+          "desc": "③ 방송화면 액자 · 최종 구역"
+        },
         "ui.live.floors": {
           "type": "image",
           "file": "ui/live_floors.png",
@@ -1806,6 +1973,96 @@
           ],
           "desc": "모르 전신"
         },
+        "star.dialogue.karin": {
+          "type": "image",
+          "file": "star/karin_dialogue.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "카린 대사 전신"
+        },
+        "star.expression.karin": {
+          "type": "image",
+          "file": "star/karin_expression.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "카린 표정 전신"
+        },
+        "star.dialogue.juno": {
+          "type": "image",
+          "file": "star/juno_dialogue.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "주노 대사 전신"
+        },
+        "star.expression.juno": {
+          "type": "image",
+          "file": "star/juno_expression.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "주노 큰웃음 표정 전신"
+        },
+        "star.dialogue.sela": {
+          "type": "image",
+          "file": "star/sela_dialogue.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "세라 대사 전신"
+        },
+        "star.expression.sela": {
+          "type": "image",
+          "file": "star/sela_expression.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "세라 표정 전신"
+        },
+        "star.dialogue.ilan": {
+          "type": "image",
+          "file": "star/ilan_dialogue.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "일란 대사 전신"
+        },
+        "star.expression.ilan": {
+          "type": "image",
+          "file": "star/ilan_expression.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "일란 표정 전신"
+        },
+        "star.dialogue.mor": {
+          "type": "image",
+          "file": "star/mor_dialogue.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "모르 대사 전신"
+        },
+        "star.expression.mor": {
+          "type": "image",
+          "file": "star/mor_expression.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "모르 표정 전신"
+        },
         "star.portrait.karin": {
           "type": "image",
           "file": "star/karin.png",
@@ -1975,6 +2232,11 @@
           "type": "audio",
           "file": "sfx/revive.mp3",
           "desc": "소생 — 수조에서 몸이 일어난다"
+        },
+        "sfx.revive.knock": {
+          "type": "audio",
+          "file": "sfx/revive_knock.mp3",
+          "desc": "빈 소생실에서 2초 뒤 들리는 편성실 쪽 노크"
         },
         "sfx.click": {
           "type": "audio",

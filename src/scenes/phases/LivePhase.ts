@@ -46,6 +46,15 @@ function zoneArt(s: Readonly<GameState>): string {
   return ['bg.live.stone', 'bg.live.flame', 'bg.live.final'][i < 0 ? zones.length - 1 : i] ?? 'bg.live.stone';
 }
 
+/**
+ * 같은 구역의 **방송화면 액자** (462x452). `배경-*` 와는 다른 그림이다 —
+ * 배경은 벽면 한 컷이고, 이건 복도를 정면으로 잡은 모니터 컷이다 (V3 아트).
+ * 적 스프라이트 뒤에 깔려 적이 복도 안에 선 것처럼 보이게 한다 (사용자 확정).
+ */
+function zoneScreen(s: Readonly<GameState>): string {
+  return `${zoneArt(s)}`.replace('bg.live.', 'bg.live.screen.');
+}
+
 /** 층 게이지와 지도가 함께 보여주는 층 창(窓). 현재 층이 위에서 다섯 번째에 온다 */
 const WINDOW_ROWS = 14;
 const WINDOW_LEAD = 4;
@@ -431,8 +440,17 @@ export class LivePhase extends PhaseScene {
     const v = L.live.combat;
     this.rect(v.x, v.y, v.w, v.h, 'ink');
     // 갈림길을 묻는 동안에는 문 두 짝 — 「어느 쪽입니까」가 그림으로 보인다
-    const backdrop = pendingFork(s) !== null ? 'ui.live.door' : zoneArt(s);
+    const asking = pendingFork(s) !== null;
+    const backdrop = asking ? 'ui.live.door' : zoneArt(s);
     this.spriteCover(v, [backdrop, 'bg.tower']);
+
+    // 방송화면 액자 — 배경 위, 적 아래. 갈림길(문 두 짝) 동안에는 걸지 않는다.
+    // 1:1 로 놓는다: `spriteFit` 은 칸에 맞춰 줄이지만 칸이 원본과 같은 크기라 그대로 간다
+    if (!asking) {
+      const sc = L.live.screen;
+      this.sprite(sc.x, sc.y, zoneScreen(s), sc.w, sc.h);
+    }
+
     const run = s.today ?? null;
     if (run === null) {
       this.text(v.x + L.pad, v.y + L.pad, '방송 준비 중', 'dust');
