@@ -122,8 +122,10 @@ export class Button extends Phaser.GameObjects.Container {
         strokeRect(g, 0, 0, w, h);
       }
       this.txt.setY(Math.round(h / 2) + (this.visual === 'press' ? 2 : 0));
+      // 활성 버튼 판은 밝은 면이므로, 글자도 검정으로 뒤집어 읽힌다.
+      const active = this.visual === 'hover' || this.visual === 'press';
       this.txt.setColor(
-        css(this.visual === 'disabled' ? 'dust' : variant === 'danger' ? 'wax' : this.visual === 'hover' ? 'bone' : 'bone'),
+        css(this.visual === 'disabled' ? 'dust' : active ? 'ink' : variant === 'danger' ? 'wax' : 'bone'),
       );
       return;
     }
@@ -149,7 +151,7 @@ export class Button extends Phaser.GameObjects.Container {
 
     // press 시 2px 내려앉는다 — 그림자 없이 눌린 느낌을 만드는 방법
     this.txt.setY(Math.round(h / 2) + (this.visual === 'press' ? 2 : 0));
-    this.txt.setColor(css(this.visual === 'hover' ? 'bone' : variant === 'danger' ? 'wax' : 'bone'));
+    this.txt.setColor(css(this.visual === 'hover' || this.visual === 'press' ? 'ink' : variant === 'danger' ? 'wax' : 'bone'));
   }
 }
 
