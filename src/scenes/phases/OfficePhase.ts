@@ -38,6 +38,8 @@ export class OfficePhase extends PhaseScene {
   private selectedItemId: string | null = null;
   /** 4칸 한 줄 인벤토리의 현재 첫 번째 행. */
   private inventoryScrollRow = 0;
+  /** 아이콘 hover 중에만 살아 있는 장비 상세 정보창 오브젝트. */
+  private itemDetail: Phaser.GameObjects.GameObject[] = [];
 
   constructor() {
     super(SCENES.PHASE_OFFICE);
@@ -53,11 +55,14 @@ export class OfficePhase extends PhaseScene {
     this.inventoryOpen = false;
     this.selectedItemId = null;
     this.inventoryScrollRow = 0;
+    this.itemDetail = [];
     super.create();
     playBgm(this, 'bgm.shop');
   }
 
   protected build(s: Readonly<GameState>): void {
+    // redraw()가 이전 동적 오브젝트를 정리한 뒤 새 화면을 만든다.
+    this.itemDetail = [];
     // 심사할 계약서가 없으면 계약 모드에 머무를 이유가 없다.
     // 여기 갇히면 「오늘의 출연자」를 고를 수 없어 하루가 넘어가지 않는다.
     if (this.mode === 'CONTRACT' && s.visitors.length === 0) this.mode = 'SHELF';
@@ -379,8 +384,68 @@ export class OfficePhase extends PhaseScene {
   }
 
   private wireItemHint(image: Phaser.GameObjects.Image, item: ItemDef, hint: Phaser.GameObjects.Text): void {
-    image.on('pointerover', () => hint.setText(`${item.name} · ${this.itemStats(item)} · ${item.price.toLocaleString('en-US')} G`));
-    image.on('pointerout', () => hint.setText('장비 도트를 끌어 맞는 진열대에 놓으세요.'));
+    image.on('pointerover', (pointer: Phaser.Input.Pointer) => {
+      hint.setText(`${item.name} · ${this.itemStats(item)} · ${item.price.toLocaleString('en-US')} G`);
+      this.showItemDetail(item, pointer);
+    });
+    image.on('pointerdown', (pointer: Phaser.Input.Pointer) => this.showItemDetail(item, pointer));
+    image.on('pointerout', () => {
+      hint.setText('장비 도트를 끌어 맞는 진열대에 놓으세요.');
+      this.hideItemDetail();
+    });
+  }
+
+  /** 마우스 오른쪽 위에 원본 정보창 비율을 유지한 상세 카드를 연다. */
+  private showItemDetail(item: ItemDef, pointer: Phaser.Input.Pointer): void {
+    this.hideItemDetail();
+    const w = 256;
+    const h = 539;
+    const x = Math.max(8, Math.min(L.W - w - 8, pointer.x + 24 <= L.W - w - 8 ? pointer.x + 24 : pointer.x - w - 24));
+    const y = Math.max(L.hud.h + 8, Math.min(L.H - h - 8, pointer.y - h - 16));
+    const depth = 5000;
+
+    if (this.hasArt('ui.inventory.info')) {
+      this.itemDetail.push(this.add.image(x, y, key('ui.inventory.info')).setOrigin(0, 0).setDisplaySize(w, h).setDepth(depth));
+    } else {
+      this.itemDetail.push(this.add.rectangle(x, y, w, h, 0x07110b, 0.96).setOrigin(0, 0).setDepth(depth));
+    }
+
+    const addBody = (dx: number, dy: number, text: string, color: 'bone' | 'dust' | 'wax' = 'bone', scale = 0.625): void => {
+      const label = this.text(x + dx, y + dy, text, color).setScale(scale).setDepth(depth + 1);
+      this.itemDetail.push(label);
+    };
+    const addLabel = (dx: number, dy: number, text: string, color: 'bone' | 'dust' | 'wax' = 'dust'): void => {
+      const label = this.label(x + dx, y + dy, text, color).setDepth(depth + 1);
+      this.itemDetail.push(label);
+    };
+    const slot = content.balance.equipment.slotByItem[item.id];
+    const slotName = slot === undefined ? '기타' : SLOT_NAMES[slot];
+    const category = item.kind === 'POTION' ? '소모품' : item.isRelic ? '유품' : '장비';
+    const description = item.kind === 'POTION'
+      ? `방송 중 체력을\n${item.healing} 회복합니다.`
+      : `출연자에게 장착하면\n전투 능력치가 오릅니다.`;
+
+    addBody(16, 14, this.clip(item.name, 224, 'body'), item.isRelic ? 'wax' : 'bone', 0.75);
+    addLabel(18, 46, `${category} · ${slotName} 칸`);
+    const icon = this.itemArt(item, { x: x + 22, y: y + 74, w: 82, h: 82 });
+    if (icon !== null) {
+      icon.setDepth(depth + 2);
+      this.itemDetail.push(icon);
+    }
+    addLabel(122, 76, `등급 ${item.tier}`, item.isRelic ? 'wax' : 'bone');
+    addLabel(122, 102, `판매가 ${item.price.toLocaleString('en-US')} G`);
+    addBody(122, 126, this.itemStats(item), 'bone', 0.58);
+    addLabel(18, 166, '효과');
+    addBody(18, 188, description, 'bone', 0.625);
+    addLabel(18, 258, '능력치');
+    addBody(18, 282, item.kind === 'POTION' ? `회복  +${item.healing}` : `체력  +${item.hp}\n공격  +${item.atk}\n방어  +${item.def}`, 'bone', 0.625);
+    addLabel(18, 372, '진열대 사용법');
+    addBody(18, 396, `${slotName} 칸으로 끌어 놓으세요.\n다시 인벤토리로 끌면 회수합니다.`, 'dust', 0.56);
+  }
+
+  private hideItemDetail(): void {
+    this.itemDetail.forEach((object) => object.destroy());
+    this.itemDetail = [];
   }
 
   private wireInventoryDrag(image: Phaser.GameObjects.Image, item: ItemDef, home: { x: number; y: number }): void {

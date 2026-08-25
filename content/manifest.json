@@ -253,6 +253,15 @@
           ],
           "desc": "인벤토리 선택 장비 프레임 (우측 하단 없음)"
         },
+        "ui.inventory.info": {
+          "type": "image",
+          "file": "ui/item_info_window.png",
+          "size": [
+            536,
+            1129
+          ],
+          "desc": "장비 상세 정보창"
+        },
         "ui.cursor": {
           "type": "image",
           "file": "ui/cursor.png",
@@ -992,6 +1001,15 @@
             240
           ],
           "desc": "인벤토리 선택 장비 프레임 (우측 하단 없음)"
+        },
+        "ui.inventory.info": {
+          "type": "image",
+          "file": "ui/item_info_window.png",
+          "size": [
+            536,
+            1129
+          ],
+          "desc": "장비 상세 정보창"
         },
         "bg.title": {
           "type": "image",
