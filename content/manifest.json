@@ -372,10 +372,10 @@
         },
         "bg.shop.bench": {
           "type": "image",
-          "file": "bg/shop_bench_legacy.png",
+          "file": "bg/shop_bench_v2.png",
           "size": [
-            1244,
-            792
+            2009,
+            1371
           ],
           "desc": "② 편성실 우측 — 작업대"
         },
@@ -1157,10 +1157,10 @@
         },
         "bg.shop.bench": {
           "type": "image",
-          "file": "bg/shop_bench_legacy.png",
+          "file": "bg/shop_bench_v2.png",
           "size": [
-            1244,
-            792
+            2009,
+            1371
           ],
           "desc": "② 편성실 우측 — 작업대"
         },
