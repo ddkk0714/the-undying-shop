@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { SCENES } from '../../config';
 import { content } from '../../core/content';
 import { PALETTE } from '../../render/palette';
-import { starArt, key, slice } from '../../render/assets';
+import { starArt, starExpression, key, slice } from '../../render/assets';
 import { L } from '../../ui/layout';
 import { Button } from '../../ui/Button';
 import { Ticker } from '../../ui/Ticker';
@@ -658,18 +658,26 @@ export class LivePhase extends PhaseScene {
     }
     const ratio = run.hero.maxHp <= 0 ? 0 : run.hero.hp / run.hero.maxHp;
     const appealing = run.encounter?.log.at(-1) === 'APPEAL';
-    const state = appealing ? '카메라를 본다'
-      : ratio >= 0.7 ? '평상'
-      : ratio >= 0.4 ? '땀. 눈썹이 처졌다'
-      : ratio >= 0.15 ? '피. 숨이 가쁘다'
-      : '초점이 없다';
+    // 상태 한 줄과 **표정 스프라이트를 같은 사다리에서 뽑는다** (사용자 확정).
+    // 글과 그림이 따로 놀면 「평상」이라고 써 놓고 우는 얼굴이 뜬다.
+    const mood = appealing ? { text: '카메라를 본다', face: 'smile' }
+      : ratio >= 0.7 ? { text: '평상', face: 'neutral' }
+      : ratio >= 0.4 ? { text: '땀. 눈썹이 처졌다', face: 'sad' }
+      : ratio >= 0.15 ? { text: '피. 숨이 가쁘다', face: 'pain' }
+      : { text: '초점이 없다', face: 'empty' };
 
     // 어필 중에는 어필 컷으로 갈아낀다 (M06 §7 "이 게임의 썸네일")
     const art = starArt(star.id);
     const before = this.children.list.length;
     this.rect(v.x, v.y, v.w, v.h, 'ink');
     this.screenBackdrop(v, zoneScreen(s));
-    const keys = appealing ? [art.appeal, art.portrait] : [art.portrait];
+    // 표정 → 어필 컷 → 기본 초상 순으로 **있는 것을 쓴다.** 표정 에셋은 아직 다 오지 않았고
+    // (`star/expressions/` 가 캐릭터마다 몇 장씩 비어 있다) 없으면 `bust` 가 다음 것으로 넘어간다
+    const keys = [
+      starExpression(star.id, mood.face),
+      ...(appealing ? [art.appeal] : []),
+      art.portrait,
+    ];
     if (!this.bust(v, keys)) this.dither(v.x, v.y, v.w, v.h, 'mid', ratio < 0.15 ? 12 : 8);
     this.frame(v.x, v.y, v.w, v.h, appealing ? 'wax' : 'bone');
 
@@ -689,24 +697,47 @@ export class LivePhase extends PhaseScene {
       }
     }
 
-    // 초상 **바로 아래** — 이름 · 공/방 · 체력. 이 넷이 전투 중에 계속 바뀌는 값이다.
-    // 소생·어필 횟수는 뺐다 (사용자 확정) — 소생은 초상의 균열이, 어필은 어필 컷이 말한다.
-    // 랜턴 팔이 이 자리 뒤로 지나가 아주 밝다. 솎아 찍는 판(scrim)으로는 글이 안 읽혀서
+    // 초상 **바로 아래** — **상태 한 줄 · 체력바 · 멘탈 아이콘** 셋뿐이다 (사용자 확정).
+    // 이름·공/방·체력 숫자·누적 슈퍼챗은 걷어냈다. 이름은 초상이 말하고, 공/방은 전투 중에
+    // 바뀌지 않으며, 숫자는 바가 이미 보여 준다.
+    // 랜턴 팔이 이 자리 뒤로 지나가 아주 밝다. 솎아 찍는 판(scrim)으로는 안 읽혀서
     // 초상과 같은 폭의 **불투명 판**을 깐다 — 둘이 한 덩어리로 보이는 편이 낫다
-    const iw = info.w - L.pad * 2;
     this.rect(info.x, info.y, info.w, info.h, 'ink');
     this.frame(info.x, info.y, info.w, info.h, 'bone');
-    // 04-UI-KIT — 글자 크기는 16 / 32 / 48 셋뿐이다 (네오둥근모 16px 의 정수배).
-    // 24 같은 값을 지어내면 폰트가 뭉개진다. 그래서 한 단계씩 통째로 내렸다.
-    this.text(info.x + L.pad, info.y + 12, this.clip(star.bodyName, iw));
-    this.label(info.x + L.pad, info.y + 56, this.clip(state, iw * 2), appealing ? 'wax' : 'dust');
-    this.label(info.x + L.pad, info.y + 84, `공 ${run.hero.atk}   방 ${run.hero.def}`, 'dust');
-    this.bar(info.x + L.pad, info.y + 112, iw, run.hero.hp, run.hero.maxHp, 'bone');
-    this.label(info.x + L.pad, info.y + 140, `${run.hero.hp} / ${run.hero.maxHp}`, 'dust');
+    this.label(info.x + L.pad, info.y + 12, this.clip(mood.text, (info.w - L.pad * 2) * 2), appealing ? 'wax' : 'dust');
+    // 바 오른쪽에 아이콘 한 칸(24)과 그 사이 8px 을 비워 둔다
+    const iconSize = 24;
+    const barW = info.w - L.pad * 2 - iconSize - 8;
+    this.bar(info.x + L.pad, info.y + 44, barW, run.hero.hp, run.hero.maxHp, 'bone');
+    this.mentalIcon(info.x + info.w - L.pad - iconSize, info.y + 44, run.mental);
+  }
 
-    // 이 방송의 누적 슈퍼챗. **시청자 수는 여기 안 쓴다** — 방송바에 이미 있어서
-    // 한 화면에 같은 숫자가 둘이 떴다 (사용자 확정)
-    this.label(info.x + L.pad, info.y + 168, `+${run.superchat} G`, 'bone');
+  /**
+   * 멘탈 아이콘 — 체력바 **오른쪽**에 24x24 한 칸 (사용자 확정).
+   *
+   * core 가 정한 임계는 `balance.mental.panicThreshold` **하나뿐**이다 (그 아래로
+   * 내려가면 대사 톤이 `MENTAL_BREAK` 로 바뀐다 — `dive.combatLineTone`).
+   * 가운데 「흔들림」 단계는 그 값의 두 배를 쓰는 **표시용 눈금**이라 규칙이 아니다.
+   * 숫자는 balance 에서 읽는다 — 씬에서 지어내지 않는다.
+   *
+   * 아이콘은 절차적으로 그린다. 멘탈용 아트가 아직 없고, 색만으로도 세 단계가 갈린다
+   * (bone → dust → wax 는 이 프로젝트가 쓰는 심각도 순서다).
+   */
+  private mentalIcon(x: number, y: number, mental: number): void {
+    const panic = content.balance.mental.panicThreshold;
+    const s = 24;
+    const tone = mental <= panic ? 'wax' : mental <= panic * 2 ? 'dust' : 'bone';
+
+    this.rect(x, y, s, s, 'ink');
+    this.frame(x, y, s, s, tone);
+    if (tone === 'wax') {
+      // 평평해진 한 줄 — 더는 버티지 못한다
+      this.rect(x + 5, y + 11, s - 10, L.line, 'wax');
+      return;
+    }
+    // 채워진 눈. 흔들리는 동안에는 가운데에서 어긋난다
+    const off = tone === 'dust' ? 3 : 0;
+    this.rect(x + 7 + off, y + 7 + off, 10, 10, tone);
   }
 
   /**
