@@ -137,6 +137,15 @@
           ],
           "desc": "HUD game-clock hour hand"
         },
+        "ui.contract.sheet": {
+          "type": "image",
+          "file": "ui/contract_sheet.png",
+          "size": [
+            1112,
+            1415
+          ],
+          "desc": "Submitted hero contract; click its desk copy to inspect"
+        },
         "ui.icon.help": {
           "type": "image",
           "file": "ui/icon_help.png",
@@ -441,6 +450,132 @@
             792
           ],
           "desc": "③ 생방송 전투 칸 배경 (던전)"
+        },
+        "bg.live.desk": {
+          "type": "image",
+          "file": "bg/live_desk.png",
+          "size": [
+            738,
+            936
+          ],
+          "desc": "③ 생방송 좌측 책상 판 (지도·무전기가 올라간다)"
+        },
+        "bg.live.stone": {
+          "type": "image",
+          "file": "bg/live_stone.png",
+          "size": [
+            1182,
+            936
+          ],
+          "desc": "③ 던전 · 돌 구역 (~22F)"
+        },
+        "bg.live.ice": {
+          "type": "image",
+          "file": "bg/live_ice.png",
+          "size": [
+            1182,
+            936
+          ],
+          "desc": "③ 던전 · 얼음 구역 (23~30F)"
+        },
+        "bg.live.flame": {
+          "type": "image",
+          "file": "bg/live_flame.png",
+          "size": [
+            1182,
+            936
+          ],
+          "desc": "③ 던전 · 화염 구역 (23~30F)"
+        },
+        "bg.live.final": {
+          "type": "image",
+          "file": "bg/live_final.png",
+          "size": [
+            1182,
+            936
+          ],
+          "desc": "③ 던전 · 최종 구역 (31F~)"
+        },
+        "ui.live.floors": {
+          "type": "image",
+          "file": "ui/live_floors.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 (탑 단면)"
+        },
+        "ui.live.map": {
+          "type": "image",
+          "file": "ui/live_map.png",
+          "size": [
+            620,
+            786
+          ],
+          "desc": "③ 플레이어가 보는 지도 (찢어진 종이)"
+        },
+        "ui.live.radio": {
+          "type": "image",
+          "file": "ui/live_radio.png",
+          "size": [
+            220,
+            420
+          ],
+          "desc": "③ 무전기"
+        },
+        "ui.live.badge": {
+          "type": "image",
+          "file": "ui/live_badge.png",
+          "size": [
+            206,
+            74
+          ],
+          "desc": "③ LIVE 표시"
+        },
+        "ui.live.lantern": {
+          "type": "image",
+          "file": "ui/live_lantern.png",
+          "size": [
+            460,
+            568
+          ],
+          "desc": "③ 랜턴 든 팔 (우하단 전경)"
+        },
+        "ui.live.door": {
+          "type": "image",
+          "file": "ui/live_door.png",
+          "size": [
+            1182,
+            936
+          ],
+          "desc": "③ 갈림길 문 오버레이 (무전 3택)"
+        },
+        "ui.live.noise": {
+          "type": "image",
+          "file": "ui/live_noise.png",
+          "size": [
+            1182,
+            936
+          ],
+          "desc": "③ 방송 잡음 1장 (씬이 뒤집어 가며 쓴다)"
+        },
+        "ui.live.chat": {
+          "type": "image",
+          "file": "ui/live_chat.png",
+          "size": [
+            560,
+            394
+          ],
+          "desc": "③ 채팅창 (상단 타이틀 바가 있어 9-slice 불가 · 고정 크기)"
+        },
+        "ui.live.superchat": {
+          "type": "image",
+          "file": "ui/live_superchat.png",
+          "size": [
+            528,
+            86
+          ],
+          "desc": "③ 슈퍼챗 한 줄 (고정 크기)"
         },
         "bg.death": {
           "type": "image",
@@ -975,6 +1110,15 @@
           ],
           "desc": "HUD game-clock hour hand"
         },
+        "ui.contract.sheet": {
+          "type": "image",
+          "file": "ui/contract_sheet.png",
+          "size": [
+            1112,
+            1415
+          ],
+          "desc": "Submitted hero contract; click its desk copy to inspect"
+        },
         "ui.icon.help": {
           "type": "image",
           "file": "ui/icon_help.png",
@@ -1244,6 +1388,132 @@
             792
           ],
           "desc": "③ 생방송 전투 칸 배경 (던전)"
+        },
+        "bg.live.desk": {
+          "type": "image",
+          "file": "bg/live_desk.png",
+          "size": [
+            738,
+            936
+          ],
+          "desc": "③ 생방송 좌측 책상 판 (지도·무전기가 올라간다)"
+        },
+        "bg.live.stone": {
+          "type": "image",
+          "file": "bg/live_stone.png",
+          "size": [
+            1182,
+            936
+          ],
+          "desc": "③ 던전 · 돌 구역 (~22F)"
+        },
+        "bg.live.ice": {
+          "type": "image",
+          "file": "bg/live_ice.png",
+          "size": [
+            1182,
+            936
+          ],
+          "desc": "③ 던전 · 얼음 구역 (23~30F)"
+        },
+        "bg.live.flame": {
+          "type": "image",
+          "file": "bg/live_flame.png",
+          "size": [
+            1182,
+            936
+          ],
+          "desc": "③ 던전 · 화염 구역 (23~30F)"
+        },
+        "bg.live.final": {
+          "type": "image",
+          "file": "bg/live_final.png",
+          "size": [
+            1182,
+            936
+          ],
+          "desc": "③ 던전 · 최종 구역 (31F~)"
+        },
+        "ui.live.floors": {
+          "type": "image",
+          "file": "ui/live_floors.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 (탑 단면)"
+        },
+        "ui.live.map": {
+          "type": "image",
+          "file": "ui/live_map.png",
+          "size": [
+            620,
+            786
+          ],
+          "desc": "③ 플레이어가 보는 지도 (찢어진 종이)"
+        },
+        "ui.live.radio": {
+          "type": "image",
+          "file": "ui/live_radio.png",
+          "size": [
+            220,
+            420
+          ],
+          "desc": "③ 무전기"
+        },
+        "ui.live.badge": {
+          "type": "image",
+          "file": "ui/live_badge.png",
+          "size": [
+            206,
+            74
+          ],
+          "desc": "③ LIVE 표시"
+        },
+        "ui.live.lantern": {
+          "type": "image",
+          "file": "ui/live_lantern.png",
+          "size": [
+            460,
+            568
+          ],
+          "desc": "③ 랜턴 든 팔 (우하단 전경)"
+        },
+        "ui.live.door": {
+          "type": "image",
+          "file": "ui/live_door.png",
+          "size": [
+            1182,
+            936
+          ],
+          "desc": "③ 갈림길 문 오버레이 (무전 3택)"
+        },
+        "ui.live.noise": {
+          "type": "image",
+          "file": "ui/live_noise.png",
+          "size": [
+            1182,
+            936
+          ],
+          "desc": "③ 방송 잡음 1장 (씬이 뒤집어 가며 쓴다)"
+        },
+        "ui.live.chat": {
+          "type": "image",
+          "file": "ui/live_chat.png",
+          "size": [
+            560,
+            394
+          ],
+          "desc": "③ 채팅창 (상단 타이틀 바가 있어 9-slice 불가 · 고정 크기)"
+        },
+        "ui.live.superchat": {
+          "type": "image",
+          "file": "ui/live_superchat.png",
+          "size": [
+            528,
+            86
+          ],
+          "desc": "③ 슈퍼챗 한 줄 (고정 크기)"
         },
         "bg.death": {
           "type": "image",
