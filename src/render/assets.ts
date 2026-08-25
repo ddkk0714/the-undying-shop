@@ -95,6 +95,17 @@ export function hasTexture(scene: Phaser.Scene, k: AssetKey): boolean {
   return textureKey !== MISSING_TEXTURE && scene.textures.exists(textureKey);
 }
 
+/**
+ * 이 키가 **본 아트**인가, 아니면 inherit 폴백으로 나온 플레이스홀더인가.
+ *
+ * `hasTexture` 는 둘을 구분하지 못한다 — 플레이스홀더도 엄연히 로드된 텍스처다.
+ * 하지만 연출은 구분해야 할 때가 있다. 예: 타이틀 배경이 본 아트면 그림 자체에 불빛이
+ * 들어 있으므로 절차적 촛불을 덧그리면 안 되고, 플레이스홀더면 촛불이 유일한 불빛이다.
+ */
+export function isFinalArt(k: AssetKey): boolean {
+  return PACKS[ACTIVE]?.entries?.[k] !== undefined;
+}
+
 /** 후보 중 실제로 로드된 첫 키. 전부 없으면 null (본 아트 → 플레이스홀더 → 절차적 순서로 쓴다) */
 export function firstTexture(scene: Phaser.Scene, ...keys: AssetKey[]): string | null {
   for (const k of keys) if (hasTexture(scene, k)) return key(k);
@@ -171,4 +182,4 @@ export function swallowLoadErrors(scene: Phaser.Scene): string[] {
   return failed;
 }
 
-export const Assets = { key, slice, queuePack, allKeys, createMissingTexture, starArt, hasTexture, firstTexture, MISSING_TEXTURE };
+export const Assets = { key, slice, queuePack, allKeys, createMissingTexture, starArt, hasTexture, firstTexture, isFinalArt, MISSING_TEXTURE };

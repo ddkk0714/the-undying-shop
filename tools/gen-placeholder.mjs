@@ -565,7 +565,18 @@ const pack = manifest.packs.placeholder;
 if (pack === undefined) throw new Error('manifest 에 placeholder 팩이 없다');
 const written = [];
 
+/**
+ * 더미를 만들면 **오히려 해로운** 슬롯.
+ *
+ * 타이틀 램프 4장은 배경 위에 번갈아 얹혀 깜빡인다. 여기에 더미(옅은 디더 판 + 키 이름)를
+ * 넣으면 타이틀 화면에서 그 판이 초당 몇 번씩 번쩍인다 — 아트가 없을 때의 올바른 모습은
+ * 「깜빡이지 않는다」이지 「더미가 깜빡인다」가 아니다.
+ * 씬은 4장이 **전부** 있을 때만 깜빡임을 켠다 (TitleScene).
+ */
+const OPTIONAL = new Set(['bg.title.lamp1', 'bg.title.lamp2', 'bg.title.lamp3', 'bg.title.lamp4']);
+
 for (const [key, entry] of Object.entries(pack.entries)) {
+  if (OPTIONAL.has(key)) continue;
   let buf;
   let colors = 0;
   if (entry.type === 'audio') {
@@ -603,6 +614,7 @@ const missing = {};
 for (const packName of Object.keys(manifest.packs)) {
   missing[packName] = [];
   for (const key of [...allKeys].sort()) {
+    if (OPTIONAL.has(key)) continue;   // 없는 게 정상인 슬롯
     const r = resolveEntry(packName, key);
     if (!r) {
       missing[packName].push({ key, path: '(해석 불가)' });
