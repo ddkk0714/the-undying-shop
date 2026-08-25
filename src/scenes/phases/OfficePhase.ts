@@ -234,18 +234,18 @@ export class OfficePhase extends PhaseScene {
       const dropZone = this.add.zone(x, y, w, h).setOrigin(0, 0);
       dropZone.setInteractive({ cursor: acceptsSelected ? 'pointer' : 'default' });
       dropZone.on('pointerup', () => this.placeSelected(i));
-      this.label(x + 12, y + 10, SLOT_NAMES[i]!);
+      this.text(x + 12, y + 10, SLOT_NAMES[i]!, 'bone').setScale(0.75);
       if (def === undefined) {
-        this.label(x + 12, y + 72, '여기로 끌기', 'dust');
-        this.label(x + 12, y + 96, i === 0 ? '무기' : i === 1 ? '방어구' : '물약·유물', 'dust');
+        this.text(x + 12, y + 72, '여기로 끌기', 'bone').setScale(0.75);
+        this.text(x + 12, y + 98, i === 0 ? '무기' : i === 1 ? '방어구' : '물약·유물', 'bone').setScale(0.75);
         continue;
       }
 
       const art = this.itemArt(def, { x: x + 14, y: y + 34, w: w - 28, h: 100 });
       if (art !== null) this.wireShelfDrag(art, i, { x: art.x, y: art.y });
-      this.label(x + 12, y + 142, this.clip(def.name, w - 24, 'label'), def.isRelic ? 'wax' : 'bone');
-      this.label(x + 12, y + 164, this.itemStats(def), 'dust');
-      this.label(x + 12, y + 188, '인벤토리로 끌어 회수', 'dust');
+      this.text(x + 12, y + 142, this.clip(def.name, Math.floor((w - 24) / 0.75), 'body'), 'bone').setScale(0.75);
+      this.text(x + 12, y + 168, this.clip(this.itemStats(def), Math.floor((w - 24) / 0.75), 'body'), 'bone').setScale(0.75);
+      this.text(x + 12, y + 194, '인벤토리로 끌어 회수', 'bone').setScale(0.75);
     }
 
     // 오늘의 출연자 — 램프와 장부 사이. 소품 자리를 침범하지 않는다
