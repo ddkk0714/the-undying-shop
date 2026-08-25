@@ -289,7 +289,7 @@ export class OfficePhase extends PhaseScene {
 
     const stacks = s.inventory.filter((stack) => stack.qty > 0);
     this.text(ix, panel.y + 16, `인벤토리  ${stacks.length}종`, 'ink');
-    const hint = this.label(ix, panel.y + 70, '장비를 끌거나 클릭해 고른 뒤, 맞는 진열대를 누르세요.', 'dust');
+    const hint = this.label(ix, panel.y + 70, '장비를 끌거나 클릭해 고른 뒤, 맞는 진열대를 누르세요.', 'dust').setScale(1.3);
     new Button(this, {
       x: panel.x + panel.w + 12, y: panel.y + 8, w: 128, h: 52,
       label: '닫기',
@@ -385,8 +385,8 @@ export class OfficePhase extends PhaseScene {
   /** 마우스 오른쪽 위에 원본 정보창 비율을 유지한 상세 카드를 연다. */
   private showItemDetail(item: ItemDef, pointer: Phaser.Input.Pointer): void {
     this.hideItemDetail();
-    const w = 400;
-    const h = 843;
+    const w = 450;
+    const h = 948;
     const x = Math.max(8, Math.min(L.W - w - 8, pointer.x + 24 <= L.W - w - 8 ? pointer.x + 24 : pointer.x - w - 24));
     const y = Math.max(72, Math.min(L.H - h - 8, pointer.y - h - 56));
     const depth = 5000;
@@ -397,11 +397,11 @@ export class OfficePhase extends PhaseScene {
       this.itemDetail.push(this.add.rectangle(x, y, w, h, 0x07110b, 0.96).setOrigin(0, 0).setDepth(depth));
     }
 
-    const addBody = (dx: number, dy: number, text: string, color: 'bone' | 'dust' | 'wax' = 'bone', scale = 0.75): void => {
+    const addBody = (dx: number, dy: number, text: string, color: 'bone' | 'dust' | 'wax' = 'bone', scale = 0.85): void => {
       const label = this.text(x + dx, y + dy, text, color).setScale(scale).setDepth(depth + 1);
       this.itemDetail.push(label);
     };
-    const addLabel = (dx: number, dy: number, text: string, color: 'bone' | 'dust' | 'wax' = 'dust', scale = 1.15): void => {
+    const addLabel = (dx: number, dy: number, text: string, color: 'bone' | 'dust' | 'wax' = 'dust', scale = 1.3): void => {
       const label = this.label(x + dx, y + dy, text, color).setScale(scale).setDepth(depth + 1);
       this.itemDetail.push(label);
     };
@@ -412,22 +412,22 @@ export class OfficePhase extends PhaseScene {
       ? `방송 중 체력을\n${item.healing} 회복합니다.`
       : `출연자에게 장착하면\n전투 능력치가 오릅니다.`;
 
-    addBody(26, 21, this.clip(item.name, 348, 'body'), item.isRelic ? 'wax' : 'bone', 0.85);
-    addLabel(29, 71, `${category} · ${slotName} 칸`);
-    const icon = this.itemArt(item, { x: x + 35, y: y + 115, w: 108, h: 108 });
+    addBody(29, 24, this.clip(item.name, 398, 'body'), item.isRelic ? 'wax' : 'bone', 0.95);
+    addLabel(33, 80, `${category} · ${slotName} 칸`);
+    const icon = this.itemArt(item, { x: x + 39, y: y + 129, w: 121, h: 121 });
     if (icon !== null) {
       icon.setDepth(depth + 2);
       this.itemDetail.push(icon);
     }
-    addLabel(190, 119, `등급 ${item.tier}`, item.isRelic ? 'wax' : 'bone');
-    addLabel(190, 160, `판매가 ${item.price.toLocaleString('en-US')} G`);
-    addBody(190, 198, this.itemStats(item), 'bone', 0.68);
-    addLabel(29, 260, '효과');
-    addBody(29, 293, description, 'bone', 0.75);
-    addLabel(29, 404, '능력치');
-    addBody(29, 440, item.kind === 'POTION' ? `회복  +${item.healing}` : `체력  +${item.hp}\n공격  +${item.atk}\n방어  +${item.def}`, 'bone', 0.75);
-    addLabel(29, 581, '진열대 사용법');
-    addBody(29, 619, `${slotName} 칸으로 끌어 놓으세요.\n다시 인벤토리로 끌면 회수합니다.`, 'dust', 0.68);
+    addLabel(214, 134, `등급 ${item.tier}`, item.isRelic ? 'wax' : 'bone');
+    addLabel(214, 180, `판매가 ${item.price.toLocaleString('en-US')} G`);
+    addBody(214, 223, this.itemStats(item), 'bone', 0.78);
+    addLabel(33, 293, '효과');
+    addBody(33, 330, description, 'bone', 0.85);
+    addLabel(33, 455, '능력치');
+    addBody(33, 495, item.kind === 'POTION' ? `회복  +${item.healing}` : `체력  +${item.hp}\n공격  +${item.atk}\n방어  +${item.def}`, 'bone', 0.85);
+    addLabel(33, 654, '진열대 사용법');
+    addBody(33, 696, `${slotName} 칸으로 끌어 놓으세요.\n다시 인벤토리로 끌면 회수합니다.`, 'dust', 0.76);
   }
 
   private hideItemDetail(): void {
