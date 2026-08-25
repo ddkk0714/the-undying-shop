@@ -17,7 +17,10 @@ import type { ChatMessage } from '../core/types';
 
 export const TICKER_ROWS = 12;
 
-const ROW_H = 44;
+/** 한 줄이 최소로 차지하는 높이. 두 줄로 접히면 그만큼 늘어난다 */
+const ROW_MIN_H = 26;
+/** 줄 사이 간격 */
+const ROW_GAP = 6;
 
 interface Row {
   text: Phaser.GameObjects.Text;
@@ -36,13 +39,18 @@ export class Ticker {
     private readonly onDelete: (id: string) => void,
   ) {
     this.box = box;
-    // 줄 수는 **상자 높이가 정한다.** 예전에는 TICKER_ROWS 고정이라, 채팅창을
-    // 작게 잡으면 줄이 창 밖으로 흘러 던전 위에 글자가 떠 다녔다 (실측).
-    const fits = Math.max(1, Math.floor(box.h / ROW_H));
-    for (let i = 0; i < Math.min(TICKER_ROWS, fits); i += 1) {
-      const y = box.y + i * ROW_H;
+    // 줄은 12개를 미리 만들어 두고 **아래에서 위로** 쌓는다. 상자를 넘치는 줄은
+    // 그리지 않는다 — 예전에는 상자 높이로 줄 수를 세었는데, 그러면 접힌 줄(2줄짜리)을
+    // 세지 못해 개수가 어긋난다.
+    for (let i = 0; i < TICKER_ROWS; i += 1) {
+      const y = box.y + i * ROW_MIN_H;
+      // 16px 본문. 32px 로 키워 뒀더니 긴 말이 잘려 나가고 창의 절반만 찼다 (실측)
       const text = scene.add
-        .text(box.x, y, '', { ...FONT_LABEL, fontSize: '32px', color: css('dust') })
+        .text(box.x, y, '', {
+          ...FONT_LABEL,
+          color: css('dust'),
+          wordWrap: { width: box.w - 56, useAdvancedWrap: true },
+        })
         .setVisible(false);
 
       // 삭제 버튼 — 줄 오른쪽 끝. 32x32 라 손가락으로도 눌린다
@@ -53,8 +61,8 @@ export class Ticker {
         .setInteractive({ useHandCursor: true });
       const mark = scene.add.graphics().setVisible(false);
 
-      hit.on('pointerover', () => this.paintMark(mark, box.x + box.w - 40, y, true));
-      hit.on('pointerout', () => this.paintMark(mark, box.x + box.w - 40, y, false));
+      hit.on('pointerover', () => this.paintMark(mark, hit.x, hit.y, true));
+      hit.on('pointerout', () => this.paintMark(mark, hit.x, hit.y, false));
       hit.on('pointerup', () => {
         const id = this.rows[i]?.id;
         if (id !== null && id !== undefined) this.onDelete(id);
@@ -81,35 +89,58 @@ export class Ticker {
 
   /**
    * 큐를 줄에 얹는다. **아래가 최신이다** — 새 메시지가 아래에서 올라온다.
-   * 오브젝트를 만들지 않는다. 내용과 보임 여부만 바꾼다.
+   * 오브젝트를 만들지 않는다. 내용과 자리만 바꾼다.
+   *
+   * ★ 예전에는 `offset = TICKER_ROWS - live.length` 로 자리를 잡았다.
+   *   그런데 실제 줄 수는 상자 높이에 따라 12보다 적을 수 있어서, 줄이 9개인데
+   *   상수 12로 빼면 앞쪽 3개가 음수 인덱스로 떨어져 **그냥 사라졌다.**
+   *   메시지 7개 중 4개만 뜨던 「채팅창의 절반만 찬다」가 이것이다.
+   *   이제 자리는 아래에서 위로 쌓으면서 정한다 — 상수를 안 쓴다.
    */
   render(queue: readonly ChatMessage[]): void {
-    const live = queue.filter((m) => !m.removed).slice(-TICKER_ROWS);
-    const offset = TICKER_ROWS - live.length; // 아래쪽부터 채운다
+    const live = queue.filter((m) => !m.removed).slice(-this.rows.length);
+    const shown = live.length;
 
-    this.rows.forEach((row, i) => {
-      const msg = i >= offset ? live[i - offset] : undefined;
-      if (msg === undefined) {
+    // 먼저 내용을 넣어 높이를 재고(접히면 두 줄이 된다), 그 다음 아래부터 쌓는다
+    let y = this.box.y + this.box.h;
+    for (let j = shown - 1; j >= 0; j -= 1) {
+      const msg = live[j]!;
+      const row = this.rows[shown - 1 - j]!;
+      const deletable = msg.leakPower > 0;
+      const money = msg.amount === undefined ? '' : ` +${msg.amount}G`;
+      row.text
+        .setText(`${msg.nick}: ${msg.text}${money}`)
+        // TRUTH 는 진실이 새어나가는 줄이다. 즉시 눈에 띄어야 한다 (M07)
+        .setColor(css(msg.tone === 'TRUTH' || msg.tone === 'SUPERCHAT' ? 'wax' : 'dust'));
+
+      const h = Math.max(ROW_MIN_H, Math.ceil(row.text.height));
+      y -= h + ROW_GAP;
+      if (y < this.box.y) {
+        // 상자를 넘겼다 — 이 줄부터는 안 보인다
         row.id = null;
         row.text.setVisible(false);
         row.hit.setVisible(false);
         row.mark.setVisible(false).clear();
-        return;
+        y += h + ROW_GAP;
+        continue;
       }
+
+      row.id = deletable ? msg.id : null;
+      row.text.setPosition(this.box.x, y).setVisible(true);
       // 지울 수 있는 줄에만 ✕ 를 붙인다. 눌리는데 아무 일도 안 일어나는 버튼이 제일 나쁘다.
       // core 의 moderateChat 은 진실·의심 톤만 받는다 — 그 줄만 leakPower 가 0 보다 크다 (HO-015)
-      const deletable = msg.leakPower > 0;
-      row.id = deletable ? msg.id : null;
-      const money = msg.amount === undefined ? '' : ` +${msg.amount}G`;
-      row.text
-        .setText(clip(`${msg.nick}: ${msg.text}${money}`, this.box.w - 56))
-        // TRUTH 는 진실이 새어나가는 줄이다. 즉시 눈에 띄어야 한다 (M07)
-        .setColor(css(msg.tone === 'TRUTH' || msg.tone === 'SUPERCHAT' ? 'wax' : 'dust'))
-        .setVisible(true);
-      row.hit.setVisible(deletable);
-      if (deletable) this.paintMark(row.mark, this.box.x + this.box.w - 40, this.box.y + i * ROW_H, false);
+      row.hit.setPosition(this.box.x + this.box.w - 40, y).setVisible(deletable);
+      if (deletable) this.paintMark(row.mark, this.box.x + this.box.w - 40, y, false);
       else row.mark.setVisible(false).clear();
-    });
+    }
+
+    for (let i = shown; i < this.rows.length; i += 1) {
+      const row = this.rows[i]!;
+      row.id = null;
+      row.text.setVisible(false);
+      row.hit.setVisible(false);
+      row.mark.setVisible(false).clear();
+    }
   }
 
   /** ✕ — Text 를 쓰지 않는다. 풀 개수를 12개로 묶어 두기 위해서다 */
@@ -124,13 +155,3 @@ export class Ticker {
   }
 }
 
-/** 04-UI-KIT §3 과 같은 규칙 — 전각 2 · 반각 1, 본문 32px */
-function clip(s: string, px: number): string {
-  let used = 0;
-  for (let i = 0; i < s.length; i += 1) {
-    const w = (s.charCodeAt(i) > 0x2000 ? 2 : 1) * 16;
-    if (used + w > px) return s.slice(0, Math.max(0, i - 1)) + '·';
-    used += w;
-  }
-  return s;
-}

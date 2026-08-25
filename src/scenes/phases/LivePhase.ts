@@ -442,16 +442,13 @@ export class LivePhase extends PhaseScene {
       // 적 CG — 512x512 원본을 정확히 1/2 로. 소수배로 줄이면 디더가 깨진다
       if (!this.spriteFit(e, [enc.enemyKey])) this.enemyShape(e.x - 32, e.y - 20, 320, 300, enc.enemyKey);
 
-      // 체력바는 적 스프라이트 **바로 아래**. 이름도 여기 붙는다 —
-      // 층·이름 창을 없앤 뒤로 이 줄이 「무엇과 싸우는지」를 말하는 유일한 자리다
-      // 층·이름 창을 없앤 뒤로 이 줄이 「무엇과 싸우는지」를 말하는 유일한 자리다.
-      // 16px 라벨로는 배경에 묻혀서 본문 크기로 올리고 판도 불투명하게 깐다
-      const hy = e.y + e.h - 2;
-      this.rect(e.x - 12, hy, e.w + 24, 78, 'ink');
-      this.bar(e.x, hy + 10, e.w, enc.enemy.hp, enc.enemy.maxHp, 'wax');
-      this.text(e.x, hy + 34,
-        `${enemyName(enc.enemyKey)}  ${enc.enemy.hp} / ${enc.enemy.maxHp}`, 'bone');
-      if (enc.guarding) this.textRight(e.x + e.w, hy + 34, '방어', 'wax');
+      // 체력바는 적 스프라이트 **바로 아래**. 바 하나만 둔다 (사용자 확정) —
+      // 이름·숫자·판까지 얹었더니 몬스터 발밑이 정보창이 됐다.
+      // 배경이 밝든 어둡든 읽히도록 바 뒤에 ink 한 줄만 깔아 준다.
+      const hy = e.y + e.h + 6;
+      this.rect(e.x - L.line, hy - L.line, e.w + L.line * 2, 20, 'ink');
+      this.bar(e.x, hy, e.w, enc.enemy.hp, enc.enemy.maxHp, 'wax');
+      if (enc.guarding) this.textRight(e.x + e.w, hy + 26, '방어', 'wax');
     }
 
     // 용사의 이름·공·방·체력은 초상 바로 아래에 붙는다 (`buildPortrait`).
@@ -836,11 +833,6 @@ function deepestWitnessFloor(): number {
 function pick(lines: readonly string[] | undefined, n: number): string {
   if (lines === undefined || lines.length === 0) return '';
   return lines[Math.abs(n) % lines.length] ?? '';
-}
-
-/** 'enemy.gatekeeper' → 'GATEKEEPER'. 한글 이름은 content 몫이다 (HO-005) */
-function enemyName(assetKey: string): string {
-  return (assetKey.split('.').at(-1) ?? assetKey).toUpperCase();
 }
 
 /** 04-UI-KIT §3 과 같은 규칙(전각 2 · 반각 1, 본문 32px)으로 줄을 나눈다 */
