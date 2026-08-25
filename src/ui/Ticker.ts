@@ -36,7 +36,10 @@ export class Ticker {
     private readonly onDelete: (id: string) => void,
   ) {
     this.box = box;
-    for (let i = 0; i < TICKER_ROWS; i += 1) {
+    // 줄 수는 **상자 높이가 정한다.** 예전에는 TICKER_ROWS 고정이라, 채팅창을
+    // 작게 잡으면 줄이 창 밖으로 흘러 던전 위에 글자가 떠 다녔다 (실측).
+    const fits = Math.max(1, Math.floor(box.h / ROW_H));
+    for (let i = 0; i < Math.min(TICKER_ROWS, fits); i += 1) {
       const y = box.y + i * ROW_H;
       const text = scene.add
         .text(box.x, y, '', { ...FONT_LABEL, fontSize: '32px', color: css('dust') })

@@ -185,6 +185,19 @@ export abstract class PhaseScene extends Phaser.Scene {
     if (w !== undefined && h !== undefined) img.setDisplaySize(Math.round(w), Math.round(h));
   }
 
+  /**
+   * `sprite` 와 같지만 만들어진 오브젝트를 돌려준다 — 뒤에서 깜빡이거나 흔들어야 할 때.
+   * 키가 없으면 null 이다. 호출한 쪽이 절차적 대체물을 그리면 된다.
+   */
+  protected spriteObject(
+    x: number, y: number, assetKey: string, w?: number, h?: number, frame = 0,
+  ): Phaser.GameObjects.Image | null {
+    if (!hasTexture(this, assetKey)) return null;
+    const img = this.add.image(Math.round(x), Math.round(y), key(assetKey), frame).setOrigin(0, 0);
+    if (w !== undefined && h !== undefined) img.setDisplaySize(Math.round(w), Math.round(h));
+    return img;
+  }
+
   /** 이 키의 그림이 실제로 로드돼 있는가 — 없으면 씬이 절차적으로 대신 그린다 */
   protected hasArt(assetKey: string): boolean {
     return hasTexture(this, assetKey);

@@ -141,8 +141,8 @@
           "type": "image",
           "file": "ui/contract_sheet.png",
           "size": [
-            1112,
-            1415
+            700,
+            914
           ],
           "desc": "Submitted hero contract; click its desk copy to inspect"
         },
@@ -531,6 +531,24 @@
             74
           ],
           "desc": "③ LIVE 표시"
+        },
+        "ui.live.blink": {
+          "type": "image",
+          "file": "ui/live_blink.png",
+          "size": [
+            26,
+            28
+          ],
+          "desc": "③ LIVE 붉은 마름모 (깜빡인다)"
+        },
+        "ui.live.dialogue": {
+          "type": "image",
+          "file": "ui/live_dialogue.png",
+          "size": [
+            1040,
+            200
+          ],
+          "desc": "③ 용사 대사 배너 (무전이 열리면 뜬다)"
         },
         "ui.live.lantern": {
           "type": "image",
@@ -1114,8 +1132,8 @@
           "type": "image",
           "file": "ui/contract_sheet.png",
           "size": [
-            1112,
-            1415
+            700,
+            914
           ],
           "desc": "Submitted hero contract; click its desk copy to inspect"
         },
@@ -1469,6 +1487,24 @@
             74
           ],
           "desc": "③ LIVE 표시"
+        },
+        "ui.live.blink": {
+          "type": "image",
+          "file": "ui/live_blink.png",
+          "size": [
+            26,
+            28
+          ],
+          "desc": "③ LIVE 붉은 마름모 (깜빡인다)"
+        },
+        "ui.live.dialogue": {
+          "type": "image",
+          "file": "ui/live_dialogue.png",
+          "size": [
+            1040,
+            200
+          ],
+          "desc": "③ 용사 대사 배너 (무전이 열리면 뜬다)"
         },
         "ui.live.lantern": {
           "type": "image",

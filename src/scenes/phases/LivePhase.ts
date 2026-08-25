@@ -26,6 +26,26 @@ import type { ChatMessage, CombatChoice, ForkRecord, GameState, ItemDef } from '
  *   **전투·갈림길 대기 중에도 틱을 계속 보내야 한다.** 여기서 틱을 멈추면 페널티가 죽는다.
  */
 
+/**
+ * 지금 층에 맞는 던전 배경.
+ *
+ * **층 경계를 씬이 정하지 않는다.** `floors.json` 의 `enemiesByZone` 이 이미
+ * 구간(22 / 30 / 40)을 갖고 있으므로 그 배열을 그대로 읽는다.
+ * 조우 중이면 적 종류가 더 정확한 신호다 — 화염 적이 나오는 곳이 화염 구역이다.
+ */
+function zoneArt(s: Readonly<GameState>): string {
+  const enemyKey = s.today?.encounter?.enemyKey ?? null;
+  if (enemyKey === 'enemy.flame') return 'bg.live.flame';
+  if (enemyKey === 'enemy.beast') return 'bg.live.ice';
+  if (enemyKey === 'enemy.gatekeeper') return 'bg.live.final';
+  if (enemyKey === 'enemy.rat' || enemyKey === 'enemy.husk') return 'bg.live.stone';
+
+  const floor = s.today?.currentFloor ?? 0;
+  const zones = content.floors.enemiesByZone;
+  const i = zones.findIndex((z) => floor <= z.upTo);
+  return ['bg.live.stone', 'bg.live.flame', 'bg.live.final'][i < 0 ? zones.length - 1 : i] ?? 'bg.live.stone';
+}
+
 /** 층 게이지와 지도가 함께 보여주는 층 창(窓). 현재 층이 위에서 다섯 번째에 온다 */
 const WINDOW_ROWS = 14;
 const WINDOW_LEAD = 4;
@@ -70,7 +90,7 @@ export class LivePhase extends PhaseScene {
   private fanDropUntil = 0;
 
   /** 프레임마다 손보는 오브젝트 — build() 가 매번 다시 채운다 */
-  private blinkers: Phaser.GameObjects.Rectangle[] = [];
+  private blinkers: (Phaser.GameObjects.Rectangle | Phaser.GameObjects.Image)[] = [];
   private shaken: { obj: Phaser.GameObjects.GameObject & { x: number; y: number }; x: number; y: number }[] = [];
   private noiseLayer: Phaser.GameObjects.Graphics | null = null;
 
@@ -167,9 +187,10 @@ export class LivePhase extends PhaseScene {
     this.noiseLayer = null;
     this.watch(s);
 
-    const v = L.live;
-    this.rect(0, 0, L.W, L.H, 'ink');
-    this.spriteCover({ x: 0, y: 0, w: L.W, h: L.H }, ['bg.live']);
+    // 상단 144 는 DayScene 의 HUD 다 — 목업(전투화면.png)에서도 방송 중에 그대로 떠 있다.
+    // 예전에는 여기서 화면 전체를 ink 로 덮고 자체 바를 그렸다. 그러면 HUD 아트가 가려진다.
+    this.rect(L.stage.x, L.stage.y, L.stage.w, L.stage.h, 'ink');
+    this.spriteCover(L.stage, ['bg.live']);
 
     // 「이 순간이 게임 전체에서 가장 중요한 30초다」 (M11 §2).
     // 덮기만 하면 아래 3택이 그대로 눌리므로 다른 것을 아예 그리지 않는다.
@@ -181,25 +202,26 @@ export class LivePhase extends PhaseScene {
       return;
     }
 
-    this.buildBar(s);
+    // 그리는 순서가 곧 레이어다 (목업 기준):
+    //   책상 판 → 층계 → 지도 → 무전기  |  던전 → 랜턴 팔 → LIVE → 채팅 → 초상 → 대사 → 3택
+    this.sprite(L.live.desk.x, L.live.desk.y, 'bg.live.desk', L.live.desk.w, L.live.desk.h);
+    this.buildCombat(s);
     this.buildFloors(s);
     this.buildMap(s);
     this.buildRadio(s);
-    this.buildCombat(s);
-    this.buildChoices(s);
+    this.buildLantern();
+    this.buildBadge();
     this.buildPortrait(s);
     this.buildChat(s);
-
-    // 5분할 경계선 — 2px 하드 엣지만으로 칸을 나눈다
-    for (const box of [v.floors, v.map, v.radio, v.combat, v.choices, v.portrait, v.chat]) {
-      this.frame(box.x, box.y, box.w, box.h);
-    }
+    this.buildDialogue(s);
+    this.buildChoices(s);
 
     // 5분할이 화면을 꽉 채워 빈 띠가 없다. 온보딩은 방송 정보 바에 태운다 (04-UI-KIT §7)
     if (s.today !== null) {
       const asking = pendingFork(s) !== null;
       if (asking || s.today.encounter !== null) {
-        onboard(this, s.day, asking ? 'LIVE_RADIO' : 'LIVE_COMBAT', { x: 700, y: 8, w: 900 });
+        // HUD(0~144) 위에 뜨면 상단바 아트를 가린다. 지도 위 빈 띠에 태운다
+        onboard(this, s.day, asking ? 'LIVE_RADIO' : 'LIVE_COMBAT', { x: 220, y: 152, w: 520 });
       }
     }
 
@@ -241,25 +263,16 @@ export class LivePhase extends PhaseScene {
     this.lastFans = s.fans;
   }
 
-  /* ── ① 상단 바 ─────────────────────────────────────── */
-  private buildBar(s: Readonly<GameState>): void {
-    const v = L.live;
-    this.rect(v.bar.x, v.bar.y, v.bar.w, v.bar.h, 'ink');
-    this.blinkers.push(this.dot(L.pad, v.bar.y + 64, 16, 'wax'));
-    this.text(L.pad + 32, v.bar.y + 52, 'LIVE', 'wax');
-
-    const persona = s.personas.find((p) => p.id === s.today?.personaId);
-    const title = `${persona?.displayName ?? '무명 방송'} · ${s.today?.claimedCeiling ?? 0}층 도전`;
-    this.text(L.pad + 160, v.bar.y + 52, this.clip(title, 900), 'bone');
-
-    this.textRight(L.W - L.pad, v.bar.y + 52, `시청자 ${fmtFans(s.fans)}`, 'dust');
-    if (this.time.now < this.fanDropUntil) this.textRight(L.W - L.pad - 320, v.bar.y + 52, '▼', 'wax');
-  }
+  /**
+   * 방송 제목·시청자 수는 목업에서 사라졌다 — 상단 HUD 가 그 자리를 쓴다.
+   * 대신 이 방송이 누구 것인지는 우상단 초상 아래에 적는다 (`buildPortrait`).
+   */
 
   /* ── ② 좌측 층수 게이지 — 아래로 깊어진다 (M06 §6) ──── */
   private buildFloors(s: Readonly<GameState>): void {
     const v = L.live.floors;
     this.rect(v.x, v.y, v.w, v.h, 'ink');
+    this.sprite(v.x, v.y, 'ui.live.floors', v.w, v.h);
 
     const floor = s.today?.currentFloor ?? 0;
     const top = windowTop(floor);
@@ -286,8 +299,10 @@ export class LivePhase extends PhaseScene {
   /* ── ③ 던전 지도 — 프로시저럴. 갈림길 정답은 그리지 않는다 ─ */
   private buildMap(s: Readonly<GameState>): void {
     const v = L.live.map;
-    this.rect(v.x, v.y, v.w, v.h, 'ink');
-    this.label(v.x + L.pad, v.y + L.pad, '단면도', 'dust');
+    // 종이 아트가 오면 판을 깔지 않는다 — 찢어진 가장자리가 사각형에 갇힌다
+    if (!this.hasArt('ui.live.map')) this.rect(v.x, v.y, v.w, v.h, 'ink');
+    this.sprite(v.x, v.y, 'ui.live.map', v.w, v.h);
+    this.label(v.x + 56, v.y + 56, '단면도', 'ink');
 
     const floor = s.today?.currentFloor ?? 0;
     const top = windowTop(floor);
@@ -322,8 +337,8 @@ export class LivePhase extends PhaseScene {
   /* ── ④ 무전기 — 진짜 지도는 여기에만 (M06 §5) ────────── */
   private buildRadio(s: Readonly<GameState>): void {
     const v = L.live.radio;
-    this.rect(v.x, v.y, v.w, v.h, 'ink');
-    this.label(v.x + L.pad, v.y + L.pad, '무전', 'dust');
+    if (!this.hasArt('ui.live.radio')) this.rect(v.x, v.y, v.w, v.h, 'ink');
+    this.sprite(v.x, v.y, 'ui.live.radio', v.w, v.h);
 
     const inner = v.w - L.pad * 2;
     const fork = pendingFork(s);
@@ -365,50 +380,98 @@ export class LivePhase extends PhaseScene {
   private buildCombat(s: Readonly<GameState>): void {
     const v = L.live.combat;
     this.rect(v.x, v.y, v.w, v.h, 'ink');
-    this.spriteCover(v, ['bg.tower']);
-    // 탑 배경이 들어오면 그 위의 층수·대사·HP 가 묻힌다. 글이 놓이는 두 띠만 덮는다.
-    // 가운데(적이 서는 자리)는 건드리지 않는다 — 거기가 이 칸의 그림이다
-    this.scrimBlock(v.x, v.y, 480, 104);
-    // 아래 띠는 3택 패널까지 48px 넘겨 깐다 — 거기는 곧 3택이 덮으므로 이음매가 보이지 않는다
-    this.scrimRow(v.x, v.y + 424, v.w, v.h - 424 + 48);
+    // 갈림길을 묻는 동안에는 문 두 짝 — 「어느 쪽입니까」가 그림으로 보인다
+    const backdrop = pendingFork(s) !== null ? 'ui.live.door' : zoneArt(s);
+    this.spriteCover(v, [backdrop, 'bg.tower']);
     const run = s.today ?? null;
     if (run === null) {
       this.text(v.x + L.pad, v.y + L.pad, '방송 준비 중', 'dust');
       return;
     }
-    const inner = v.w - L.pad * 2;
     const enc = run.encounter;
 
+    // 좌상단은 LIVE 표시가, 그 아래는 채팅창이 쓴다.
+    // 전투 정보는 **채팅 오른쪽 · 초상 왼쪽** 띠에 세운다 — 목업에도 이 자리는 비어 있다.
+    const e = L.live.enemy;
+    const ix = e.x;
+    const iw = L.live.portrait.x - ix - 24;
+
     if (enc === null) {
-      this.label(v.x + L.pad, v.y + 16, `${run.currentFloor}F`, 'dust');
-      this.title(v.x + L.pad, v.y + 48, '하강 중', 'dust');
-      this.dither(v.x + 212, v.y + 160, 320, 260, 'mid', 12);
+      this.scrimBlock(ix - 16, v.y + 40, iw + 32, 96);
+      this.label(ix, v.y + 52, `${run.currentFloor}F`, 'dust');
+      this.title(ix, v.y + 84, '하강 중', 'dust');
     } else {
-      this.label(v.x + L.pad, v.y + 16, `${enc.floor}F · ${enc.turn}턴`, 'dust');
-      this.title(v.x + L.pad, v.y + 48, this.clip(enemyName(enc.enemyKey), inner, 'title'), 'bone');
-      // 적 CG 가 오면 그걸 쓰고, 없으면 키 해시로 만든 실루엣을 그린다
-      // 512x512 원본을 정확히 1/2 로 줄여 놓는다. 소수배로 줄이면 디더가 깨진다
-      if (!this.spriteFit({ x: v.x + 244, y: v.y + 152, w: 256, h: 256 }, [enc.enemyKey])) {
-        this.enemyShape(v.x + 212, v.y + 130, 320, 300, enc.enemyKey);
-      }
-      this.bar(v.x + L.pad, v.y + 452, inner, enc.enemy.hp, enc.enemy.maxHp, 'wax');
-      this.label(v.x + L.pad, v.y + 486, `적 ${enc.enemy.hp} / ${enc.enemy.maxHp}`, 'dust');
-      // 용사 대사는 core 가 `Encounter.line` 에 넣는다. 비어 있으면 지어내지 않는다 (HO-005)
-      if (enc.line !== '') this.text(v.x + L.pad, v.y + 512, this.clip(`"${enc.line}"`, inner), 'bone');
-      if (enc.guarding) this.textRight(v.x + v.w - L.pad, v.y + 480, '방어 자세', 'wax');
+      this.scrimBlock(ix - 16, v.y + 40, iw + 32, 96);
+      this.label(ix, v.y + 52, `${enc.floor}F · ${enc.turn}턴`, 'dust');
+      this.title(ix, v.y + 84, this.clip(enemyName(enc.enemyKey), iw, 'title'), 'bone');
+
+      // 적 CG — 512x512 원본을 정확히 1/2 로. 소수배로 줄이면 디더가 깨진다
+      if (!this.spriteFit(e, [enc.enemyKey])) this.enemyShape(e.x - 32, e.y - 20, 320, 300, enc.enemyKey);
+
+      this.scrimBlock(ix - 16, e.y + e.h + 12, iw + 32, 116);
+      this.bar(ix, e.y + e.h + 24, iw, enc.enemy.hp, enc.enemy.maxHp, 'wax');
+      this.label(ix, e.y + e.h + 58, `적 ${enc.enemy.hp} / ${enc.enemy.maxHp}`, 'dust');
+      if (enc.guarding) this.textRight(ix + iw, e.y + e.h + 58, '방어 자세', 'wax');
     }
 
-    this.rect(v.x + L.pad, v.y + 576, inner, L.line, 'mid');
-    this.label(v.x + L.pad, v.y + 600, '용사', 'dust');
-    this.textRight(v.x + v.w - L.pad, v.y + 592, `공 ${run.hero.atk}  방 ${run.hero.def}`, 'dust');
-    this.bar(v.x + L.pad, v.y + 636, inner, run.hero.hp, run.hero.maxHp, 'bone');
-    this.label(v.x + L.pad, v.y + 670, `${run.hero.hp} / ${run.hero.maxHp}`, 'dust');
+    // 용사 상태 — 채팅창 아래 (채팅 하단 682 → 여기부터 비어 있다)
+    const hy = L.live.chat.y + L.live.chat.h + 24;
+    const hw = L.live.chat.w - 24;
+    this.scrimBlock(v.x + L.pad, hy - 12, hw + 24, 120);
+    this.label(v.x + L.pad, hy, '용사', 'dust');
+    this.textRight(v.x + L.pad + hw, hy, `공 ${run.hero.atk}  방 ${run.hero.def}`, 'dust');
+    this.bar(v.x + L.pad, hy + 36, hw, run.hero.hp, run.hero.maxHp, 'bone');
+    this.label(v.x + L.pad, hy + 70, `${run.hero.hp} / ${run.hero.maxHp}`, 'dust');
   }
 
   /* ── ⑥ 공격 / 방어 / 어필 ──────────────────────────── */
+  /** 우하단 전경 — 랜턴 든 팔. 던전 위에 겹쳐 「보고 있다」는 거리감을 만든다 */
+  private buildLantern(): void {
+    const v = L.live.lantern;
+    this.sprite(v.x, v.y, 'ui.live.lantern', v.w, v.h);
+  }
+
+  /**
+   * LIVE 표시 — 액자와 붉은 마름모가 따로 왔다.
+   * 마름모만 깜빡인다 (`blinkers`). 액자까지 깜빡이면 방송이 끊긴 것처럼 보인다.
+   */
+  private buildBadge(): void {
+    const v = L.live.badge;
+    if (this.spriteObject(v.x, v.y, 'ui.live.badge', v.w, v.h) === null) {
+      this.rect(v.x, v.y, v.w, v.h, 'ink');
+      this.frame(v.x, v.y, v.w, v.h, 'bone');
+      this.text(v.x + 56, v.y + 18, 'LIVE', 'bone');
+    }
+    const dot = this.spriteObject(v.x + 18, v.y + 24, 'ui.live.blink', 26, 28);
+    this.blinkers.push(dot ?? this.dot(v.x + 24, v.y + 30, 16, 'wax'));
+  }
+
+  /**
+   * 용사 대사 배너 — **용사가 플레이어에게 말할 때만** 뜬다 (사용자 확정).
+   * 목업의 「…사장님, 어떡할까요?」 자리다.
+   *
+   * 두 경우가 여기로 온다: 갈림길 질문(무전)과 전투 중 한 마디(`Encounter.line`).
+   * 둘 다 core 가 문장을 만든다 — 씬은 지어내지 않는다 (HO-005).
+   */
+  private buildDialogue(s: Readonly<GameState>): void {
+    const fork = pendingFork(s);
+    const spoken = fork !== null
+      ? pick(content.radio.forkAsk, fork.floor)
+      : (s.today?.encounter?.line ?? '');
+    if (spoken === '') return;
+
+    const v = L.live.dialogue;
+    if (this.spriteObject(v.x, v.y, 'ui.live.dialogue', v.w, v.h) === null) {
+      this.rect(v.x, v.y, v.w, v.h, 'ink');
+      this.frame(v.x, v.y, v.w, v.h, 'bone');
+    }
+    // 배너가 사선으로 잘린 그림이라 글은 가운데 검은 띠 안에만 놓는다
+    this.text(v.x + 220, v.y + Math.round(v.h / 2) - 20, this.clip(`"${spoken}"`, v.w - 380), 'bone');
+  }
+
   private buildChoices(s: Readonly<GameState>): void {
     const v = L.live.choices;
-    this.rect(v.x, v.y, v.w, v.h, 'ink');
+    this.scrimRow(v.x - 16, v.y - 12, v.w + 32, v.h + 24);
     const ready = s.phase === 'LIVE' && s.today?.encounter != null;
     const choices: { label: string; choice: CombatChoice; hotkey: string }[] = [
       { label: '공격한다', choice: 'ATTACK', hotkey: '1' },
@@ -416,10 +479,11 @@ export class LivePhase extends PhaseScene {
       { label: '어필한다', choice: 'APPEAL', hotkey: '3' },
     ];
     const gap = 16;
-    const buttonW = Math.floor((v.w - L.pad * 2 - gap * 2) / 3);
+    const pad = 8;
+    const buttonW = Math.floor((v.w - pad * 2 - gap * 2) / 3);
     choices.forEach((c, i) => {
       new Button(this, {
-        x: v.x + L.pad + i * (buttonW + gap), y: v.y + L.pad, w: buttonW, h: v.h - L.pad * 2,
+        x: v.x + pad + i * (buttonW + gap), y: v.y + pad, w: buttonW, h: v.h - pad * 2,
         label: c.label, hotkey: c.hotkey,
         variant: c.choice === 'APPEAL' ? 'danger' : 'default',
         enabled: ready,
@@ -431,11 +495,12 @@ export class LivePhase extends PhaseScene {
   /* ── ⑦ 용사 초상 — 상태에 따라 변한다 (M06 §7) ──────── */
   private buildPortrait(s: Readonly<GameState>): void {
     const v = L.live.portrait;
-    this.rect(v.x, v.y, v.w, v.h, 'ink');
+    const info = L.live.stats;
     const run = s.today ?? null;
     const star = s.stars.find((x) => x.id === run?.starId);
     if (run === null || star === undefined) {
-      this.text(v.x + L.pad, v.y + L.pad, '출연자 없음', 'dust');
+      this.scrimBlock(info.x, info.y, info.w, 80);
+      this.text(info.x + L.pad, info.y + 20, '출연자 없음', 'dust');
       return;
     }
     const ratio = run.hero.maxHp <= 0 ? 0 : run.hero.hp / run.hero.maxHp;
@@ -446,22 +511,19 @@ export class LivePhase extends PhaseScene {
       : ratio >= 0.15 ? '피. 숨이 가쁘다'
       : '초점이 없다';
 
-    // 초상 자리 — 어필 중에는 어필 컷으로 갈아낀다 (M06 §7 "이 게임의 썸네일")
+    // 어필 중에는 어필 컷으로 갈아낀다 (M06 §7 "이 게임의 썸네일")
     const art = starArt(star.id);
-    const px = v.x + v.w - 248;
-    const py = v.y + 16;
-    // 384x480 원본을 정확히 1/2 로 (192x240). 상점 화면에서는 1:1 로 쓰인다
-    const box = { x: v.x + v.w - 216, y: v.y + 80, w: 192, h: 240 };
     const before = this.children.list.length;
+    this.rect(v.x, v.y, v.w, v.h, 'ink');
     const keys = appealing ? [art.appeal, art.portrait] : [art.portrait];
-    if (!this.spriteFit(box, keys)) this.dither(px, py, 232, v.h - 32, 'mid', ratio < 0.15 ? 12 : 8);
-    if (appealing) this.frame(px, py, 232, v.h - 32, 'wax');
+    if (!this.bust(v, keys)) this.dither(v.x, v.y, v.w, v.h, 'mid', ratio < 0.15 ? 12 : 8);
+    this.frame(v.x, v.y, v.w, v.h, appealing ? 'wax' : 'bone');
 
     // 열화 3+ — 균열 오버레이. 위 모든 상태에 겹친다
     if (star.reviveCount >= 3) {
       for (let i = 0; i < 5; i += 1) {
-        const y = py + 24 + Math.floor(hash2(star.reviveCount, i) * (v.h - 96));
-        this.rect(px + 8 + i * 12, y, 216 - i * 24, L.line, 'dust');
+        const y = v.y + 24 + Math.floor(hash2(star.reviveCount, i) * (v.h - 96));
+        this.rect(v.x + 8 + i * 12, y, v.w - 32 - i * 24, L.line, 'dust');
       }
     }
 
@@ -473,13 +535,41 @@ export class LivePhase extends PhaseScene {
       }
     }
 
-    this.title(v.x + L.pad, v.y + 20, this.clip(star.bodyName, v.w - 280, 'title'));
-    this.text(v.x + L.pad, v.y + 96, this.clip(state, v.w - 280), appealing ? 'wax' : 'dust');
-    this.text(v.x + L.pad, v.y + 148, `소생 ${star.reviveCount}회`, star.reviveCount >= 3 ? 'wax' : 'dust');
-    this.text(v.x + L.pad, v.y + 200, `어필 ${run.appealCount}회`, 'dust');
-    this.text(v.x + L.pad, v.y + 252, `+${run.superchat} G`, 'bone');
+    // 상태 글은 초상 아래로 내렸다 — 목업의 초상 칸에는 그림만 있다
+    this.scrimBlock(info.x, info.y, info.w, info.h);
+    this.title(info.x + L.pad, info.y + 8, this.clip(star.bodyName, info.w - 48, 'title'));
+    this.text(info.x + L.pad, info.y + 72, this.clip(state, info.w - 48), appealing ? 'wax' : 'dust');
+    this.text(info.x + L.pad, info.y + 116, `소생 ${star.reviveCount}회`, star.reviveCount >= 3 ? 'wax' : 'dust');
+    this.text(info.x + L.pad, info.y + 156, `어필 ${run.appealCount}회`, 'dust');
+    this.text(info.x + L.pad, info.y + 196, `+${run.superchat} G`, 'bone');
+
+    // 시청자 수 — 예전에는 상단 바에 있었다. 바가 사라져서 여기로 왔다
+    const dropping = this.time.now < this.fanDropUntil;
+    this.textRight(info.x + info.w - L.pad, info.y + 196,
+      `${dropping ? '▼ ' : ''}${fmtFans(s.fans)}`, dropping ? 'wax' : 'dust');
 
     this.buildPotions(s, run.hero.hp < run.hero.maxHp);
+  }
+
+  /**
+   * 초상을 흉상으로 잘라 칸에 넣는다 (사용자 확정 — 씬에서 crop).
+   *
+   * 원본 384x480 을 **1:1 로** 놓고 세로만 자른다. 줄이면 0.8배 같은 소수배가 되어
+   * 도트가 지글거린다. 머리 위 여백 24px 을 버리고 가슴까지 `v.h` 만큼만 보인다.
+   * 전투 중 표정이 바뀌어도 같은 crop 이 그대로 적용된다.
+   */
+  private bust(v: { x: number; y: number; w: number; h: number }, keys: string[]): boolean {
+    const img = keys.reduce<Phaser.GameObjects.Image | null>(
+      (hit, k) => hit ?? this.spriteObject(v.x, v.y, k), null,
+    );
+    if (img === null) return false;
+    const src = img.texture.getSourceImage() as { width: number; height: number };
+    const cw = Math.min(src.width, v.w);
+    const ch = Math.min(src.height, v.h);
+    const cx = Math.round((src.width - cw) / 2);
+    const cy = Math.min(24, Math.max(0, src.height - ch));
+    img.setPosition(v.x - cx, v.y - cy).setCrop(cx, cy, cw, ch);
+    return true;
   }
 
   /**
@@ -487,7 +577,7 @@ export class LivePhase extends PhaseScene {
    * 다 찼을 때는 잠근다 — 눌러도 아무 일이 안 일어나는 버튼을 두지 않는다.
    */
   private buildPotions(s: Readonly<GameState>, hurt: boolean): void {
-    const v = L.live.portrait;
+    const v = L.live.stats;
     const potions = s.inventory
       .filter((stack) => stack.qty > 0)
       .map((stack) => ({ stack, def: content.items.find((item) => item.id === stack.id) }))
@@ -495,10 +585,11 @@ export class LivePhase extends PhaseScene {
       .slice(0, 2);
     if (potions.length === 0) return;
 
-    this.label(v.x + L.pad, v.y + 288, '물약', 'dust');
+    this.scrimRow(v.x, v.y + v.h, v.w, 108);
+    this.label(v.x + L.pad, v.y + v.h + 8, '물약', 'dust');
     potions.forEach(({ stack, def }, i) => {
       new Button(this, {
-        x: v.x + L.pad + i * 164, y: v.y + 312, w: 152, h: 56,
+        x: v.x + L.pad + i * 164, y: v.y + v.h + 36, w: 152, h: 56,
         label: this.clip(`+${def.healing}${stack.qty > 1 ? ` x${stack.qty}` : ''}`, 120),
         hotkey: String(4 + i),
         enabled: hurt,
@@ -510,8 +601,12 @@ export class LivePhase extends PhaseScene {
   /* ── ⑧ 채팅 ────────────────────────────────────────── */
   private buildChat(s: Readonly<GameState>): void {
     const v = L.live.chat;
-    this.rect(v.x, v.y, v.w, v.h, 'ink');
-    this.label(v.x + L.pad, v.y + 16, '채팅', 'dust');
+    if (this.hasArt('ui.live.chat')) {
+      this.sprite(v.x, v.y, 'ui.live.chat', v.w, v.h);
+    } else {
+      this.rect(v.x, v.y, v.w, v.h, 'ink');
+      this.label(v.x + L.pad, v.y + 16, '채팅', 'dust');
+    }
 
     // 28F 를 지나면 3초간 완전히 조용해진다. 침묵이 가장 강한 연출이다 (M06 §9)
     if (this.time.now < this.chatSilentUntil) {
@@ -543,7 +638,7 @@ export class LivePhase extends PhaseScene {
 
       playSfx(this, 'sfx.superchat', 0.5);
       const from = { x: L.live.chat.x + L.pad, y: L.live.chat.y + L.live.chat.h - 120 };
-      const to = { x: L.live.portrait.x + L.pad, y: L.live.portrait.y + 252 };
+      const to = { x: L.live.stats.x + L.pad, y: L.live.stats.y + 196 };
       const label = this.text(from.x, from.y, `+${msg.amount} G`, 'wax');
       // 날아가는 동안 화면이 다시 그려지면 파괴된다. 도착할 때까지 살려 둔다
       this.keepAlive(label);
