@@ -19,12 +19,12 @@ const LINES: [string, string][] = [
   ['ESC', '이전 화면으로'],
 ];
 
-/** 패널 안쪽 좌표. 설명 열은 x=152 에서 시작해 패널 우변(456)까지 304px 을 쓴다.
- *  16px 한글 1자 = 16px 이므로 설명은 공백 포함 19자 폭을 넘지 않는다. */
+/** 옵션과 같은 여백·본문 크기를 쓴다. 제목 영역과 첫 행을 분리해 겹치지 않는다. */
 const PANEL = { x: 96, y: 64, w: BASE_W - 192, h: BASE_H - 248 } as const;
 const COL_KEY = 160;
-const COL_DESC = 608;
-const ROW_H = 88;
+const COL_DESC = 688;
+const FIRST_ROW_Y = 224;
+const ROW_H = 80;
 
 export class HelpScene extends Phaser.Scene {
   private returnTo: string | null = null;
@@ -42,10 +42,10 @@ export class HelpScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor(PALETTE.ink);
     panel(this, PANEL.x, PANEL.y, PANEL.w, PANEL.h, 'sunken');
 
-    this.add.text(COL_KEY, 104, '조작 안내', { ...FONT_TITLE, color: css('bone') });
+    this.add.text(COL_KEY, 112, '조작 안내', { ...FONT_TITLE, color: css('bone') });
 
-    const right = PANEL.x + PANEL.w - L.pad;
-    let y = 54;
+    const right = PANEL.x + PANEL.w - L.pad * 2;
+    let y = FIRST_ROW_Y;
     for (const [k, desc] of LINES) {
       this.add.text(COL_KEY, y, k, { ...FONT, color: css('bone') });
       const t = this.add.text(COL_DESC, y, desc, { ...FONT, color: css('dust') });
@@ -56,10 +56,10 @@ export class HelpScene extends Phaser.Scene {
       y += ROW_H;
     }
 
-    this.add.text(COL_KEY, y + 16, 'v3 에는 제한시간이 없다. 얼마든지 생각해도 된다.', { ...FONT, color: css('dust') });
+    this.add.text(COL_KEY, y + 16, '제한시간은 없다. 천천히 선택해도 된다.', { ...FONT, color: css('dust') });
 
     new Button(this, {
-      x: BASE_W / 2 - 264, y: BASE_H - 136, w: 528, h: 96,
+      x: BASE_W / 2 - 264, y: BASE_H - 144, w: 528, h: 88,
       label: '돌아가기', hotkey: '1',
       onClick: () => this.close(),
     });

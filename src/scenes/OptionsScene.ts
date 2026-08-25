@@ -28,15 +28,16 @@ export class OptionsScene extends Phaser.Scene {
   create(): void {
     this.scene.bringToTop();
     this.cameras.main.setBackgroundColor(PALETTE.ink);
-    panel(this, 24, 16, BASE_W - 48, BASE_H - 62, 'sunken');
-    this.add.text(160, 104, '옵션', { ...FONT_TITLE, color: css('bone') });
+    // 조작 안내와 같은 팝업 그리드. 제목·선택지·설명·닫기 영역이 서로 겹치지 않는다.
+    panel(this, 96, 64, BASE_W - 192, BASE_H - 248, 'sunken');
+    this.add.text(160, 112, '옵션', { ...FONT_TITLE, color: css('bone') });
 
     const reduced = reducedMotion(this.registry);
     const speed = speedMul(this.registry);
 
-    this.add.text(160, 264, '연출 감소', { ...FONT, color: css('dust') });
+    this.add.text(160, 232, '연출 감소', { ...FONT, color: css('dust') });
     new Button(this, {
-      x: 960, y: 248, w: 400, h: 96,
+      x: 960, y: 216, w: 400, h: 88,
       label: reduced ? '켜짐' : '꺼짐', hotkey: '1',
       onClick: () => {
         this.registry.set('opt.reducedMotion', !reduced);
@@ -44,9 +45,9 @@ export class OptionsScene extends Phaser.Scene {
       },
     });
 
-    this.add.text(160, 416, '진행 속도', { ...FONT, color: css('dust') });
+    this.add.text(160, 400, '진행 속도', { ...FONT, color: css('dust') });
     new Button(this, {
-      x: 960, y: 400, w: 400, h: 96,
+      x: 960, y: 384, w: 400, h: 88,
       label: `x${speed}`, hotkey: '2',
       onClick: () => {
         const next = speed >= 3 ? 1 : speed + 1;
@@ -59,7 +60,7 @@ export class OptionsScene extends Phaser.Scene {
     const off = muted(this.registry);
     this.add.text(160, 568, '소리', { ...FONT, color: css('dust') });
     new Button(this, {
-      x: 960, y: 552, w: 400, h: 96,
+      x: 960, y: 552, w: 400, h: 88,
       label: off ? '꺼짐' : '켜짐', hotkey: '3',
       onClick: () => {
         setMuted(this, !off);
@@ -67,11 +68,11 @@ export class OptionsScene extends Phaser.Scene {
       },
     });
 
-    this.add.text(160, 700, 'v3 에는 제한시간이 없다.', { ...FONT, color: css('dust') });
-    this.add.text(160, 748, '연출 감소를 켜면 화면 흔들림·노이즈가 꺼진다.', { ...FONT, color: css('dust') });
+    this.add.text(160, 720, '제한시간은 없다. 천천히 선택해도 된다.', { ...FONT, color: css('dust') });
+    this.add.text(160, 768, '연출 감소를 켜면 화면 흔들림과 노이즈가 꺼진다.', { ...FONT, color: css('dust') });
 
     new Button(this, {
-      x: BASE_W / 2 - 264, y: BASE_H - 136, w: 528, h: 96,
+      x: BASE_W / 2 - 264, y: BASE_H - 144, w: 528, h: 88,
       label: '돌아가기', hotkey: '4',
       onClick: () => this.close(),
     });
