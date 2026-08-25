@@ -8,7 +8,7 @@ import { Button } from '../../ui/Button';
 import { onboard } from '../../ui/Onboarding';
 import { playBgm } from '../../audio/Sfx';
 import { PhaseScene } from './PhaseScene';
-import type { Contract, GameState, ItemDef } from '../../core/types';
+import type { Contract, GameState, ItemDef, Persona } from '../../core/types';
 
 /**
  * M05 편성실 — **상점 화면** (v3.1 레퍼런스 정본, 04-UI-KIT §1 · 00-OVERVIEW §8-2).
@@ -46,6 +46,8 @@ export class OfficePhase extends PhaseScene {
   private inventoryScrollRow = 0;
   /** 아이콘 hover 중에만 살아 있는 장비 상세 정보창 오브젝트. */
   private itemDetail: Phaser.GameObjects.GameObject[] = [];
+  /** 드래그 중에는 hover 상세창을 다시 열지 않는다. */
+  private draggingInventoryItem = false;
 
   constructor() {
     super(SCENES.PHASE_OFFICE);
@@ -62,6 +64,7 @@ export class OfficePhase extends PhaseScene {
     this.selectedItemId = null;
     this.inventoryScrollRow = 0;
     this.itemDetail = [];
+    this.draggingInventoryItem = false;
     super.create();
     playBgm(this, 'bgm.shop');
   }
@@ -69,6 +72,7 @@ export class OfficePhase extends PhaseScene {
   protected build(s: Readonly<GameState>): void {
     // redraw()가 이전 동적 오브젝트를 정리한 뒤 새 화면을 만든다.
     this.itemDetail = [];
+    this.draggingInventoryItem = false;
     // 심사할 계약서가 없으면 계약 모드에 머무를 이유가 없다.
     // 여기 갇히면 「오늘의 출연자」를 고를 수 없어 하루가 넘어가지 않는다.
     if (this.mode === 'CONTRACT' && s.visitors.length === 0) this.mode = 'SHELF';
@@ -245,7 +249,6 @@ export class OfficePhase extends PhaseScene {
       if (art !== null) this.wireShelfDrag(art, i, { x: art.x, y: art.y });
       this.text(x + 12, y + 142, this.clip(def.name, Math.floor((w - 24) / 0.75), 'body'), 'bone').setScale(0.75);
       this.text(x + 12, y + 168, this.clip(this.itemStats(def), Math.floor((w - 24) / 0.75), 'body'), 'bone').setScale(0.75);
-      this.text(x + 12, y + 194, '인벤토리로 끌어 회수', 'bone').setScale(0.75);
     }
 
     // 오늘의 출연자 — 램프와 장부 사이. 소품 자리를 침범하지 않는다
@@ -344,13 +347,15 @@ export class OfficePhase extends PhaseScene {
       if (selected) this.sprite(cellX - 2, cellY - 2, 'ui.inventory.selected', 140, 124);
       const art = this.itemArt(def, { x: cellX + 3, y: cellY + 5, w: cellW - 6, h: 84 });
       if (art !== null) {
+        // 원화의 도트 무게가 오른쪽으로 치우친 경우를 보정해 칸의 시각적 중앙에 둔다.
+        art.setX(Math.round(cellX + cellW / 2 - 8));
         if (equipped) art.setAlpha(0.38);
         else {
           this.wireInventoryDrag(art, def, { x: art.x, y: art.y });
           // 아이콘 위에서도 휠이 작업대가 아니라 인벤토리 행을 넘긴다.
           art.on('wheel', (_pointer: Phaser.Input.Pointer, _dx: number, dy: number) => this.scrollInventory(Math.sign(dy), maxScrollRow));
         }
-        this.wireItemHint(art, def, hint);
+        this.wireItemHint(art, def, hint, s);
       }
       this.text(cellX, cellY + 86, this.clip(def.name, Math.floor(cellW / 0.75), 'body'), equipped ? 'wax' : 'bone').setScale(0.75);
       this.text(cellX, cellY + 112, this.clip(equipped ? '진열 중' : `${this.itemStats(def)}${stack.qty > 1 ? ` ×${stack.qty}` : ''}`, Math.floor(cellW / 0.75), 'body'), 'dust').setScale(0.75);
@@ -371,20 +376,28 @@ export class OfficePhase extends PhaseScene {
     return item.kind === 'POTION' ? `회복 +${item.healing}` : `HP+${item.hp} 공+${item.atk} 방+${item.def}`;
   }
 
-  private wireItemHint(image: Phaser.GameObjects.Image, item: ItemDef, hint: Phaser.GameObjects.Text): void {
+  private wireItemHint(image: Phaser.GameObjects.Image, item: ItemDef, hint: Phaser.GameObjects.Text, state: Readonly<GameState>): void {
     image.on('pointerover', (pointer: Phaser.Input.Pointer) => {
       hint.setText(`${item.name} · ${this.itemStats(item)} · ${item.price.toLocaleString('en-US')} G`);
-      this.showItemDetail(item, pointer);
+      if (!this.draggingInventoryItem) this.showItemDetail(item, pointer, this.featuredPersona(state));
     });
-    image.on('pointerdown', (pointer: Phaser.Input.Pointer) => this.showItemDetail(item, pointer));
+    image.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      if (!this.draggingInventoryItem) this.showItemDetail(item, pointer, this.featuredPersona(state));
+    });
     image.on('pointerout', () => {
       hint.setText('장비 도트를 끌어 맞는 진열대에 놓으세요.');
       this.hideItemDetail();
     });
   }
 
+  /** 현재 출연 중인 페르소나의 실제 계승 기록을 장비 카드에 함께 보여 준다. */
+  private featuredPersona(state: Readonly<GameState>): Persona | undefined {
+    return state.personas.find((persona) => state.stars.some((star) => star.personaId === persona.id && star.status === 'ALIVE'))
+      ?? state.personas.find((persona) => persona.lineage.length > 0);
+  }
+
   /** 마우스 오른쪽 위에 원본 정보창 비율을 유지한 상세 카드를 연다. */
-  private showItemDetail(item: ItemDef, pointer: Phaser.Input.Pointer): void {
+  private showItemDetail(item: ItemDef, pointer: Phaser.Input.Pointer, persona: Persona | undefined): void {
     this.hideItemDetail();
     const w = 450;
     const h = 948;
@@ -420,7 +433,7 @@ export class OfficePhase extends PhaseScene {
     // 장비정보창_예상.png의 다섯 구획: 제목 → 아이콘/가격 → 스탯 → 특성 → 계승 정보.
     addBody(29, 28, this.clip(item.name, 286, 'body'), item.isRelic ? 'wax' : 'bone', 1.1);
     addBody(344, 31, item.tier, item.isRelic ? 'wax' : 'bone', 1.1);
-    const icon = this.itemArt(item, { x: x + 42, y: y + 122, w: 128, h: 128 });
+    const icon = this.itemArt(item, { x: x + 50, y: y + 130, w: 112, h: 112 });
     if (icon !== null) {
       icon.setDepth(depth + 2);
       this.itemDetail.push(icon);
@@ -431,8 +444,25 @@ export class OfficePhase extends PhaseScene {
     addLabel(38, 445, '특성', 'dust', 1.45);
     addBody(38, 485, marks, item.isRelic ? 'wax' : 'bone', 1.0);
     addLabel(38, 644, '계승 정보', 'dust', 1.45);
-    addBody(38, 684, `계승 가능  출연자\n장비 등급  ${item.tier}\n소유 상태  보관 중`, 'dust', 0.9);
+    addBody(38, 684, this.personaLineage(persona), 'dust', 0.9);
     addBody(95, 878, '“EQUIP TO LIVE”', 'bone', 0.78);
+  }
+
+  /** 현재 몸은 빼고, 페르소나가 거쳐 간 이전 사용자의 이름과 사망 층만 남긴다. */
+  private personaLineage(persona: Persona | undefined): string {
+    if (persona === undefined) return '페르소나 미배정\n이전 사용자 기록 없음';
+    const currentCarrier = this.store.getState().stars.find((star) => star.personaId === persona.id)?.id;
+    const previous = persona.lineage
+      .filter((entry) => entry.starId !== currentCarrier)
+      .slice(-2)
+      .map((entry, index) => {
+        const name = content.stars.find((star) => star.id === entry.starId)?.bodyName ?? entry.starId;
+        const floor = entry.diedFloor > 0 ? `${entry.diedFloor}F` : '기록 없음';
+        return `${index + 1}대  ${name}  ${floor}`;
+      });
+    return previous.length > 0
+      ? `${persona.displayName} · ${persona.generation}세대\n이전 사용자\n${previous.join('\n')}`
+      : `${persona.displayName} · ${persona.generation}세대\n이전 사용자 기록 없음`;
   }
 
   private hideItemDetail(): void {
@@ -451,10 +481,13 @@ export class OfficePhase extends PhaseScene {
     });
     image.on('dragstart', () => {
       dragged = true;
+      this.draggingInventoryItem = true;
+      this.hideItemDetail();
       image.setDepth(1000).setScale(1.15);
     });
     image.on('drag', (_pointer: Phaser.Input.Pointer, dragX: number, dragY: number) => image.setPosition(Math.round(dragX), Math.round(dragY)));
     image.on('dragend', () => {
+      this.draggingInventoryItem = false;
       const slot = this.shelfSlotAt(image.x, image.y);
       if (slot === content.balance.equipment.slotByItem[item.id]) {
         this.selectedItemId = null;
