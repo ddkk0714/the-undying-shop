@@ -10,23 +10,32 @@ import { playAmbience, playBgm, playSfx, stopAmbience } from '../audio/Sfx';
 import { hasSavedRun, loadRun, newRun } from './run';
 
 /**
- * 램프 깜빡임 순서 — `[단계, 머무는 ms]`.
- * 0 이 가장 밝고 4 가 가장 어둡다.
+ * 조절판 알파 대본 — `[목표 알파, 걸리는 ms, 방식]`.
+ * 알파 0 이 원본 그대로(가장 밝음), 1 이면 창이 완전히 죽는다.
  *
- * 일정한 간격으로 돌리면 네온사인처럼 보인다. 기름 램프는 **대체로 밝게 타다가
- * 이따금 훅 꺼질 듯 흔들린다.** 그래서 0~1 에 오래 머물고, 3~4 는 짧게 스치기만 한다.
+ * 사용자 확정 리듬: **빠르게 두세 번 깜빡 → 느리게 일렁**. 이걸 반복한다.
+ * `snap` 은 그 자리에서 뚝 끊고 그만큼 머문다 (접촉 불량처럼 튀는 구간),
+ * `ease` 는 그 시간 동안 부드럽게 건너간다 (기름이 숨 쉬는 구간).
+ *
+ * 깜빡을 일정 간격으로 돌리면 네온사인이 된다. 그래서 간격을 조금씩 어긋나게 두고,
+ * 일렁 구간은 깜빡보다 20배 넘게 길게 잡아 두 리듬이 확실히 갈라지게 했다.
  */
-const LAMP_CYCLE: ReadonlyArray<readonly [number, number]> = [
-  [0, 1500], [1, 110], [0, 780], [1, 80], [2, 60], [1, 90],
-  [0, 1800], [1, 100], [2, 70], [3, 50], [2, 90], [1, 110],
-  [0, 1200], [1, 80], [2, 60], [3, 50], [4, 40], [3, 70], [1, 130],
+const LAMP_SCRIPT: ReadonlyArray<readonly [number, number, 'snap' | 'ease']> = [
+  // ① 빠르게 세 번
+  [0.82, 55, 'snap'], [0.02, 85, 'snap'],
+  [0.94, 45, 'snap'], [0.02, 70, 'snap'],
+  [0.74, 60, 'snap'], [0.02, 120, 'snap'],
+  // ② 느리게 일렁 — 세 번 숨 쉰다
+  [0.26, 1400, 'ease'], [0.05, 1600, 'ease'],
+  [0.20, 1500, 'ease'], [0.04, 1750, 'ease'],
+  [0.30, 1300, 'ease'], [0.03, 1900, 'ease'],
+  // ③ 빠르게 두 번
+  [0.88, 50, 'snap'], [0.02, 95, 'snap'],
+  [0.78, 55, 'snap'], [0.02, 110, 'snap'],
+  // ④ 더 길게 일렁
+  [0.22, 1700, 'ease'], [0.04, 2000, 'ease'],
+  [0.16, 1900, 'ease'], [0.02, 2300, 'ease'],
 ];
-
-/**
- * 같은 5단을 **조절판 알파**로 낸다. 0 은 판이 안 보이는 상태 = 원본 그대로 가장 밝다.
- * 배경 5장(각 190KB)을 갈아 끼우던 걸 2KB 짜리 판 한 장으로 대신한다.
- */
-const LAMP_ALPHA = [0, 0.22, 0.42, 0.62, 0.8] as const;
 
 /**
  * 진열창 빛 조절판이 앉는 자리.
@@ -38,21 +47,24 @@ const LAMP_ALPHA = [0, 0.22, 0.42, 0.62, 0.8] as const;
 const WINDOW_BOX = { x: 648, y: 543, w: 384, h: 203 } as const;
 
 /**
- * 문 위 처마등. 같은 방식으로 원본 (1692, 881, 86, 59) 을 옮겼다.
- * 원본 그림의 등은 점선 윤곽이고, 이 스프라이트는 그걸 덮는 **꽉 찬 실루엣**이다.
+ * 진열창 **안쪽 중간 상단**에 매달린 등 (사용자 확정 — 처음엔 문 위 처마등에 붙였는데
+ * 그게 아니었다). 자리는 「빛1」에 그려진 등을 잘라 재서 잡았다: 원본 (1205, 802, 86, 59).
+ *
+ * `타이틀 배경.png` 에는 이 등이 **없다.** 아티스트가 흔들 수 있도록 따로 뽑아 준 것이고
+ * (`랜턴애니메이션용.png`), 크기 86x59 가 「빛1」의 등과 정확히 맞는다.
+ * y 가 창 상자의 위쪽 변(543)과 같은 것도 우연이 아니다 — 창틀에 매달려 있다.
  */
-const LANTERN_BOX = { x: 1146, y: 597, w: 58, h: 40 } as const;
+const LANTERN_BOX = { x: 816, y: 543, w: 58, h: 40 } as const;
 
 /**
- * 처마등이 흔들리는 폭(도)과 한 번 왕복하는 시간 — 바람 없는 밤이다. 약하게.
+ * 흔들리는 폭(도)과 한 번 왕복하는 시간 — 바람 없는 밤이다. 약하게.
  *
- * 회전축은 등 자체가 아니라 **등을 매단 처마**다. 등의 꼭대기를 축으로 돌리면
- * 갓이 제자리에서 갸웃거린다. 축을 위로 `LANTERN_PIVOT` 만큼 올려야 매달린 것이 흔들린다.
- * 1.6도로 잡았더니 밑동이 0.5px 도 안 움직여서 눈에 안 보였다 (실측) — 지금은 3px 쯤 움직인다.
+ * **상단이 고정된 채 좌우로 각도만 바뀐다** (사용자 확정) — origin 을 (0.5, 0) 으로 잡는다.
+ * 3.5도면 갓 밑동이 40 × tan(3.5°) ≈ 2.4px 움직인다. 밝은 창 위의 검은 실루엣이라
+ * 이 정도면 눈에 들어온다.
  */
-const LANTERN_SWING = 2.6;
+const LANTERN_SWING = 3.5;
 const LANTERN_PERIOD = 3200;
-const LANTERN_PIVOT = 30;
 
 /**
  * M01 §6 — 타이틀.
@@ -90,8 +102,9 @@ export class TitleScene extends Phaser.Scene {
       this.add
         .tileSprite(0, 0, BASE_W, BASE_H, scrimTexture(this, 1))
         .setOrigin(0, 0);
-      this.windowFlicker();
+      // 등이 먼저다 — 등도 창 안에 있으니 조절판이 그 위를 덮어야 같이 어두워진다
       this.lanternSway();
+      this.windowFlicker();
     } else {
       // 본 아트가 없을 때만 — 절차적 촛불이 이 화면의 유일한 불빛이다.
       // 그림이 들어오면 그 안에 이미 창의 불빛이 있으므로 덧그리지 않는다.
@@ -220,27 +233,36 @@ export class TitleScene extends Phaser.Scene {
 
     let step = 0;
     const advance = (): void => {
-      const [level, hold] = LAMP_CYCLE[step % LAMP_CYCLE.length] ?? [0, 1000];
-      shade.setAlpha(LAMP_ALPHA[level] ?? 0);
+      const [alpha, ms, how] = LAMP_SCRIPT[step % LAMP_SCRIPT.length] ?? [0, 1000, 'snap'];
       step += 1;
-      this.time.delayedCall(hold, advance);
+      if (how === 'snap') {
+        shade.setAlpha(alpha);
+        this.time.delayedCall(ms, advance);
+        return;
+      }
+      // 일렁 — 알파를 그 시간 동안 건너간다. 끝나면 다음 칸으로
+      this.tweens.add({
+        targets: shade,
+        alpha,
+        duration: ms,
+        ease: 'Sine.easeInOut',
+        onComplete: advance,
+      });
     };
     advance();
   }
 
   /**
-   * 문 위 처마등이 약하게 흔들린다.
-   *
-   * 매다는 물건이라 축이 **등보다 위**에 있다 (`LANTERN_PIVOT`). origin.y 를 음수로 주면
-   * 회전 중심이 그림 밖 위쪽으로 나가므로, 그만큼 y 를 올려서 등은 제자리에 놓는다.
+   * 진열창 안 등이 약하게 흔들린다 — **꼭대기를 축으로 좌우 각도만** 바뀐다.
+   * 매단 자리는 그대로 있고 갓만 기운다. origin (0.5, 0) 이 그 축이다.
    */
   private lanternSway(): void {
     if (!hasTexture(this, 'bg.title.lantern')) return;
 
     const v = LANTERN_BOX;
     const lamp = this.add
-      .image(v.x + v.w / 2, v.y - LANTERN_PIVOT, assetKey('bg.title.lantern'))
-      .setOrigin(0.5, -LANTERN_PIVOT / v.h)
+      .image(v.x + v.w / 2, v.y, assetKey('bg.title.lantern'))
+      .setOrigin(0.5, 0)
       .setDisplaySize(v.w, v.h);
 
     if (reducedMotion(this.registry)) return;
