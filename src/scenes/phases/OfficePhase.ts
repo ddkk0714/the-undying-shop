@@ -407,27 +407,31 @@ export class OfficePhase extends PhaseScene {
     };
     const slot = content.balance.equipment.slotByItem[item.id];
     const slotName = slot === undefined ? '기타' : SLOT_NAMES[slot];
-    const category = item.kind === 'POTION' ? '소모품' : item.isRelic ? '유품' : '장비';
-    const description = item.kind === 'POTION'
-      ? `방송 중 체력을\n${item.healing} 회복합니다.`
-      : `출연자에게 장착하면\n전투 능력치가 오릅니다.`;
+    const itemType = item.kind === 'POTION' ? 'POTION' : item.isRelic ? 'RELIC' : slot === 0 ? 'WEAPON' : slot === 1 ? 'ARMOR' : 'UTILITY';
+    const signed = (value: number): string => `${value >= 0 ? '+' : ''}${value}`;
+    const statRows = item.kind === 'POTION'
+      ? `HEAL  ··········  +${item.healing}`
+      : `HP    ··········  ${signed(item.hp)}\nATK   ··········  ${signed(item.atk)}\nDEF   ··········  ${signed(item.def)}`;
+    const marks = item.kind === 'POTION'
+      ? `<HEAL>\nHP +${item.healing}`
+      : `<${slotName}>\n${this.itemStats(item)}`;
 
-    addBody(29, 24, this.clip(item.name, 398, 'body'), item.isRelic ? 'wax' : 'bone', 0.95);
-    addLabel(33, 80, `${category} · ${slotName} 칸`);
-    const icon = this.itemArt(item, { x: x + 39, y: y + 129, w: 121, h: 121 });
+    // 장비정보창_예상.png의 다섯 구획: 제목 → 아이콘/가격 → 스탯 → 특성 → 배치정보.
+    addBody(29, 28, this.clip(item.name, 286, 'body'), item.isRelic ? 'wax' : 'bone', 0.95);
+    addBody(344, 31, item.tier, item.isRelic ? 'wax' : 'bone', 0.95);
+    const icon = this.itemArt(item, { x: x + 42, y: y + 122, w: 128, h: 128 });
     if (icon !== null) {
       icon.setDepth(depth + 2);
       this.itemDetail.push(icon);
     }
-    addLabel(214, 134, `등급 ${item.tier}`, item.isRelic ? 'wax' : 'bone');
-    addLabel(214, 180, `판매가 ${item.price.toLocaleString('en-US')} G`);
-    addBody(214, 223, this.itemStats(item), 'bone', 0.78);
-    addLabel(33, 293, '효과');
-    addBody(33, 330, description, 'bone', 0.85);
-    addLabel(33, 455, '능력치');
-    addBody(33, 495, item.kind === 'POTION' ? `회복  +${item.healing}` : `체력  +${item.hp}\n공격  +${item.atk}\n방어  +${item.def}`, 'bone', 0.85);
-    addLabel(33, 654, '진열대 사용법');
-    addBody(33, 696, `${slotName} 칸으로 끌어 놓으세요.\n다시 인벤토리로 끌면 회수합니다.`, 'dust', 0.76);
+    addBody(205, 138, itemType, 'bone', 0.85);
+    addBody(205, 185, `${item.price.toLocaleString('en-US')} G`, 'bone', 1.1);
+    addBody(38, 286, statRows, 'bone', 0.75);
+    addLabel(38, 445, '특성');
+    addBody(38, 485, marks, item.isRelic ? 'wax' : 'bone', 0.85);
+    addLabel(38, 644, '배치 정보');
+    addBody(38, 684, `필요 칸  ${slotName}\n등급      ${item.tier}\n판매가    ${item.price.toLocaleString('en-US')} G`, 'dust', 0.76);
+    addBody(95, 878, '“EQUIP TO LIVE”', 'bone', 0.68);
   }
 
   private hideItemDetail(): void {
