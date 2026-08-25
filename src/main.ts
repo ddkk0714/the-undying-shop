@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { BASE_W, BASE_H } from './config';
 import { PALETTE } from './render/palette';
-import { applyIntegerScale } from './render/scaler';
+import { applyFitScale } from './render/scaler';
 import { BootScene } from './scenes/BootScene';
 import { PreloadScene } from './scenes/PreloadScene';
 import { TitleScene } from './scenes/TitleScene';
@@ -31,7 +31,7 @@ const game = new Phaser.Game({
     // Phaser 의 autoCenter 까지 켜면 canvas 에 marginLeft 가 더해져 둘이 겹치고,
     // 캔버스가 좌우 3:1 로 밀린다. (상수 이름은 NO_CENTER — CENTER_OFF 는 없다)
     autoCenter: Phaser.Scale.NO_CENTER,
-    zoom: 1, // scaler.ts 가 런타임에 정수로 재설정
+    zoom: 1, // scaler.ts 가 런타임에 창 크기에 맞춰 재설정
   },
   // 첫 씬만 자동 시작한다. 단계 씬은 DayScene 이 launch 할 때까지 잠들어 있다.
   scene: [
@@ -41,7 +41,7 @@ const game = new Phaser.Game({
   ],
 });
 
-applyIntegerScale(game);
+applyFitScale(game);
 
 // ?seed=12345 — 버그 재현 및 심사 시연용 결정적 플레이 (01-ARCHITECTURE §6)
 const seed = Number(new URLSearchParams(location.search).get('seed'));
