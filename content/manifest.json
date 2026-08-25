@@ -372,7 +372,7 @@
         },
         "bg.shop.bench": {
           "type": "image",
-          "file": "bg/shop_bench.png",
+          "file": "bg/shop_bench_v2.png",
           "size": [
             2009,
             1371
@@ -1157,7 +1157,7 @@
         },
         "bg.shop.bench": {
           "type": "image",
-          "file": "bg/shop_bench.png",
+          "file": "bg/shop_bench_v2.png",
           "size": [
             2009,
             1371
