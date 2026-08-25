@@ -440,17 +440,8 @@ export class LivePhase extends PhaseScene {
     const v = L.live.combat;
     this.rect(v.x, v.y, v.w, v.h, 'ink');
     // 갈림길을 묻는 동안에는 문 두 짝 — 「어느 쪽입니까」가 그림으로 보인다
-    const asking = pendingFork(s) !== null;
-    const backdrop = asking ? 'ui.live.door' : zoneArt(s);
+    const backdrop = pendingFork(s) !== null ? 'ui.live.door' : zoneArt(s);
     this.spriteCover(v, [backdrop, 'bg.tower']);
-
-    // 방송화면 액자 — 배경 위, 적 아래. 갈림길(문 두 짝) 동안에는 걸지 않는다.
-    // 1:1 로 놓는다: `spriteFit` 은 칸에 맞춰 줄이지만 칸이 원본과 같은 크기라 그대로 간다
-    if (!asking) {
-      const sc = L.live.screen;
-      this.sprite(sc.x, sc.y, zoneScreen(s), sc.w, sc.h);
-    }
-
     const run = s.today ?? null;
     if (run === null) {
       this.text(v.x + L.pad, v.y + L.pad, '방송 준비 중', 'dust');
@@ -620,6 +611,7 @@ export class LivePhase extends PhaseScene {
     const art = starArt(star.id);
     const before = this.children.list.length;
     this.rect(v.x, v.y, v.w, v.h, 'ink');
+    this.screenBackdrop(v, zoneScreen(s));
     const keys = appealing ? [art.appeal, art.portrait] : [art.portrait];
     if (!this.bust(v, keys)) this.dither(v.x, v.y, v.w, v.h, 'mid', ratio < 0.15 ? 12 : 8);
     this.frame(v.x, v.y, v.w, v.h, appealing ? 'wax' : 'bone');
@@ -658,6 +650,25 @@ export class LivePhase extends PhaseScene {
     // 이 방송의 누적 슈퍼챗. **시청자 수는 여기 안 쓴다** — 방송바에 이미 있어서
     // 한 화면에 같은 숫자가 둘이 떴다 (사용자 확정)
     this.label(info.x + L.pad, info.y + 168, `+${run.superchat} G`, 'bone');
+  }
+
+  /**
+   * 용사 흉상 **뒤에 깔리는 방송화면 액자** (사용자 확정).
+   *
+   * 받은 `방송화면-*` 은 462x452 인데 초상 칸은 256x248 이다. 덮어 맞추면 0.554배 —
+   * 소수배 축소라 디더가 모아레를 낸다. 그래서 **1:1 로 놓고 칸만큼 잘라낸다** (`bust` 와 같은 수법).
+   * 액자의 둥근 테두리는 잘려 나가는데 그게 맞다 — 초상 칸에는 이미 `frame()` 이 있어서
+   * 두 겹으로 두르면 액자 안의 액자가 된다. 남는 건 복도 그림뿐이다.
+   */
+  private screenBackdrop(v: { x: number; y: number; w: number; h: number }, key: string): void {
+    const img = this.spriteObject(v.x, v.y, key);
+    if (img === null) return;
+    const src = img.texture.getSourceImage() as { width: number; height: number };
+    const cw = Math.min(src.width, v.w);
+    const ch = Math.min(src.height, v.h);
+    const cx = Math.round((src.width - cw) / 2);
+    const cy = Math.round((src.height - ch) / 2);
+    img.setPosition(v.x - cx, v.y - cy).setCrop(cx, cy, cw, ch);
   }
 
   /**
