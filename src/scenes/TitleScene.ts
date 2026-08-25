@@ -5,11 +5,9 @@ import { FONT, FONT_TITLE } from '../render/font';
 import { Button } from '../ui/Button';
 import { key as assetKey, hasTexture, isFinalArt } from '../render/assets';
 import { scrimTexture, SCRIM_TILE } from '../render/scrim';
-import { reducedMotion } from '../ui/options';
 import { hasSavedRun, loadRun, newRun } from './run';
 
 /** 창의 불빛 4단 — 밝은 쪽부터. `bg.title` 자체가 가장 밝은 상태다 */
-const LAMP_KEYS = ['bg.title.lamp1', 'bg.title.lamp2', 'bg.title.lamp3', 'bg.title.lamp4'] as const;
 
 /**
  * 램프 깜빡임 순서 — `[프레임, 머무는 ms]`.
@@ -18,11 +16,6 @@ const LAMP_KEYS = ['bg.title.lamp1', 'bg.title.lamp2', 'bg.title.lamp3', 'bg.tit
  * 일정한 간격으로 돌리면 네온사인처럼 보인다. 기름 램프는 **대체로 밝게 타다가
  * 이따금 훅 꺼질 듯 흔들린다.** 그래서 0~1 에 오래 머물고, 3~4 는 짧게 스치기만 한다.
  */
-const LAMP_CYCLE: ReadonlyArray<readonly [number, number]> = [
-  [0, 1500], [1, 110], [0, 780], [1, 80], [2, 60], [1, 90],
-  [0, 1800], [1, 100], [2, 70], [3, 50], [2, 90], [1, 110],
-  [0, 1200], [1, 80], [2, 60], [3, 50], [4, 40], [3, 70], [1, 130],
-];
 
 /**
  * M01 §6 — 타이틀.
@@ -57,7 +50,6 @@ export class TitleScene extends Phaser.Scene {
       this.add
         .tileSprite(0, 0, BASE_W, BASE_H, scrimTexture(this, 1))
         .setOrigin(0, 0);
-      this.lampFlicker(bg);
     } else {
       // 본 아트가 없을 때만 — 절차적 촛불이 이 화면의 유일한 불빛이다.
       // 그림이 들어오면 그 안에 이미 창의 불빛이 있으므로 덧그리지 않는다.
@@ -163,21 +155,6 @@ export class TitleScene extends Phaser.Scene {
    * 창의 불빛 깜빡임 — 배경 텍스처를 밝기 5단 사이에서 갈아 끼운다.
    * 4장이 **전부** 있을 때만 켠다. 한 장이라도 없으면 깜빡이지 않는 그림 그대로가 정답이다.
    */
-  private lampFlicker(bg: Phaser.GameObjects.Image): void {
-    if (reducedMotion(this.registry)) return;
-    if (!LAMP_KEYS.every((k) => hasTexture(this, k))) return;
-
-    const frames = [assetKey('bg.title'), ...LAMP_KEYS.map((k) => assetKey(k))];
-    let step = 0;
-    const advance = (): void => {
-      const [frame, hold] = LAMP_CYCLE[step % LAMP_CYCLE.length] ?? [0, 1000];
-      bg.setTexture(frames[frame] ?? frames[0]!);
-      step += 1;
-      this.time.delayedCall(hold, advance);
-    };
-    advance();
-  }
-
   /** 본 아트가 없을 때의 촛불 2프레임 루프 — tallow 점 하나의 밝기만 바꾼다 */
   private candleFlicker(): void {
     const candle = this.add.graphics();
