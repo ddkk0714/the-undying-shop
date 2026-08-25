@@ -11,6 +11,11 @@
  *   CASTING/* + SHOP/* → OFFICE/*   ·   DIVE/TICK → LIVE/TICK
  *   COMBAT/CHOOSE 신설   ·   RADIO/ANSWER 는 A|B|UNKNOWN
  *
+ * CCR-005 (승인: 사람, 2026-08-25). OFFICE/CONTRACT_HAGGLE 신설.
+ *   방문 계약을 그 자리에서 깎는다 — **계약 1장당 하루 1회, 계약금 20% 할인.**
+ *   횟수 제한·할인율·거절 조건은 전부 리듀서와 `content/balance.json` 이 정한다.
+ *   화면은 이 액션을 보내고 상태가 바뀐 것만 다시 그린다 (숫자를 씬에 두지 않는다).
+ *
  * v3.1 반영 — CCR-002 (승인). PHASE/GOTO 신설.
  *   상점 화면이 ①소생 / ②편성 두 단계를 한 화면의 모드로 보여주므로,
  *   하단 4택에서 ②에서 ①로 되돌아갈 길이 필요하다. 임의 점프는 리듀서가 막는다.
@@ -29,6 +34,7 @@ export type Action =
   | { type: 'REVIVE/INHERIT'; personaId: PersonaId; toStarId: StarId }
   | { type: 'OFFICE/CONTRACT_ACCEPT'; starId: StarId }
   | { type: 'OFFICE/CONTRACT_REJECT'; starId: StarId }
+  | { type: 'OFFICE/CONTRACT_HAGGLE'; starId: StarId }          // 방문 계약 1장당 하루 1회 (CCR-005)
   | { type: 'OFFICE/PICK_STAR'; starId: StarId }
   | { type: 'OFFICE/PLACE'; slot: number; itemId: ItemId | null }
   | { type: 'OFFICE/SELL'; itemId: ItemId }
