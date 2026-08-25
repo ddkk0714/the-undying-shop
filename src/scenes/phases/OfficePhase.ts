@@ -385,8 +385,8 @@ export class OfficePhase extends PhaseScene {
   /** 마우스 오른쪽 위에 원본 정보창 비율을 유지한 상세 카드를 연다. */
   private showItemDetail(item: ItemDef, pointer: Phaser.Input.Pointer): void {
     this.hideItemDetail();
-    const w = 336;
-    const h = 708;
+    const w = 400;
+    const h = 843;
     const x = Math.max(8, Math.min(L.W - w - 8, pointer.x + 24 <= L.W - w - 8 ? pointer.x + 24 : pointer.x - w - 24));
     const y = Math.max(L.hud.h + 8, Math.min(L.H - h - 8, pointer.y - h - 16));
     const depth = 5000;
@@ -412,22 +412,22 @@ export class OfficePhase extends PhaseScene {
       ? `방송 중 체력을\n${item.healing} 회복합니다.`
       : `출연자에게 장착하면\n전투 능력치가 오릅니다.`;
 
-    addBody(22, 18, this.clip(item.name, 292, 'body'), item.isRelic ? 'wax' : 'bone', 0.85);
-    addLabel(24, 60, `${category} · ${slotName} 칸`);
-    const icon = this.itemArt(item, { x: x + 29, y: y + 97, w: 108, h: 108 });
+    addBody(26, 21, this.clip(item.name, 348, 'body'), item.isRelic ? 'wax' : 'bone', 0.85);
+    addLabel(29, 71, `${category} · ${slotName} 칸`);
+    const icon = this.itemArt(item, { x: x + 35, y: y + 115, w: 108, h: 108 });
     if (icon !== null) {
       icon.setDepth(depth + 2);
       this.itemDetail.push(icon);
     }
-    addLabel(160, 100, `등급 ${item.tier}`, item.isRelic ? 'wax' : 'bone');
-    addLabel(160, 134, `판매가 ${item.price.toLocaleString('en-US')} G`);
-    addBody(160, 166, this.itemStats(item), 'bone', 0.68);
-    addLabel(24, 218, '효과');
-    addBody(24, 246, description, 'bone', 0.75);
-    addLabel(24, 339, '능력치');
-    addBody(24, 370, item.kind === 'POTION' ? `회복  +${item.healing}` : `체력  +${item.hp}\n공격  +${item.atk}\n방어  +${item.def}`, 'bone', 0.75);
-    addLabel(24, 488, '진열대 사용법');
-    addBody(24, 520, `${slotName} 칸으로 끌어 놓으세요.\n다시 인벤토리로 끌면 회수합니다.`, 'dust', 0.68);
+    addLabel(190, 119, `등급 ${item.tier}`, item.isRelic ? 'wax' : 'bone');
+    addLabel(190, 160, `판매가 ${item.price.toLocaleString('en-US')} G`);
+    addBody(190, 198, this.itemStats(item), 'bone', 0.68);
+    addLabel(29, 260, '효과');
+    addBody(29, 293, description, 'bone', 0.75);
+    addLabel(29, 404, '능력치');
+    addBody(29, 440, item.kind === 'POTION' ? `회복  +${item.healing}` : `체력  +${item.hp}\n공격  +${item.atk}\n방어  +${item.def}`, 'bone', 0.75);
+    addLabel(29, 581, '진열대 사용법');
+    addBody(29, 619, `${slotName} 칸으로 끌어 놓으세요.\n다시 인벤토리로 끌면 회수합니다.`, 'dust', 0.68);
   }
 
   private hideItemDetail(): void {
