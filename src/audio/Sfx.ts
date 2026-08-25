@@ -14,6 +14,7 @@ import { key, MISSING_TEXTURE } from '../render/assets';
  */
 
 const BGM_KEY = 'bgm.playing';
+const AMBIENCE_KEY = 'ambience.playing';
 const MUTE_KEY = 'opt.mute';
 
 /** 소리를 껐는가. 심사자가 조용히 보고 싶을 수 있다 */
@@ -71,4 +72,33 @@ export function stopBgm(scene: Phaser.Scene): void {
   const k = loaded(scene, current);
   if (k !== null) scene.sound.stopByKey(k);
   scene.registry.set(BGM_KEY, undefined);
+}
+
+/**
+ * 배경음과 별도로 겹쳐 재생하는 환경음. 타이틀의 백색소음처럼 BGM 교체와
+ * 독립적으로 수명을 관리해야 하는 루프에 쓴다.
+ */
+export function playAmbience(scene: Phaser.Scene, logicalKey: string, volume = 0.08): void {
+  const current = scene.registry.get(AMBIENCE_KEY) as string | undefined;
+  if (current === logicalKey) return;
+
+  stopAmbience(scene);
+  scene.registry.set(AMBIENCE_KEY, logicalKey);
+  if (muted(scene.registry)) return;
+
+  const k = loaded(scene, logicalKey);
+  if (k === null) return;
+  try {
+    scene.sound.play(k, { loop: true, volume });
+  } catch {
+    // 브라우저가 아직 소리를 막고 있다. 타이틀은 소리 없이도 계속 열린다
+  }
+}
+
+export function stopAmbience(scene: Phaser.Scene): void {
+  const current = scene.registry.get(AMBIENCE_KEY) as string | undefined;
+  if (current === undefined) return;
+  const k = loaded(scene, current);
+  if (k !== null) scene.sound.stopByKey(k);
+  scene.registry.set(AMBIENCE_KEY, undefined);
 }

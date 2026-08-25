@@ -25,7 +25,7 @@
 3,배경,bg/live_ice.png,1182×936,1:1,③ 던전 · 얼음 구역 (23~30F),도착,bg.live.ice
 3,배경,bg/live_stone.png,1182×936,1:1,③ 던전 · 돌 구역 (~22F),도착,bg.live.stone
 3,배경,bg/live.png,1920×1080,1:1,③ 생방송 5분할 바탕 (칸 사이 여백),도착,bg.live
-3,배경,bg/revive_bench_crop.png,1644×1122,1:1,① 소생실 우측 (없으면 bg.shop.bench 를 쓴다),대기,bg.revive.bench
+3,배경,bg/revive_bench_crop.png,1644×1122,1:1,① 소생실 우측 (없으면 bg.shop.bench 를 쓴다),도착,bg.revive.bench
 3,배경,bg/revive_room.png,650×792,1:1,① 소생실 좌측 (없으면 bg.shop.room 을 쓴다),도착,bg.revive.room
 3,배경,bg/studio.png,1920×936,1:1,⑥ 발표 스튜디오,도착,bg.studio
 3,배경,bg/title_lamp1.png,1920×1080,1:1,타이틀 램프 밝기 1/4 — 넣으면 창의 불빛이 깜빡인다 (4장 다 있어야 켜진다),도착,bg.title.lamp1
@@ -44,7 +44,8 @@
 3,UI · 버튼,ui/button.png,208×88,버튼 크기에 맞춰 늘어난다 (모서리 22px 고정),버튼 평상,도착,ui.button.9s
 4,기타,bgm/live.mp3,,1:1,생방송 BGM — 하강 중 (긴장),도착,bgm.live
 4,기타,bgm/shop.mp3,,1:1,상점 BGM — 소생실·편성실 (낮고 느리게),도착,bgm.shop
-4,기타,bgm/title.mp3,,1:1,타이틀 화면 BGM,도착,bgm.title
+4,기타,bgm/title_noise.mp3,,1:1,타이틀 화면 저음량 백색소음,도착,bgm.title.noise
+4,기타,bgm/title.mp3,,1:1,타이틀 화면 BGM (원본 앞 2초 제거),도착,bgm.title
 4,기타,item/blade_tallow.png,174×189,1:1,촛농검 장비 도트,도착,item.blade_tallow
 4,기타,item/boots_quiet.png,165×159,1:1,죽은 자의 신발 장비 도트,도착,item.boots_quiet
 4,기타,item/charm_seal.png,156×141,1:1,봉랍 부적 장비 도트,도착,item.charm_seal
@@ -66,7 +67,8 @@
 4,소리,sfx/stamp.mp3,,1:1,봉랍 도장 — 검시 판정·폐기 확정,도착,sfx.stamp
 4,소리,sfx/superchat.mp3,,1:1,슈퍼챗 알림,도착,sfx.superchat
 4,소리,sfx/text.mp3,,1:1,생방송 채팅이 들어올 때의 낮은 텍스트 틱,도착,sfx.text
-4,소리,sfx/title_door.mp3,,1:1,타이틀의 새 게임: 가게 문이 열리는 소리,도착,sfx.title.door
+4,소리,sfx/title_chime.mp3,,1:1,타이틀의 새 게임: 띠링,도착,sfx.title.chime
+4,소리,sfx/title_door.mp3,,1:1,타이틀의 새 게임: 가게 문이 열리는 소리 (앞 2초),도착,sfx.title.door
 4,소품,prop/lamp.png,224×352,1:1,작업대의 실제 석유 램프,도착,prop.lamp
 4,소품,prop/ledger.png,336×264,1:1,작업대의 출연자 서류철,도착,prop.ledger
 4,소품,prop/scroll.png,176×64,1:1,계약서 서류 조각,도착,prop.scroll

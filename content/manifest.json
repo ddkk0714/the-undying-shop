@@ -1035,7 +1035,12 @@
         "sfx.title.door": {
           "type": "audio",
           "file": "sfx/title_door.mp3",
-          "desc": "타이틀의 새 게임: 가게 문이 열리는 소리"
+          "desc": "타이틀의 새 게임: 가게 문이 열리는 소리 (앞 2초)"
+        },
+        "sfx.title.chime": {
+          "type": "audio",
+          "file": "sfx/title_chime.mp3",
+          "desc": "타이틀의 새 게임: 띠링"
         },
         "sfx.text": {
           "type": "audio",
@@ -1046,7 +1051,13 @@
           "type": "audio",
           "file": "bgm/title.mp3",
           "loop": true,
-          "desc": "타이틀 화면 BGM"
+          "desc": "타이틀 화면 BGM (원본 앞 2초 제거)"
+        },
+        "bgm.title.noise": {
+          "type": "audio",
+          "file": "bgm/title_noise.mp3",
+          "loop": true,
+          "desc": "타이틀 화면 저음량 백색소음"
         },
         "bgm.shop": {
           "type": "audio",
@@ -2014,7 +2025,12 @@
         "sfx.title.door": {
           "type": "audio",
           "file": "sfx/title_door.mp3",
-          "desc": "타이틀의 새 게임: 가게 문이 열리는 소리"
+          "desc": "타이틀의 새 게임: 가게 문이 열리는 소리 (앞 2초)"
+        },
+        "sfx.title.chime": {
+          "type": "audio",
+          "file": "sfx/title_chime.mp3",
+          "desc": "타이틀의 새 게임: 띠링"
         },
         "sfx.text": {
           "type": "audio",
@@ -2025,7 +2041,13 @@
           "type": "audio",
           "file": "bgm/title.mp3",
           "loop": true,
-          "desc": "타이틀 화면 BGM"
+          "desc": "타이틀 화면 BGM (원본 앞 2초 제거)"
+        },
+        "bgm.title.noise": {
+          "type": "audio",
+          "file": "bgm/title_noise.mp3",
+          "loop": true,
+          "desc": "타이틀 화면 저음량 백색소음"
         },
         "bgm.shop": {
           "type": "audio",

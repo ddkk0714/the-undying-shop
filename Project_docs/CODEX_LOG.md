@@ -82,3 +82,10 @@
 ## D6 — M05 sequential contract desk loop
 **Delivered**: The office exposes exactly one seeded visitor contract at a time. Rejecting a contract permanently excludes that applicant and immediately produces the next eligible applicant. Accepting a contract charges its fee, recruits that applicant, creates the run, and transitions directly into LIVE.
 **Verification**: `npm run typecheck`; `npm test` (10 files, 74 tests); `npm run sim` (1,000-seed policy suite); and `npm run build` all passed on 2026-08-25.
+
+## D7 · 타이틀 오디오 V2 연결
+
+**프롬프트**: 도착한 `사운드_V2`를 사용해 미뤄 둔 타이틀 BGM·백색소음·시작 버튼 사운드를 완성한다.
+**산출**: 앞 2초를 제거한 타이틀 BGM, 30초 저음량 백색소음 루프, 띠링과 2초 문소리, BGM과 독립된 ambience 수명 관리, 버튼별 기본 클릭음 비활성 옵션.
+**수정한 것**: 새 게임만 일반 클릭음을 끄고 띠링·문소리를 겹쳐 재생한다. 다른 버튼은 기존 딸깍음을 유지한다. 타이틀 종료 시 백색소음 루프를 즉시 정지하며, placeholder와 final 매니페스트에 새 논리 키를 함께 등록했다.
+**검증**: `npm run art` 본 아트 110/117, `npm run typecheck`, `npm test` 10개 파일·74개, `npm run build` 통과. 변환 파일 실측은 BGM 115.53초, 백색소음 29.98초, 문소리 2.00초다.

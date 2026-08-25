@@ -18,6 +18,8 @@ export interface ButtonOpts {
   /** 숫자 핫키 — 모든 주요 선택지에 붙인다 (04-UI-KIT §2-1, 심사자 조작 편의) */
   hotkey?: string;
   enabled?: boolean;
+  /** 기본 클릭음을 바꾸거나 끈다. 생략하면 `sfx.click`, false 면 무음이다. */
+  sound?: string | false;
 }
 
 /**
@@ -82,18 +84,23 @@ export class Button extends Phaser.GameObjects.Container {
       this.on('pointerdown', () => this.setVisualState('press'));
       this.on('pointerup', () => {
         this.setVisualState('hover');
-        playSfx(scene, 'sfx.click', 0.35);
+        this.playClickSound();
         opts.onClick();
       });
 
       if (opts.hotkey) {
         scene.input.keyboard?.on(`keydown-${keyCodeFor(opts.hotkey)}`, () => {
           if (this.visual === 'disabled' || !this.active) return;
-          playSfx(scene, 'sfx.click', 0.35);
+          this.playClickSound();
           opts.onClick();
         });
       }
     }
+  }
+
+  private playClickSound(): void {
+    if (this.opts.sound === false) return;
+    playSfx(this.scene, this.opts.sound ?? 'sfx.click', 0.35);
   }
 
   private setVisualState(s: 'idle' | 'hover' | 'press'): void {
