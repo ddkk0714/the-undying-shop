@@ -123,8 +123,8 @@ export class OfficePhase extends PhaseScene {
     }
 
     // 배경이 밝은 곳(문·벽)에 이름이 걸리면 안 읽힌다. 이름이 앉는 자리만 덮는다
-    this.scrimBlock(g.x + L.line, g.y + L.line, 560, 96);
-    this.title(g.x + L.pad, g.y + L.pad, this.clip(name, g.w - L.pad * 2, 'title'));
+    this.scrimBlock(g.x + L.line, g.y + L.line, 460, 76);
+    this.title(g.x + L.pad, g.y + 18, this.clip(name, g.w - L.pad * 2, 'title')).setScale(0.8);
 
     // 캐릭터보다 앞에 가리개를 얹고 그 안에 대사를 둔다.
     const coverW = g.w;
@@ -135,7 +135,7 @@ export class OfficePhase extends PhaseScene {
     const d = L.dialogue;
     this.rect(d.x, d.y, d.w, d.h, 'ink');
     const line = this.mode === 'CONTRACT' ? '...일할 자리 있나요?' : '...강한 무기 있나요?';
-    this.title(coverX + L.pad, coverY + 52, this.clip(line, coverW - 96, 'title'), 'bone');
+    this.title(coverX + L.pad, coverY + 52, this.clip(line, coverW - 96, 'title'), 'bone').setScale(0.78);
     this.text(coverX + coverW - 48, coverY + 64, '▼', 'dust');
   }
 
