@@ -242,7 +242,9 @@ export class LivePhase extends PhaseScene {
       const asking = pendingFork(s) !== null;
       if (asking || s.today.encounter !== null) {
         // 위쪽은 HUD 와 방송 바가 다 쓴다. 지도 아래 책상 빈 띠에 태운다
-        onboard(this, s.day, asking ? 'LIVE_RADIO' : 'LIVE_COMBAT', { x: 160, y: 1000, w: 560 });
+        // 무전기가 지도 우하단(580~780)으로 내려와서 폭을 줄였다 — 겹치면 글이 안 읽힌다.
+        // 좁아진 만큼 `onboard` 가 줄을 접으므로 두 줄 높이(80)를 감안해 y 를 올렸다
+        onboard(this, s.day, asking ? 'LIVE_RADIO' : 'LIVE_COMBAT', { x: 160, y: 992, w: 400 });
       }
     }
 
@@ -407,32 +409,21 @@ export class LivePhase extends PhaseScene {
       return;
     }
 
-    this.label(v.x + L.pad, v.y + 52, `${fork.floor}F`, 'dust');
-    // 용사의 질문은 두 줄까지 흘린다 — 한 줄로 자르면 문장이 끊긴다
-    wrapBody(`"${pick(content.radio.forkAsk, fork.floor)}"`, inner, 2)
-      .forEach((line, i) => this.text(v.x + L.pad, v.y + 80 + i * 36, line, 'bone'));
-
-    // 당신의 서랍 — 플레이어만 보는 진짜 정보
-    this.frame(v.x + L.pad, v.y + 156, inner, 116, 'bone');
-    this.label(v.x + L.pad + 12, v.y + 164, '진짜 지도', 'dust');
-    this.text(v.x + L.pad + 12, v.y + 186, this.clip(`A · ${fork.truth.a.label}`, inner - 24), 'dust');
-    this.text(v.x + L.pad + 12, v.y + 226, this.clip(`B · ${fork.truth.b.label}`, inner - 24), 'dust');
-
-    const answers: { label: string; dir: 'A' | 'B' | 'UNKNOWN'; hotkey: string }[] = [
-      { label: 'A 로 가', dir: 'A', hotkey: '1' },
-      { label: 'B 로 가', dir: 'B', hotkey: '2' },
-      { label: '나도 몰라', dir: 'UNKNOWN', hotkey: '3' },
-    ];
-    const answerGap = 8;
-    const answerW = Math.floor((inner - answerGap * 2) / 3);
-    answers.forEach((a, i) => {
-      new Button(this, {
-        x: v.x + L.pad + i * (answerW + answerGap), y: v.y + 292, w: answerW, h: 48,
-        label: a.label, hotkey: a.hotkey,
-        variant: a.dir === 'UNKNOWN' ? 'ghost' : 'default',
-        onClick: () => this.store.dispatch({ type: 'RADIO/ANSWER', dir: a.dir }),
-      });
-    });
+    // 질문은 여기 안 쓴다 — 3택 바로 위 대사창으로 나간다 (`buildDialogue`, V3 목업).
+    // 무전기에 남는 건 **플레이어만 보는 진짜 지도**뿐이다. 그게 이 물건의 용도다.
+    //
+    // ★ 판을 ink 로 꽉 채운 뒤에 글을 얹는다. 무전기 몸통이 밝은 그림이라
+    //   그 위에 dust 글자를 바로 쓰면 읽히지 않는다 (실측 — 지도 우하단으로 옮기고 드러났다).
+    //   판은 무전기 **위쪽 지도 위**에 따로 놓는다 — 몸통을 가리지 않는다.
+    //   폭 440 은 눈대중이 아니다. `floors.json` 의 가장 긴 갈림길 이름
+    //   「안전 · 17F에서 막힘」이 접두사 「A · 」까지 32px 폰트로 400px 이라 그걸 담는 최소값이다
+    const plate = { x: v.x - 380, y: v.y - 176, w: 440, h: 152 };
+    this.rect(plate.x, plate.y, plate.w, plate.h, 'ink');
+    this.frame(plate.x, plate.y, plate.w, plate.h, 'bone');
+    this.label(plate.x + 12, plate.y + 10, `${fork.floor}F · 진짜 지도`, 'dust');
+    const line = plate.w - 24;
+    this.text(plate.x + 12, plate.y + 40, this.clip(`A · ${fork.truth.a.label}`, line), 'bone');
+    this.text(plate.x + 12, plate.y + 96, this.clip(`B · ${fork.truth.b.label}`, line), 'bone');
   }
 
   /* ── ⑤ 1인칭 전투 ──────────────────────────────────── */
@@ -536,21 +527,50 @@ export class LivePhase extends PhaseScene {
     this.text(v.x + 200, v.y + Math.round(v.h / 2) - 4, this.clip(`"${spoken}"`, v.w - 330), 'bone');
   }
 
+  /**
+   * 3택 — **전투와 무전이 같은 자리를 쓴다** (V3 목업, 사용자 확정).
+   *
+   * 예전에는 갈림길 3택이 무전기 패널 안 48px 짜리 작은 버튼이었고, 전투 3택은
+   * 오른쪽 아래에 따로 있었다. 같은 「지금 무엇을 시킬까」인데 손이 화면 양끝을 오갔다.
+   * 이제 둘 다 여기로 온다 — 갈림길이 걸려 있으면 무전 3택이, 아니면 전투 3택이 뜬다.
+   */
   private buildChoices(s: Readonly<GameState>): void {
     const v = L.live.choices;
     this.scrimRow(v.x - 16, v.y - 12, v.w + 32, v.h + 24);
+
+    const gap = 16;
+    const pad = 8;
+    const buttonW = Math.floor((v.w - pad * 2 - gap * 2) / 3);
+    const place = (i: number): { x: number; y: number; w: number; h: number } => ({
+      x: v.x + pad + i * (buttonW + gap), y: v.y + pad, w: buttonW, h: v.h - pad * 2,
+    });
+
+    if (pendingFork(s) !== null) {
+      const answers: { label: string; dir: 'A' | 'B' | 'UNKNOWN'; hotkey: string }[] = [
+        { label: 'A 로 가', dir: 'A', hotkey: '1' },
+        { label: 'B 로 가', dir: 'B', hotkey: '2' },
+        { label: '나도 몰라', dir: 'UNKNOWN', hotkey: '3' },
+      ];
+      answers.forEach((a, i) => {
+        new Button(this, {
+          ...place(i),
+          label: a.label, hotkey: a.hotkey,
+          variant: a.dir === 'UNKNOWN' ? 'ghost' : 'default',
+          onClick: () => this.store.dispatch({ type: 'RADIO/ANSWER', dir: a.dir }),
+        });
+      });
+      return;
+    }
+
     const ready = s.phase === 'LIVE' && s.today?.encounter != null;
     const choices: { label: string; choice: CombatChoice; hotkey: string }[] = [
       { label: '공격한다', choice: 'ATTACK', hotkey: '1' },
       { label: '방어한다', choice: 'DEFEND', hotkey: '2' },
       { label: '어필한다', choice: 'APPEAL', hotkey: '3' },
     ];
-    const gap = 16;
-    const pad = 8;
-    const buttonW = Math.floor((v.w - pad * 2 - gap * 2) / 3);
     choices.forEach((c, i) => {
       new Button(this, {
-        x: v.x + pad + i * (buttonW + gap), y: v.y + pad, w: buttonW, h: v.h - pad * 2,
+        ...place(i),
         label: c.label, hotkey: c.hotkey,
         variant: c.choice === 'APPEAL' ? 'danger' : 'default',
         enabled: ready,
@@ -844,26 +864,6 @@ function deepestWitnessFloor(): number {
 function pick(lines: readonly string[] | undefined, n: number): string {
   if (lines === undefined || lines.length === 0) return '';
   return lines[Math.abs(n) % lines.length] ?? '';
-}
-
-/** 04-UI-KIT §3 과 같은 규칙(전각 2 · 반각 1, 본문 32px)으로 줄을 나눈다 */
-function wrapBody(s: string, px: number, maxLines: number): string[] {
-  const lines: string[] = [];
-  let cur = '';
-  let used = 0;
-  for (const ch of s) {
-    const w = (ch.charCodeAt(0) > 0x2000 ? 2 : 1) * 16;
-    if (used + w > px) {
-      lines.push(cur);
-      if (lines.length === maxLines) return lines;
-      cur = '';
-      used = 0;
-    }
-    cur += ch;
-    used += w;
-  }
-  if (cur !== '') lines.push(cur);
-  return lines;
 }
 
 function strHash(s: string): number {

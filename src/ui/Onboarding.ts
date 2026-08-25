@@ -40,23 +40,49 @@ export interface OnboardSpot {
   w: number;
 }
 
+/** 본문 32px 기준 글자 폭 — 전각 32, 반각 16 (04-UI-KIT §3 과 같은 규칙) */
+function wrapLine(s: string, px: number): string[] {
+  const lines: string[] = [];
+  let cur = '';
+  let used = 0;
+  for (const ch of s) {
+    const w = ch.charCodeAt(0) > 0x2000 ? 32 : 16;
+    if (used + w > px && cur !== '') {
+      lines.push(cur);
+      cur = '';
+      used = 0;
+    }
+    cur += ch;
+    used += w;
+  }
+  if (cur !== '') lines.push(cur);
+  return lines;
+}
+
 /**
  * Day 1 에만 한 줄을 얹는다. 다른 날은 아무것도 하지 않는다.
  * 조작을 막지 않는다 — 위에 떠 있을 뿐이다.
+ *
+ * ★ `spot.w` 를 **지킨다.** 예전에는 판만 그 폭으로 그리고 글자는 그냥 흘려서,
+ *   좁은 자리에 부르면 글이 판 밖으로 삐져나와 옆 그림에 깔렸다
+ *   (생방송 무전기를 지도 우하단으로 옮기고 나서 드러났다). 넘치면 줄을 접는다.
  */
 export function onboard(scene: Phaser.Scene, day: number, tag: OnboardTag, spot: OnboardSpot): void {
   if (day !== 1) return;
-  const text = LINES[tag];
   const x = Math.round(spot.x);
   const y = Math.round(spot.y);
-  const h = 48;
+  const w = Math.round(spot.w);
+  const lines = wrapLine(LINES[tag], w - 40);
+  const h = 16 + lines.length * 32;
 
   const g = scene.add.graphics();
   g.fillStyle(PALETTE.ink, 0.88);
-  g.fillRect(x, y, Math.round(spot.w), h);
+  g.fillRect(x, y, w, h);
   // 왼쪽에 붉은 눈금 하나 — 「지금 여기」 표시
   g.fillStyle(PALETTE.wax, 1);
   g.fillRect(x, y, L.line * 2, h);
 
-  scene.add.text(x + 20, y + 8, text, { ...FONT, color: css('bone') });
+  lines.forEach((line, i) => {
+    scene.add.text(x + 20, y + 8 + i * 32, line, { ...FONT, color: css('bone') });
+  });
 }
