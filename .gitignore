@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# 원본 아트·사운드 드롭 (189MB). 빌드가 쓰는 건 public/assets/packs/final/ 이고
+# 그건 추적한다. 원본은 로컬·드라이브에만 둔다 — 레포에 넣으면 되돌릴 수 없다
+아트-발주서/
