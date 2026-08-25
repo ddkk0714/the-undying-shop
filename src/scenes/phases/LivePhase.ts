@@ -338,7 +338,9 @@ export class LivePhase extends PhaseScene {
   private buildRadio(s: Readonly<GameState>): void {
     const v = L.live.radio;
     if (!this.hasArt('ui.live.radio')) this.rect(v.x, v.y, v.w, v.h, 'ink');
-    this.sprite(v.x, v.y, 'ui.live.radio', v.w, v.h);
+    // 지도 위에 툭 던져 둔 물건이라 살짝 기울인다. 회전축은 기기 가운데다
+    const radio = this.spriteObject(v.x, v.y, 'ui.live.radio', v.w, v.h);
+    radio?.setOrigin(0.5).setPosition(v.x + v.w / 2, v.y + v.h / 2).setAngle(-11);
 
     const inner = v.w - L.pad * 2;
     const fork = pendingFork(s);
@@ -408,20 +410,15 @@ export class LivePhase extends PhaseScene {
       // 적 CG — 512x512 원본을 정확히 1/2 로. 소수배로 줄이면 디더가 깨진다
       if (!this.spriteFit(e, [enc.enemyKey])) this.enemyShape(e.x - 32, e.y - 20, 320, 300, enc.enemyKey);
 
-      this.scrimBlock(ix - 16, e.y + e.h + 12, iw + 32, 116);
-      this.bar(ix, e.y + e.h + 24, iw, enc.enemy.hp, enc.enemy.maxHp, 'wax');
-      this.label(ix, e.y + e.h + 58, `적 ${enc.enemy.hp} / ${enc.enemy.maxHp}`, 'dust');
-      if (enc.guarding) this.textRight(ix + iw, e.y + e.h + 58, '방어 자세', 'wax');
+      // 체력바는 적 스프라이트 **바로 아래** — 누구의 체력인지 붙어 있어야 읽힌다
+      this.scrimBlock(e.x - 12, e.y + e.h, e.w + 24, 76);
+      this.bar(e.x, e.y + e.h + 10, e.w, enc.enemy.hp, enc.enemy.maxHp, 'wax');
+      this.label(e.x, e.y + e.h + 42, `적 ${enc.enemy.hp} / ${enc.enemy.maxHp}`, 'dust');
+      if (enc.guarding) this.textRight(e.x + e.w, e.y + e.h + 42, '방어', 'wax');
     }
 
-    // 용사 상태 — 채팅창 아래 (채팅 하단 682 → 여기부터 비어 있다)
-    const hy = L.live.chat.y + L.live.chat.h + 24;
-    const hw = L.live.chat.w - 24;
-    this.scrimBlock(v.x + L.pad, hy - 12, hw + 24, 120);
-    this.label(v.x + L.pad, hy, '용사', 'dust');
-    this.textRight(v.x + L.pad + hw, hy, `공 ${run.hero.atk}  방 ${run.hero.def}`, 'dust');
-    this.bar(v.x + L.pad, hy + 36, hw, run.hero.hp, run.hero.maxHp, 'bone');
-    this.label(v.x + L.pad, hy + 70, `${run.hero.hp} / ${run.hero.maxHp}`, 'dust');
+    // 용사의 이름·공·방·체력은 초상 바로 아래에 붙는다 (`buildPortrait`).
+    // 여기서 또 그리면 같은 숫자가 화면 두 곳에 있게 된다.
   }
 
   /* ── ⑥ 공격 / 방어 / 어필 ──────────────────────────── */
@@ -535,17 +532,23 @@ export class LivePhase extends PhaseScene {
       }
     }
 
-    // 상태 글은 초상 아래로 내렸다 — 목업의 초상 칸에는 그림만 있다
-    this.scrimBlock(info.x, info.y, info.w, info.h);
-    this.title(info.x + L.pad, info.y + 8, this.clip(star.bodyName, info.w - 48, 'title'));
-    this.text(info.x + L.pad, info.y + 72, this.clip(state, info.w - 48), appealing ? 'wax' : 'dust');
-    this.text(info.x + L.pad, info.y + 116, `소생 ${star.reviveCount}회`, star.reviveCount >= 3 ? 'wax' : 'dust');
-    this.text(info.x + L.pad, info.y + 156, `어필 ${run.appealCount}회`, 'dust');
-    this.text(info.x + L.pad, info.y + 196, `+${run.superchat} G`, 'bone');
+    // 초상 **바로 아래** — 이름 · 공/방 · 체력. 이 넷이 전투 중에 계속 바뀌는 값이다.
+    // 소생·어필 횟수는 뺐다 (사용자 확정) — 소생은 초상의 균열이, 어필은 어필 컷이 말한다.
+    // 랜턴 팔이 이 자리 뒤로 지나가 아주 밝다. 솎아 찍는 판(scrim)으로는 글이 안 읽혀서
+    // 초상과 같은 폭의 **불투명 판**을 깐다 — 둘이 한 덩어리로 보이는 편이 낫다
+    const iw = info.w - L.pad * 2;
+    this.rect(info.x, info.y, info.w, info.h, 'ink');
+    this.frame(info.x, info.y, info.w, info.h, 'bone');
+    this.title(info.x + L.pad, info.y + 10, this.clip(star.bodyName, iw, 'title'));
+    this.text(info.x + L.pad, info.y + 68, this.clip(state, iw), appealing ? 'wax' : 'dust');
+    this.text(info.x + L.pad, info.y + 110, `공 ${run.hero.atk}   방 ${run.hero.def}`, 'dust');
+    this.bar(info.x + L.pad, info.y + 152, iw, run.hero.hp, run.hero.maxHp, 'bone');
+    this.label(info.x + L.pad, info.y + 182, `${run.hero.hp} / ${run.hero.maxHp}`, 'dust');
 
-    // 시청자 수 — 예전에는 상단 바에 있었다. 바가 사라져서 여기로 왔다
+    // 시청자 수와 이 방송의 누적 슈퍼챗 — 예전에는 상단 바에 있었다
     const dropping = this.time.now < this.fanDropUntil;
-    this.textRight(info.x + info.w - L.pad, info.y + 196,
+    this.label(info.x + L.pad, info.y + 212, `+${run.superchat} G`, 'bone');
+    this.textRight(info.x + info.w - L.pad, info.y + 212,
       `${dropping ? '▼ ' : ''}${fmtFans(s.fans)}`, dropping ? 'wax' : 'dust');
 
     this.buildPotions(s, run.hero.hp < run.hero.maxHp);
@@ -585,11 +588,11 @@ export class LivePhase extends PhaseScene {
       .slice(0, 2);
     if (potions.length === 0) return;
 
-    this.scrimRow(v.x, v.y + v.h, v.w, 108);
-    this.label(v.x + L.pad, v.y + v.h + 8, '물약', 'dust');
+    this.scrimRow(v.x, v.y + v.h + 4, v.w, 104);
+    this.label(v.x + L.pad, v.y + v.h + 12, '물약', 'dust');
     potions.forEach(({ stack, def }, i) => {
       new Button(this, {
-        x: v.x + L.pad + i * 164, y: v.y + v.h + 36, w: 152, h: 56,
+        x: v.x + L.pad + i * 116, y: v.y + v.h + 40, w: 104, h: 52,
         label: this.clip(`+${def.healing}${stack.qty > 1 ? ` x${stack.qty}` : ''}`, 120),
         hotkey: String(4 + i),
         enabled: hurt,
@@ -638,7 +641,7 @@ export class LivePhase extends PhaseScene {
 
       playSfx(this, 'sfx.superchat', 0.5);
       const from = { x: L.live.chat.x + L.pad, y: L.live.chat.y + L.live.chat.h - 120 };
-      const to = { x: L.live.stats.x + L.pad, y: L.live.stats.y + 196 };
+      const to = { x: L.live.stats.x + L.pad, y: L.live.stats.y + 216 };
       const label = this.text(from.x, from.y, `+${msg.amount} G`, 'wax');
       // 날아가는 동안 화면이 다시 그려지면 파괴된다. 도착할 때까지 살려 둔다
       this.keepAlive(label);
