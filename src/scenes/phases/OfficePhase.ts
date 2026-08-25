@@ -27,10 +27,11 @@ const SLOT_NAMES = ['무기', '방어구', '기타'] as const;
 const INVENTORY_COLUMNS = 4;
 const INVENTORY_VISIBLE_ROWS = 2;
 // 새 작업대 원화의 세 사각 홈을 1920×1080 편성실 좌표로 옮긴 값.
+// 원화를 가로 캔버스에 여백으로 확장했으므로, 그림의 실제 비율을 보존한다.
 const SHELF_SLOTS = [
-  { x: 1013, y: 227, w: 226, h: 218 },
-  { x: 1247, y: 227, w: 214, h: 218 },
-  { x: 1473, y: 227, w: 214, h: 218 },
+  { x: 1074, y: 227, w: 182, h: 218 },
+  { x: 1263, y: 227, w: 175, h: 218 },
+  { x: 1448, y: 227, w: 176, h: 218 },
 ] as const;
 
 export class OfficePhase extends PhaseScene {
@@ -416,22 +417,22 @@ export class OfficePhase extends PhaseScene {
       ? `<HEAL>\nHP +${item.healing}`
       : `<${slotName}>\n${this.itemStats(item)}`;
 
-    // 장비정보창_예상.png의 다섯 구획: 제목 → 아이콘/가격 → 스탯 → 특성 → 배치정보.
-    addBody(29, 28, this.clip(item.name, 286, 'body'), item.isRelic ? 'wax' : 'bone', 0.95);
-    addBody(344, 31, item.tier, item.isRelic ? 'wax' : 'bone', 0.95);
+    // 장비정보창_예상.png의 다섯 구획: 제목 → 아이콘/가격 → 스탯 → 특성 → 계승 정보.
+    addBody(29, 28, this.clip(item.name, 286, 'body'), item.isRelic ? 'wax' : 'bone', 1.1);
+    addBody(344, 31, item.tier, item.isRelic ? 'wax' : 'bone', 1.1);
     const icon = this.itemArt(item, { x: x + 42, y: y + 122, w: 128, h: 128 });
     if (icon !== null) {
       icon.setDepth(depth + 2);
       this.itemDetail.push(icon);
     }
-    addBody(205, 138, itemType, 'bone', 0.85);
-    addBody(205, 185, `${item.price.toLocaleString('en-US')} G`, 'bone', 1.1);
-    addBody(38, 286, statRows, 'bone', 0.75);
-    addLabel(38, 445, '특성');
-    addBody(38, 485, marks, item.isRelic ? 'wax' : 'bone', 0.85);
-    addLabel(38, 644, '배치 정보');
-    addBody(38, 684, `필요 칸  ${slotName}\n등급      ${item.tier}\n판매가    ${item.price.toLocaleString('en-US')} G`, 'dust', 0.76);
-    addBody(95, 878, '“EQUIP TO LIVE”', 'bone', 0.68);
+    addBody(205, 138, itemType, 'bone', 1.0);
+    addBody(205, 185, `${item.price.toLocaleString('en-US')} G`, 'bone', 1.25);
+    addBody(38, 286, statRows, 'bone', 0.95);
+    addLabel(38, 445, '특성', 'dust', 1.45);
+    addBody(38, 485, marks, item.isRelic ? 'wax' : 'bone', 1.0);
+    addLabel(38, 644, '계승 정보', 'dust', 1.45);
+    addBody(38, 684, `계승 가능  출연자\n장비 등급  ${item.tier}\n소유 상태  보관 중`, 'dust', 0.9);
+    addBody(95, 878, '“EQUIP TO LIVE”', 'bone', 0.78);
   }
 
   private hideItemDetail(): void {
