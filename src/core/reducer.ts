@@ -2,7 +2,7 @@ import { content } from './content';
 import { createInitialState } from './state';
 import { answerRadio, chooseCombat, startLive, tickLive, useCombatItem } from './systems/dive';
 import { damageAutopsyCorpse, discardReviveCorpse, reviveQuote } from './systems/economy';
-import { acceptContract, confirmOffice, pickStar, placeOfficeItem, populateVisitors, rejectContract, sellOfficeItem } from './systems/office';
+import { acceptContract, confirmOffice, haggleContract, pickStar, placeOfficeItem, populateVisitors, rejectContract, sellOfficeItem } from './systems/office';
 import { inherit } from './systems/roster';
 import { awardSuperchat, expireChats, moderateChat, spawnChat } from './systems/opinion';
 import { isEarlyClosure, judgeEnding } from './systems/narrative';
@@ -128,7 +128,7 @@ export function reducer(state: GameState, action: Action): GameState {
     case 'OFFICE/CONTRACT_REJECT': return rejectContract(state, action.starId);
     // CCR-005 — 계약만 열어 둔 자리다. 흥정 로직은 Codex 몫이고, 이 줄은 그냥 덮어써라.
     // 여기를 비워 두면 switch 가 exhaustive 하지 않아 `tsc --noEmit` 이 깨지고 배포가 멈춘다.
-    case 'OFFICE/CONTRACT_HAGGLE': return state;
+    case 'OFFICE/CONTRACT_HAGGLE': return haggleContract(state, action.starId);
     case 'OFFICE/PICK_STAR': return pickStar(state, action.starId);
     case 'OFFICE/PLACE': return placeOfficeItem(state, action.slot, action.itemId);
     case 'OFFICE/SELL': return sellOfficeItem(state, action.itemId);

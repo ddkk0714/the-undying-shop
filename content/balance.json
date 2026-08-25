@@ -6,7 +6,7 @@
     "maxFloor": 26,
     "days": 8,
     "targetFloor": 40,
-    "inventory": ["lantern_old", "dagger_crack", "potion_crimson"]
+    "inventory": ["dagger_crack", "rope_hemp", "potion_crimson", "lantern_old"]
   },
   "revive": {
     "base": 400,
@@ -50,6 +50,25 @@
       "enemy.gatekeeper": 22
     },
     "witnessFear": { "18": 12, "23": 15, "28": 24 }
+  },
+  "equipment": {
+    "weaponSlot": 0,
+    "armorSlot": 1,
+    "utilitySlot": 2,
+    "slotByItem": {
+      "dagger_crack": 0,
+      "blade_tallow": 0,
+      "tooth_gate": 0,
+      "rope_hemp": 1,
+      "cloak_ash": 1,
+      "boots_quiet": 1,
+      "lantern_old": 2,
+      "charm_seal": 2,
+      "mask_bone": 2,
+      "ring_rust": 2,
+      "potion_crimson": 2,
+      "potion_moon": 2
+    }
   },
   "fans": {
     "base": 800,
@@ -123,6 +142,7 @@
     "feeBase": 400,
     "feePerFandomK": 60,
     "feeHonestyBias": -300,
+    "haggleFeeMultiplier": 0.8,
     "honestyMin": 0.6,
     "honestyMax": 1.3,
     "fandomBase": 1000,

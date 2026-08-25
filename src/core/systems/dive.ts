@@ -213,7 +213,8 @@ export function useCombatItem(state: GameState, itemId: ItemId): GameState {
   if (state.phase !== 'LIVE' || state.today === null || state.today.hero.hp >= state.today.hero.maxHp) return state;
   const item = content.items.find((candidate) => candidate.id === itemId && candidate.kind === 'POTION');
   const stack = state.inventory.find((candidate) => candidate.id === itemId && candidate.qty > 0);
-  if (item === undefined || stack === undefined || item.healing <= 0) return state;
+  const utilitySlot = content.balance.equipment.utilitySlot;
+  if (item === undefined || stack === undefined || item.healing <= 0 || state.shelf[utilitySlot] !== itemId) return state;
   const inventory = state.inventory.flatMap((candidate) => {
     if (candidate.id !== itemId) return [candidate];
     return candidate.qty <= 1 ? [] : [{ ...candidate, qty: candidate.qty - 1 }];
@@ -221,6 +222,7 @@ export function useCombatItem(state: GameState, itemId: ItemId): GameState {
   return {
     ...state,
     inventory,
+    shelf: state.shelf.map((equipped, index) => index === utilitySlot ? null : equipped),
     today: { ...state.today, hero: { ...state.today.hero, hp: Math.min(state.today.hero.maxHp, state.today.hero.hp + item.healing) } },
   };
 }

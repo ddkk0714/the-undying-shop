@@ -104,17 +104,18 @@ function equippedGearForSale(state: Readonly<GameState>): string | undefined {
   return mostValuableSellableItem(state);
 }
 
-function gearToEquip(state: Readonly<GameState>): string | undefined {
+function itemToEquip(state: Readonly<GameState>): { itemId: string; slot: number } | undefined {
   return state.inventory
     .filter((stack) => stack.qty > 0 && !state.shelf.includes(stack.id))
-    .map((stack) => content.items.find((item) => item.id === stack.id && item.kind === 'GEAR'))
-    .find((item): item is NonNullable<typeof item> => item !== undefined)?.id;
+    .map((stack) => ({ itemId: stack.id, slot: content.balance.equipment.slotByItem[stack.id] }))
+    .find((candidate): candidate is { itemId: string; slot: number } => candidate.slot !== undefined && state.shelf[candidate.slot] === null);
 }
 
 function potionToUse(state: Readonly<GameState>): string | undefined {
   if (state.phase !== 'LIVE' || state.today === null || state.today.hero.hp * 2 > state.today.hero.maxHp) return undefined;
+  const utilitySlot = content.balance.equipment.utilitySlot;
   return state.inventory
-    .filter((stack) => stack.qty > 0)
+    .filter((stack) => stack.qty > 0 && state.shelf[utilitySlot] === stack.id)
     .map((stack) => content.items.find((item) => item.id === stack.id && item.kind === 'POTION'))
     .find((item): item is NonNullable<typeof item> => item !== undefined)?.id;
 }
@@ -132,9 +133,8 @@ export const damageAwarePolicy: Policy = (state) => {
     if (recoveryLoot !== undefined) return { type: 'OFFICE/SELL', itemId: recoveryLoot };
     const emergencyItem = equippedGearForSale(state);
     if (emergencyItem !== undefined) return { type: 'OFFICE/SELL', itemId: emergencyItem };
-    const emptySlot = state.shelf.findIndex((itemId) => itemId === null);
-    const gear = gearToEquip(state);
-    if (emptySlot >= 0 && gear !== undefined) return { type: 'OFFICE/PLACE', slot: emptySlot, itemId: gear };
+    const equipment = itemToEquip(state);
+    if (equipment !== undefined) return { type: 'OFFICE/PLACE', slot: equipment.slot, itemId: equipment.itemId };
   }
   if (state.phase === 'LIVE' && state.today?.encounter !== null && state.today?.encounter !== undefined && state.today.appealCount === 0) {
     return { type: 'COMBAT/CHOOSE', choice: 'APPEAL' };

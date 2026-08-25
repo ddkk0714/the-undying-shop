@@ -145,7 +145,7 @@ describe('live dive', () => {
     const initial = liveState(145, 3);
     const state = {
       ...initial,
-      inventory: [{ id: 'potion_crimson', qty: 1 }],
+      inventory: [{ id: 'potion_crimson', qty: 1 }], shelf: [null, null, 'potion_crimson'],
       today: { ...initial.today!, hero: { ...initial.today!.hero, hp: 20 }, encounter: createEncounter(3, 'NONE', 0) },
     };
     const healed = reducer(state, { type: 'COMBAT/USE_ITEM', itemId: 'potion_crimson' });
@@ -153,6 +153,7 @@ describe('live dive', () => {
     expect(healed.today?.hero.hp).toBe(44);
     expect(healed.today?.encounter).toEqual(state.today.encounter);
     expect(healed.inventory).toEqual([]);
+    expect(healed.shelf).toEqual([null, null, null]);
     expect(healed.rngCursor).toBe(state.rngCursor);
     expect(reducer(healed, { type: 'COMBAT/USE_ITEM', itemId: 'potion_crimson' })).toEqual(healed);
   });

@@ -29,9 +29,10 @@ describe('office', () => {
     expect(state.recruitPool.every((star) => star.status === 'HIDDEN')).toBe(true);
     expect(state.recruitPool.some((candidate) => state.stars.some((star) => star.id === candidate.id))).toBe(false);
     expect(state.inventory).toEqual([
-      { id: 'lantern_old', qty: 1 },
       { id: 'dagger_crack', qty: 1 },
+      { id: 'rope_hemp', qty: 1 },
       { id: 'potion_crimson', qty: 1 },
+      { id: 'lantern_old', qty: 1 },
     ]);
   });
 
@@ -93,11 +94,26 @@ describe('office', () => {
     expect(followingDay.visitors.some((visitor) => visitor.starId === applicant.id)).toBe(false);
   });
 
+  it('discounts an offered contract once, then charges the discounted fee', () => {
+    const initial = officeState();
+    const applicant = { ...initial.stars.find((star) => star.id === 'body_sela')!, status: 'HIDDEN' as const };
+    const offered = { ...initial, stars: initial.stars.filter((star) => star.id !== applicant.id), recruitPool: [applicant], visitors: [contractFor(applicant)] };
+    const haggled = reducer(offered, { type: 'OFFICE/CONTRACT_HAGGLE', starId: applicant.id });
+    const discountedFee = Math.round(1200 * content.balance.contract.haggleFeeMultiplier);
+    expect(haggled.visitors[0]?.fee).toBe(discountedFee);
+    expect(haggled.flags[`contractHaggled:${applicant.id}`]).toBe(true);
+    expect(reducer(haggled, { type: 'OFFICE/CONTRACT_HAGGLE', starId: applicant.id })).toEqual(haggled);
+
+    const accepted = reducer(haggled, { type: 'OFFICE/CONTRACT_ACCEPT', starId: applicant.id });
+    expect(accepted.gold).toBe(offered.gold - discountedFee);
+  });
+
   it('keeps equipped gear, while selling stock grants gold and leaks truth relics', () => {
     let state = { ...officeState(), inventory: [{ id: 'cloak_ash', qty: 1 }, { id: 'soil_deep', qty: 1 }] };
-    state = reducer(state, { type: 'OFFICE/PLACE', slot: 0, itemId: 'cloak_ash' });
-    expect(state.shelf).toEqual(['cloak_ash', null, null]);
-    expect(reducer(state, { type: 'OFFICE/PLACE', slot: 1, itemId: 'cloak_ash' })).toEqual(state);
+    expect(reducer(state, { type: 'OFFICE/PLACE', slot: 0, itemId: 'cloak_ash' })).toEqual(state);
+    state = reducer(state, { type: 'OFFICE/PLACE', slot: content.balance.equipment.armorSlot, itemId: 'cloak_ash' });
+    expect(state.shelf).toEqual([null, 'cloak_ash', null]);
+    expect(reducer(state, { type: 'OFFICE/PLACE', slot: content.balance.equipment.utilitySlot, itemId: 'cloak_ash' })).toEqual(state);
     expect(reducer(state, { type: 'OFFICE/SELL', itemId: 'cloak_ash' })).toEqual(state);
 
     state = reducer(state, { type: 'OFFICE/PICK_STAR', starId: 'body_karin' });
@@ -111,5 +127,23 @@ describe('office', () => {
     state = reducer(state, { type: 'OFFICE/CONFIRM' });
     expect(state.gold).toBe(content.balance.start.gold + 4400);
     expect(state.today?.hero).toEqual({ hp: 94, maxHp: 94, atk: 13, def: 9 });
+  });
+
+  it('hands each star one weapon, armor, and utility; only the handed potion can be used live', () => {
+    let state = officeState();
+    expect(reducer(state, { type: 'OFFICE/PLACE', slot: content.balance.equipment.armorSlot, itemId: 'dagger_crack' })).toEqual(state);
+
+    state = reducer(state, { type: 'OFFICE/PLACE', slot: content.balance.equipment.weaponSlot, itemId: 'dagger_crack' });
+    state = reducer(state, { type: 'OFFICE/PLACE', slot: content.balance.equipment.armorSlot, itemId: 'rope_hemp' });
+    state = reducer(state, { type: 'OFFICE/PLACE', slot: content.balance.equipment.utilitySlot, itemId: 'potion_crimson' });
+    expect(state.shelf).toEqual(['dagger_crack', 'rope_hemp', 'potion_crimson']);
+
+    state = reducer(state, { type: 'OFFICE/PICK_STAR', starId: 'body_karin' });
+    state = reducer(state, { type: 'OFFICE/CONFIRM' });
+    const wounded = { ...state, today: { ...state.today!, hero: { ...state.today!.hero, hp: 20 } } };
+    const healed = reducer(wounded, { type: 'COMBAT/USE_ITEM', itemId: 'potion_crimson' });
+    expect(healed.today?.hero).toMatchObject({ hp: 44, maxHp: 88, atk: 18, def: 4 });
+    expect(healed.shelf).toEqual(['dagger_crack', 'rope_hemp', null]);
+    expect(healed.inventory.some((stack) => stack.id === 'potion_crimson')).toBe(false);
   });
 });

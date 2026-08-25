@@ -23,6 +23,12 @@ export interface Balance {
     enemyFear: Record<string, number>;
     witnessFear: Record<string, number>;
   };
+  equipment: {
+    weaponSlot: number;
+    armorSlot: number;
+    utilitySlot: number;
+    slotByItem: Record<string, number>;
+  };
   degrade: { statMul: number[] };
   income: {
     goodsPerFan: number;
@@ -83,6 +89,7 @@ export interface Balance {
     feeBase: number;
     feePerFandomK: number;
     feeHonestyBias: number;
+    haggleFeeMultiplier: number;
     honestyMin: number;
     honestyMax: number;
     fandomBase: number;
@@ -239,7 +246,7 @@ function makeFloors(raw: unknown): FloorContent {
 }
 
 export function loadContent(): Content {
-  assertShape(isRecord(balanceJson) && isRecord(balanceJson.start) && isRecord(balanceJson.revive) && isRecord(balanceJson.dive) && isRecord(balanceJson.combat) && isRecord(balanceJson.mental) && isRecord(balanceJson.degrade) && isRecord(balanceJson.income), 'balance sections missing');
+  assertShape(isRecord(balanceJson) && isRecord(balanceJson.start) && isRecord(balanceJson.revive) && isRecord(balanceJson.dive) && isRecord(balanceJson.combat) && isRecord(balanceJson.mental) && isRecord(balanceJson.equipment) && isRecord(balanceJson.degrade) && isRecord(balanceJson.income), 'balance sections missing');
   const items = makeItems(itemsJson);
   for (const key of ['gold', 'fans', 'reputation', 'maxFloor', 'days', 'targetFloor'] as const) assertNumber(balanceJson.start[key], `balance.start.${key}`);
   assertShape(Array.isArray(balanceJson.start.inventory) && balanceJson.start.inventory.every((itemId) => typeof itemId === 'string' && items.some((item) => item.id === itemId)), 'balance.start.inventory invalid');
@@ -258,6 +265,15 @@ export function loadContent(): Content {
   }
   assertShape(balanceJson.mental.max > 0 && balanceJson.mental.panicThreshold >= 0 && balanceJson.mental.panicThreshold <= balanceJson.mental.max, 'balance.mental range invalid');
   assertShape(balanceJson.mental.minimumDamageMultiplier > 0 && balanceJson.mental.minimumDamageMultiplier <= 1, 'balance.mental minimumDamageMultiplier invalid');
+  for (const key of ['weaponSlot', 'armorSlot', 'utilitySlot'] as const) assertNumber(balanceJson.equipment[key], `balance.equipment.${key}`);
+  assertShape(isRecord(balanceJson.equipment.slotByItem), 'balance.equipment.slotByItem missing');
+  const equipmentSlots = [balanceJson.equipment.weaponSlot, balanceJson.equipment.armorSlot, balanceJson.equipment.utilitySlot];
+  assertShape(new Set(equipmentSlots).size === equipmentSlots.length && equipmentSlots.every((slot) => Number.isInteger(slot) && slot >= 0 && slot < 3), 'balance.equipment slots invalid');
+  for (const [itemId, slot] of Object.entries(balanceJson.equipment.slotByItem)) {
+    assertShape(items.some((item) => item.id === itemId), `balance.equipment.slotByItem.${itemId} item missing`);
+    assertNumber(slot, `balance.equipment.slotByItem.${itemId}`);
+    assertShape(equipmentSlots.includes(slot), `balance.equipment.slotByItem.${itemId} slot invalid`);
+  }
   assertShape(Array.isArray(balanceJson.degrade.statMul) && balanceJson.degrade.statMul.length > 0, 'balance.degrade.statMul missing');
   assertShape(isRecord(balanceJson.income.superchat), 'balance.income.superchat missing');
   assertNumber(balanceJson.income.goodsPerFan, 'balance.income.goodsPerFan');
@@ -282,7 +298,7 @@ export function loadContent(): Content {
   assertShape(isRecord(balanceJson.recruit) && isRecord(balanceJson.roster) && isRecord(balanceJson.contract) && isRecord(balanceJson.autopsy), 'balance.recruit/roster/contract/autopsy missing');
   for (const key of ['baseSlots', 'lossPerFailures'] as const) assertNumber(balanceJson.recruit[key], `balance.recruit.${key}`);
   for (const key of ['inheritFandomLoss', 'inheritSuspicion'] as const) assertNumber(balanceJson.roster[key], `balance.roster.${key}`);
-  for (const key of ['visitorsPerDay', 'feeBase', 'feePerFandomK', 'feeHonestyBias', 'honestyMin', 'honestyMax', 'fandomBase', 'fandomPerCharisma'] as const) assertNumber(balanceJson.contract[key], `balance.contract.${key}`);
+  for (const key of ['visitorsPerDay', 'feeBase', 'feePerFandomK', 'feeHonestyBias', 'haggleFeeMultiplier', 'honestyMin', 'honestyMax', 'fandomBase', 'fandomPerCharisma'] as const) assertNumber(balanceJson.contract[key], `balance.contract.${key}`);
   assertShape(Array.isArray(balanceJson.contract.claimedTiers) && balanceJson.contract.claimedTiers.length > 0, 'balance.contract.claimedTiers missing');
   balanceJson.contract.claimedTiers.forEach((tier, index) => {
     assertShape(isRecord(tier), `balance.contract.claimedTiers[${index}] invalid`);
@@ -290,6 +306,7 @@ export function loadContent(): Content {
     assertNumber(tier.rate, `balance.contract.claimedTiers[${index}].rate`);
   });
   assertShape(balanceJson.contract.honestyMin <= balanceJson.contract.honestyMax, 'balance.contract honesty range invalid');
+  assertShape(balanceJson.contract.haggleFeeMultiplier > 0 && balanceJson.contract.haggleFeeMultiplier < 1, 'balance.contract haggleFeeMultiplier invalid');
   for (const key of ['lootMin', 'lootMax', 'truthRelicMinFloor'] as const) assertNumber(balanceJson.autopsy[key], `balance.autopsy.${key}`);
   assertShape(balanceJson.autopsy.lootMin > 0 && balanceJson.autopsy.lootMin <= balanceJson.autopsy.lootMax, 'balance.autopsy loot range invalid');
   assertShape(Array.isArray(balanceJson.autopsy.truthRelicIds) && balanceJson.autopsy.truthRelicIds.length === 2 && balanceJson.autopsy.truthRelicIds.every((id) => typeof id === 'string'), 'balance.autopsy truth relic ids invalid');

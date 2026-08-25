@@ -8,6 +8,10 @@ function signedContractKey(starId: string): string {
   return `contractSigned:${starId}`;
 }
 
+function haggledContractKey(starId: string): string {
+  return `contractHaggled:${starId}`;
+}
+
 export function populateVisitors(state: GameState): GameState {
   if (state.phase !== 'OFFICE' || state.visitors.length > 0 || state.recruitPool.length === 0) return state;
   const eligible = state.recruitPool.filter((star) => !state.rejectedStarIds.includes(star.id));
@@ -67,7 +71,8 @@ export function placeOfficeItem(state: GameState, slot: number, itemId: string |
   if (itemId !== null) {
     const item = content.items.find((candidate) => candidate.id === itemId);
     const available = state.inventory.some((stack) => stack.id === itemId && stack.qty > 0);
-    if (item?.kind !== 'GEAR' || !available || state.shelf.includes(itemId)) return state;
+    const expectedSlot = content.balance.equipment.slotByItem[itemId];
+    if (item === undefined || !available || expectedSlot !== slot || state.shelf.includes(itemId)) return state;
   }
   const shelf = [...state.shelf];
   shelf[slot] = itemId;
@@ -134,6 +139,18 @@ export function acceptContract(state: GameState, starId: string): GameState {
     visitors: state.visitors.filter((visitor) => visitor.starId !== starId),
     flags: { ...state.flags, [signedContractKey(starId)]: true },
     pendingFx: [...state.pendingFx, { kind: 'CONTRACT_SIGN', payload: { starId } }],
+  };
+}
+
+export function haggleContract(state: GameState, starId: string): GameState {
+  if (state.phase !== 'OFFICE' || state.flags[haggledContractKey(starId)] === true) return state;
+  const contract = state.visitors.find((visitor) => visitor.starId === starId);
+  if (contract === undefined) return state;
+  const fee = Math.max(0, Math.round(contract.fee * content.balance.contract.haggleFeeMultiplier));
+  return {
+    ...state,
+    visitors: state.visitors.map((visitor) => visitor.starId === starId ? { ...visitor, fee } : visitor),
+    flags: { ...state.flags, [haggledContractKey(starId)]: true },
   };
 }
 
