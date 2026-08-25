@@ -2,7 +2,6 @@ import { SCENES } from '../../config';
 import Phaser from 'phaser';
 import { content } from '../../core/content';
 import { isEarlyClosure } from '../../core/systems/narrative';
-import { officeHero } from '../../core/systems/office';
 import { key, starArt } from '../../render/assets';
 import { L, actionX, ACTION_W } from '../../ui/layout';
 import { Button } from '../../ui/Button';
@@ -300,22 +299,6 @@ export class OfficePhase extends PhaseScene {
         this.redraw();
       },
     });
-
-    // 진열의 결과를 숫자로 보여준다 — 「진열 확정 시 출연자 스탯이 갱신된다」(M05 §8)
-    const totals = s.shelf.reduce(
-      (sum, id) => {
-        const item = id === null ? undefined : content.items.find((candidate) => candidate.id === id);
-        return item === undefined ? sum : { hp: sum.hp + item.hp, atk: sum.atk + item.atk, def: sum.def + item.def };
-      },
-      { hp: 0, atk: 0, def: 0 },
-    );
-    const star = s.stars.find((candidate) => candidate.status === 'ALIVE');
-    if (star !== undefined) {
-      const hero = officeHero(s, star);
-      this.label(ix + 330, panel.y + 104,
-        `장비 HP+${totals.hp} 공+${totals.atk} 방+${totals.def} → 출연자 ${hero.maxHp}·공${hero.atk}·방${hero.def}`,
-        'dust');
-    }
 
     if (stacks.length === 0) {
       this.text(ix, panel.y + 150, '팔 것도 올릴 것도 없다.', 'dust');
