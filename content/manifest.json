@@ -397,6 +397,24 @@
           ],
           "desc": "타이틀 램프 밝기 4/4 — 넣으면 창의 불빛이 깜빡인다 (4장 다 있어야 켜진다)"
         },
+        "bg.title.window": {
+          "type": "image",
+          "file": "bg/title_window.png",
+          "size": [
+            567,
+            300
+          ],
+          "desc": "타이틀 진열창 빛 조절판 — 창 위에 얹고 알파로 밝기를 조절한다 (lamp1~4 를 대체)"
+        },
+        "bg.title.lantern": {
+          "type": "image",
+          "file": "bg/title_lantern.png",
+          "size": [
+            86,
+            59
+          ],
+          "desc": "타이틀 처마등 실루엣 — 문 위 등 자리에 얹고 약하게 흔든다"
+        },
         "bg.shop.room": {
           "type": "image",
           "file": "bg/shop_room.png",
@@ -1394,6 +1412,24 @@
             1080
           ],
           "desc": "타이틀 램프 밝기 4/4 — 넣으면 창의 불빛이 깜빡인다 (4장 다 있어야 켜진다)"
+        },
+        "bg.title.window": {
+          "type": "image",
+          "file": "bg/title_window.png",
+          "size": [
+            567,
+            300
+          ],
+          "desc": "타이틀 진열창 빛 조절판 — 창 위에 얹고 알파로 밝기를 조절한다 (lamp1~4 를 대체)"
+        },
+        "bg.title.lantern": {
+          "type": "image",
+          "file": "bg/title_lantern.png",
+          "size": [
+            86,
+            59
+          ],
+          "desc": "타이틀 처마등 실루엣 — 문 위 등 자리에 얹고 약하게 흔든다"
         },
         "bg.shop.room": {
           "type": "image",
