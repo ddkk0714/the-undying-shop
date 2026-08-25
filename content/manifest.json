@@ -390,10 +390,10 @@
         },
         "bg.revive.bench": {
           "type": "image",
-          "file": "bg/revive_bench.png",
+          "file": "bg/revive_bench_crop.png",
           "size": [
-            1244,
-            792
+            1644,
+            1122
           ],
           "desc": "① 소생실 우측 (없으면 bg.shop.bench 를 쓴다)"
         },
@@ -1175,10 +1175,10 @@
         },
         "bg.revive.bench": {
           "type": "image",
-          "file": "bg/revive_bench.png",
+          "file": "bg/revive_bench_crop.png",
           "size": [
-            1244,
-            792
+            1644,
+            1122
           ],
           "desc": "① 소생실 우측 (없으면 bg.shop.bench 를 쓴다)"
         },
