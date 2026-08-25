@@ -410,8 +410,8 @@ export class OfficePhase extends PhaseScene {
     const itemType = item.kind === 'POTION' ? 'POTION' : item.isRelic ? 'RELIC' : slot === 0 ? 'WEAPON' : slot === 1 ? 'ARMOR' : 'UTILITY';
     const signed = (value: number): string => `${value >= 0 ? '+' : ''}${value}`;
     const statRows = item.kind === 'POTION'
-      ? `HEAL  ··········  +${item.healing}`
-      : `HP    ··········  ${signed(item.hp)}\nATK   ··········  ${signed(item.atk)}\nDEF   ··········  ${signed(item.def)}`;
+      ? `HEAL  +${item.healing}`
+      : `HP    ${signed(item.hp)}\nATK   ${signed(item.atk)}\nDEF   ${signed(item.def)}`;
     const marks = item.kind === 'POTION'
       ? `<HEAL>\nHP +${item.healing}`
       : `<${slotName}>\n${this.itemStats(item)}`;
