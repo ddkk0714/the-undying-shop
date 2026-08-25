@@ -60,14 +60,16 @@ export const DEATH_CURTAIN_MS = 1800;
 /**
  * 채팅을 얼마나 자주 청하는가. **밸런스가 아니라 표시 박자다** —
  * 큐 상한(`balance.opinion.chatMaxVisible`)과 수명은 core 가 관리한다.
- * M07 수용 기준 「30초에 40~60개」 → 0.5초에 하나 = 30초에 60개.
+ * M07 수용 기준 「30초에 40~60개」 → 0.75초에 하나 = 30초에 40개. **범위의 느린 쪽 끝**이다
+ * (사용자 확정 — 500ms 는 너무 빨랐다).
  *
  * ★ 채팅창에 **몇 줄이 남는지를 정하는 건 상한이 아니라 이 값이다.**
- *   core 는 `chatLifetimeSeconds`(6초) 지난 줄을 지우므로 살아있는 줄 = 수명 / 간격.
- *   600ms 이면 10줄이라 상한을 12로 올려도 창이 안 찼다 (실측 — 채팅창연출222).
- *   500ms 이면 12줄이 되어 창을 채운다.
+ *   core 는 `chatLifetimeSeconds` 지난 줄을 지우므로 살아있는 줄 = 수명 / 간격.
+ *   600ms · 수명 6초 이면 10줄이라 상한을 12로 올려도 창이 안 찼다 (실측 — 채팅창연출222).
+ *   지금은 750ms · 수명 9초 = 12줄. 빈도를 늦추면서도 창은 그대로 찬다.
+ *   **이 값을 건드리면 수명도 같이 봐야 한다.** 둘 중 하나만 바꾸면 창이 다시 빈다.
  */
-const CHAT_SPAWN_MS = 500;
+const CHAT_SPAWN_MS = 750;
 
 /** M06 §9 — 목격 1.2초 정지, 28F 는 채팅이 3초 조용해진다 */
 const WITNESS_HOLD_MS = 1200;
@@ -143,6 +145,7 @@ export class LivePhase extends PhaseScene {
         if (this.store.getState().phase !== 'LIVE') return;
         if (this.time.now < this.chatSilentUntil) return; // 28F 침묵
         this.store.dispatch({ type: 'CHAT/SPAWN' });
+        playSfx(this, 'sfx.text', 0.08);
       },
     });
 
@@ -399,7 +402,7 @@ export class LivePhase extends PhaseScene {
     const inner = v.w - L.pad * 2;
     const fork = pendingFork(s);
     if (fork === null) {
-      this.text(v.x + L.pad, v.y + 120, '· · · 잡음뿐', 'dust');
+      // 글자로 「잡음뿐」이라고 쓰지 않는다 — 디더 잡음이 이미 그 말을 하고 있다 (사용자 확정)
       this.dither(v.x + L.pad, v.y + 200, inner, 160, 'mid', 8);
       return;
     }
@@ -614,11 +617,9 @@ export class LivePhase extends PhaseScene {
     this.bar(info.x + L.pad, info.y + 112, iw, run.hero.hp, run.hero.maxHp, 'bone');
     this.label(info.x + L.pad, info.y + 140, `${run.hero.hp} / ${run.hero.maxHp}`, 'dust');
 
-    // 시청자 수와 이 방송의 누적 슈퍼챗 — 예전에는 상단 바에 있었다
-    const dropping = this.time.now < this.fanDropUntil;
+    // 이 방송의 누적 슈퍼챗. **시청자 수는 여기 안 쓴다** — 방송바에 이미 있어서
+    // 한 화면에 같은 숫자가 둘이 떴다 (사용자 확정)
     this.label(info.x + L.pad, info.y + 168, `+${run.superchat} G`, 'bone');
-    this.textRight(info.x + info.w - L.pad, info.y + 168,
-      `${dropping ? '▼ ' : ''}${fmtFans(s.fans)}`, dropping ? 'wax' : 'dust');
   }
 
   /**
