@@ -26,12 +26,11 @@ type BenchMode = 'CONTRACT' | 'SHELF';
 const SLOT_NAMES = ['무기', '방어구', '기타'] as const;
 const INVENTORY_COLUMNS = 4;
 const INVENTORY_VISIBLE_ROWS = 2;
-// 새 작업대 원화의 세 사각 홈을 1920×1080 편성실 좌표로 옮긴 값.
-// 원화를 가로 캔버스에 여백으로 확장했으므로, 그림의 실제 비율을 보존한다.
+// 원화의 아래만 잘라 작업대 비율로 맞춘 뒤, 세 사각 홈을 옮긴 값.
 const SHELF_SLOTS = [
-  { x: 1074, y: 227, w: 182, h: 218 },
-  { x: 1263, y: 227, w: 175, h: 218 },
-  { x: 1448, y: 227, w: 176, h: 218 },
+  { x: 1016, y: 246, w: 223, h: 266 },
+  { x: 1248, y: 246, w: 214, h: 266 },
+  { x: 1473, y: 246, w: 214, h: 266 },
 ] as const;
 
 export class OfficePhase extends PhaseScene {
