@@ -8,7 +8,6 @@ import { reducedMotion } from '../ui/options';
 import { DEATH_CURTAIN_MS } from './phases/LivePhase';
 import { key as assetKey, hasTexture } from '../render/assets';
 import type { WipeScene } from './WipeScene';
-import { content, reputationGrade } from '../core/content';
 import { currentRun, newRun, saveRun } from './run';
 import type { Store } from '../core/store';
 import type { GameState, PhaseId } from '../core/types';
@@ -41,25 +40,19 @@ const PHASE_SCENE: Partial<Record<PhaseId, string>> = {
 };
 
 /** HUD 자원 칸 — 레퍼런스의 세로 구분선 3분할 */
-const COLS = [
-  { label: 'GOLD', x: 172 },
-  { label: 'FANS', x: 346 },
-  { label: 'REPUTATION', x: 520 },
-] as const;
-
-const HUD_LABEL = { ...FONT_LABEL, fontSize: '20px', padding: { x: 0, y: 1 } } as const;
-const HUD_VALUE = { ...FONT, fontSize: '40px', padding: { x: 0, y: 1 } } as const;
-const HUD_DAY = { ...FONT, fontSize: '30px', padding: { x: 0, y: 1 } } as const;
-const HUD_PHASE = { ...FONT, fontSize: '26px', padding: { x: 0, y: 1 } } as const;
+const HUD_LABEL = { ...FONT_LABEL, fontSize: '16px', padding: { x: 0, y: 1 } } as const;
+const HUD_VALUE = { ...FONT, fontSize: '48px', padding: { x: 0, y: 1 } } as const;
+const HUD_LIVE = { ...FONT, fontSize: '44px', padding: { x: 0, y: 1 } } as const;
 
 export class DayScene extends Phaser.Scene {
-  private readonly hudStatus = { x: 8, y: 0, w: 700, h: 144 };
-  private readonly hudTools = { x: 724, y: 0, w: 740, h: 144 };
+  private readonly hudStatus = { x: 8, y: 0, w: 740, h: 144 };
+  private readonly hudTools = { x: 764, y: 0, w: 780, h: 144 };
   private store!: Store;
-  private hudLeft!: Phaser.GameObjects.Text;
-  private hudRight!: Phaser.GameObjects.Text;
-  private hudFloor!: Phaser.GameObjects.Text;
-  private hudValues: Phaser.GameObjects.Text[] = [];
+  private statusFloor!: Phaser.GameObjects.Text;
+  private statusViewers!: Phaser.GameObjects.Text;
+  private dayValue!: Phaser.GameObjects.Text;
+  private depthValue!: Phaser.GameObjects.Text;
+  private goldValue!: Phaser.GameObjects.Text;
   private body!: Phaser.GameObjects.Text;
   private fxLine!: Phaser.GameObjects.Text;
   private unsubscribe: (() => void) | null = null;
@@ -71,12 +64,7 @@ export class DayScene extends Phaser.Scene {
   /** 엔딩 씬에 한 번만 넘긴다 */
   private handedOver = false;
   /** 기록 갱신 연출용 — 정산이 끝나면 이전 최고층은 state 에서 사라진다 (M08) */
-  private lastMaxFloor = -1;
   /** 도달 게이지 — 목표까지 차오른다. 신기록이면 눈에 보이게 밀려 올라간다 (M08 §연출) */
-  private gauge!: Phaser.GameObjects.Graphics;
-  private gaugeShown = 0;
-  private gaugeTarget = 0;
-  private gaugeFlashUntil = 0;
 
   constructor() {
     super(SCENES.DAY);
@@ -91,11 +79,6 @@ export class DayScene extends Phaser.Scene {
     this.launched = null;
     this.swapAt = 0;
     this.skipCurtain = false;
-    this.lastMaxFloor = -1;
-    this.gaugeShown = 0;
-    this.gaugeTarget = 0;
-    this.gaugeFlashUntil = 0;
-    this.hudValues = [];
     this.fallback = [];
 
     // 와이프는 항상 맨 위에 떠 있어야 한다. Phaser 는 목록의 첫 씬만 자동 시작한다
@@ -110,35 +93,25 @@ export class DayScene extends Phaser.Scene {
     const g = this.add.graphics();
     g.fillStyle(PALETTE.ink, 1);
     g.fillRect(L.hud.x, L.hud.y, L.hud.w, L.hud.h);
-    if (hasTexture(this, 'ui.hud.status')) this.add.image(this.hudStatus.x, this.hudStatus.y, assetKey('ui.hud.status')).setOrigin(0);
+    if (hasTexture(this, 'ui.hud.status')) this.add.image(this.hudStatus.x, this.hudStatus.y, assetKey('ui.hud.status')).setOrigin(0).setDisplaySize(this.hudStatus.w, this.hudStatus.h);
     else this.drawFrame(g, this.hudStatus.x, this.hudStatus.y, this.hudStatus.w, this.hudStatus.h);
-    if (hasTexture(this, 'ui.hud.tools')) this.add.image(this.hudTools.x, this.hudTools.y, assetKey('ui.hud.tools')).setOrigin(0);
+    if (hasTexture(this, 'ui.hud.tools')) this.add.image(this.hudTools.x, this.hudTools.y, assetKey('ui.hud.tools')).setOrigin(0).setDisplaySize(this.hudTools.w, this.hudTools.h);
     else this.drawFrame(g, this.hudTools.x, this.hudTools.y, this.hudTools.w, this.hudTools.h);
 
     // 자원 라벨 3종 — 값은 render() 가 같은 x 에 채운다 (레퍼런스 배치)
-    COLS.forEach((col, i) => {
-      this.add.text(this.hudStatus.x + col.x, this.hudStatus.y + 16, col.label, {
-        ...HUD_LABEL, color: css('dust'),
-      });
-      this.hudValues[i] = this.add.text(this.hudStatus.x + col.x, this.hudStatus.y + 48, '', {
-        ...HUD_VALUE, color: css(col.label === 'REPUTATION' ? 'wax' : 'bone'),
-      });
-      if (i > 0) {
-        g.fillStyle(PALETTE.dust, 1);
-        g.fillRect(this.hudStatus.x + col.x - 24, this.hudStatus.y + 16, L.line, this.hudStatus.h - 32);
-      }
-    });
+    this.add.text(this.hudStatus.x + 28, this.hudStatus.y + 50, '● LIVE', { ...HUD_LIVE, color: css('bone') });
+    this.addHudField(this.hudStatus.x + 202, 'FLOOR', () => this.statusFloor = this.add.text(this.hudStatus.x + 202, this.hudStatus.y + 62, '', { ...HUD_VALUE, color: css('bone') }));
+    this.addHudField(this.hudStatus.x + 358, 'VIEWERS', () => this.statusViewers = this.add.text(this.hudStatus.x + 358, this.hudStatus.y + 62, '', { ...HUD_VALUE, color: css('bone') }));
+    this.addWatchEye(this.hudStatus.x + 656, this.hudStatus.y + 76);
 
-    this.hudLeft = this.add.text(this.hudStatus.x + 24, this.hudStatus.y + 28, '', { ...HUD_DAY, color: css('bone') });
-    this.hudRight = this.add
-      .text(this.hudTools.x + this.hudTools.w - 24, this.hudTools.y + 52, '', { ...HUD_PHASE, color: css('bone') })
-      .setOrigin(1, 0);
-    this.hudFloor = this.add.text(this.hudTools.x + 24, this.hudTools.y + 48, '', { ...HUD_VALUE, color: css('bone') });
-    this.addHudIcon('ui.icon.help', 'ui.icon.help.hover', BASE_W - 368, () => this.openOverlay(SCENES.HELP));
-    this.addHudIcon('ui.icon.options', 'ui.icon.options.hover', BASE_W - 240, () => this.openOverlay(SCENES.OPTIONS));
-    this.addHudIcon('ui.icon.save', 'ui.icon.save.hover', BASE_W - 112, () => saveRun(this.store));
+    this.addHudField(this.hudTools.x + 190, 'DAY', () => this.dayValue = this.add.text(this.hudTools.x + 190, this.hudTools.y + 62, '', { ...HUD_VALUE, color: css('bone') }));
+    this.addHudField(this.hudTools.x + 326, 'DEPTH', () => this.depthValue = this.add.text(this.hudTools.x + 326, this.hudTools.y + 62, '', { ...HUD_VALUE, color: css('bone') }));
+    this.addHudField(this.hudTools.x + 468, 'GOLD', () => this.goldValue = this.add.text(this.hudTools.x + 468, this.hudTools.y + 62, '', { ...HUD_VALUE, color: css('bone') }));
+    this.addWatchEye(this.hudTools.x + 684, this.hudTools.y + 76);
+    this.addHudIcon('ui.icon.help', 'ui.icon.help.hover', BASE_W - 360, () => this.openOverlay(SCENES.HELP));
+    this.addHudIcon('ui.icon.options', 'ui.icon.options.hover', BASE_W - 232, () => this.openOverlay(SCENES.OPTIONS));
+    this.addHudIcon('ui.icon.save', 'ui.icon.save.hover', BASE_W - 104, () => saveRun(this.store));
     // 도달 게이지 — 글자 오른쪽 빈자리. 차오르는 게 보여야 기록이 기록으로 느껴진다
-    this.gauge = this.add.graphics();
 
     // 본문 (L.stage) — 단계 씬이 들어올 자리
     this.body = this.add
@@ -192,7 +165,6 @@ export class DayScene extends Phaser.Scene {
       const s = this.store.getState();
       this.swap(s.isOver ? undefined : PHASE_SCENE[s.phase]);
     }
-    this.drawGauge();
 
     const fx = this.store.getState().pendingFx;
     if (fx.length === 0) return;
@@ -207,34 +179,6 @@ export class DayScene extends Phaser.Scene {
    * 도달 게이지 n/40. 값이 오르면 **차오르는 게 보이도록** 프레임마다 조금씩 따라간다.
    * 신기록 직후 1.4초 동안은 wax 로 칠한다 (M08 §RECORD_BREAK 「HUD 게이지가 차오름」).
    */
-  private drawGauge(): void {
-    const target = content.balance.start.targetFloor;
-    if (Math.abs(this.gaugeShown - this.gaugeTarget) > 0.05) {
-      this.gaugeShown += (this.gaugeTarget - this.gaugeShown) * 0.08;
-    } else {
-      this.gaugeShown = this.gaugeTarget;
-    }
-
-    const x = this.hudTools.x + 192;
-    const y = this.hudTools.y + 58;
-    const w = 300;
-    const h = 16;
-    const ratio = target <= 0 ? 0 : Math.max(0, Math.min(1, this.gaugeShown / target));
-    const hot = this.time.now < this.gaugeFlashUntil;
-
-    const g = this.gauge;
-    g.clear();
-    g.fillStyle(PALETTE.ink, 1);
-    g.fillRect(x, y, w, h);
-    g.fillStyle(hot ? PALETTE.wax : PALETTE.bone, 1);
-    g.fillRect(x, y, Math.round(w * ratio), h);
-    g.fillStyle(PALETTE.dust, 1);
-    g.fillRect(x, y, w, L.line);
-    g.fillRect(x, y + h - L.line, w, L.line);
-    g.fillRect(x, y, L.line, h);
-    g.fillRect(x + w - L.line, y, L.line, h);
-  }
-
   /** 04-UI-KIT §2-2 — HUD 이중선 액자 (바깥 bone 2px + 안쪽 dust 2px) */
   private drawFrame(g: Phaser.GameObjects.Graphics, x: number, y: number, w: number, h: number): void {
     const t = L.line;
@@ -255,6 +199,16 @@ export class DayScene extends Phaser.Scene {
     icon.on('pointerup', onClick);
   }
 
+  private addHudField(x: number, labelText: string, createValue: () => void): void {
+    this.add.text(x, this.hudStatus.y + 22, labelText, { ...HUD_LABEL, color: css('dust') });
+    createValue();
+  }
+
+  private addWatchEye(x: number, y: number): void {
+    if (!hasTexture(this, 'ui.suspicion1')) return;
+    this.add.image(x, y, assetKey('ui.suspicion1')).setDisplaySize(96, 64);
+  }
+
   private openOverlay(scene: string): void {
     this.scene.pause(SCENES.DAY);
     this.scene.launch(scene, { returnTo: SCENES.DAY });
@@ -262,20 +216,11 @@ export class DayScene extends Phaser.Scene {
 
   private render(s: Readonly<GameState>): void {
     // 최고층이 갱신되는 순간 직전 값을 넘겨 준다. DeathPhase 의 「이전 기록」 표시용
-    if (this.lastMaxFloor >= 0 && s.maxFloor !== this.lastMaxFloor) {
-      this.registry.set('record.prev', this.lastMaxFloor);
-      this.gaugeFlashUntil = this.time.now + 1400;
-    }
-    if (this.lastMaxFloor < 0) this.gaugeShown = s.maxFloor; // 첫 그림은 차오르지 않는다
-    this.lastMaxFloor = s.maxFloor;
-    this.gaugeTarget = s.maxFloor;
-
-    this.hudLeft.setText(`DAY ${s.day}\n/${content.balance.start.days}`);
-    this.hudValues[0]?.setText(fmtHudGold(s.gold));
-    this.hudValues[1]?.setText(fmtFans(s.fans));
-    this.hudValues[2]?.setText(reputationGrade(s.reputation));
-    this.hudFloor.setText(`${s.maxFloor} / ${content.balance.start.targetFloor} F`);
-    this.hudRight.setText(s.isOver ? '종료' : PHASE_LABEL[s.phase]);
+    this.statusFloor.setText(`${s.maxFloor}F`);
+    this.statusViewers.setText(String(s.fans));
+    this.dayValue.setText(String(s.day));
+    this.depthValue.setText(`${s.maxFloor}F`);
+    this.goldValue.setText(fmtHudGold(s.gold));
 
     this.syncPhaseScene(s);
 
@@ -363,11 +308,6 @@ export class DayScene extends Phaser.Scene {
 }
 
 /** 표시는 84.2K 형태 (02-DATA-SCHEMA §1) */
-function fmtFans(n: number): string {
-  if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
-  return String(n);
-}
-
 function fmtGold(n: number): string {
   return n.toLocaleString('en-US');
 }

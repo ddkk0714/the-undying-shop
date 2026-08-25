@@ -14,10 +14,10 @@ export const L = {
   stage: { x: 0, y: 144, w: 1920, h: 936 },
 
   // Source art: room 1086×1324, bench 1748×1112. These preserve both ratios.
-  guest: { x: 0, y: 144, w: 650, h: 792 },
-  dialogue: { x: 0, y: 936, w: 650, h: 144 },
-  bench: { x: 668, y: 144, w: 1244, h: 792 },
-  actions: { x: 668, y: 936, w: 1244, h: 144 },
+  guest: { x: 0, y: 144, w: 736, h: 792 },
+  dialogue: { x: 0, y: 936, w: 736, h: 144 },
+  bench: { x: 752, y: 144, w: 1160, h: 792 },
+  actions: { x: 752, y: 936, w: 1160, h: 144 },
   actionsFull: { x: 0, y: 936, w: 1920, h: 144 },
 
   // Broadcast composition follows the supplied desk, map, battle and portrait art.
@@ -44,5 +44,5 @@ export const L = {
 
 export const slotX = (i: number): number => L.slot3.x + i * (L.slot3.w + L.slot3.gap);
 
-export const ACTION_W = 290;
+export const ACTION_W = 269;
 export const actionX = (i: number): number => L.actions.x + L.pad + i * (ACTION_W + 12);
