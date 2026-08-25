@@ -9,8 +9,6 @@ import { reducedMotion } from '../ui/options';
 import { playAmbience, playBgm, playSfx, stopAmbience } from '../audio/Sfx';
 import { hasSavedRun, loadRun, newRun } from './run';
 
-const LAMP_KEYS = ['bg.title.lamp1', 'bg.title.lamp2', 'bg.title.lamp3', 'bg.title.lamp4'] as const;
-
 /**
  * 램프 깜빡임 순서 — `[단계, 머무는 ms]`.
  * 0 이 가장 밝고 4 가 가장 어둡다.
@@ -92,8 +90,7 @@ export class TitleScene extends Phaser.Scene {
       this.add
         .tileSprite(0, 0, BASE_W, BASE_H, scrimTexture(this, 1))
         .setOrigin(0, 0);
-      // 조절판이 있으면 그걸로, 없으면 예전처럼 배경 5장을 갈아 끼운다
-      if (!this.windowFlicker()) this.lampFlicker(bg);
+      this.windowFlicker();
       this.lanternSway();
     } else {
       // 본 아트가 없을 때만 — 절차적 촛불이 이 화면의 유일한 불빛이다.
@@ -200,16 +197,17 @@ export class TitleScene extends Phaser.Scene {
   /**
    * 창의 불빛 깜빡임 — **조절판 한 장의 알파만 흔든다** (사용자 확정).
    *
-   * 예전에는 1920x1080 배경 5장을 통째로 갈아 끼웠다. 텍스처 950KB 를 물고 있으면서
-   * 바뀌는 건 창 한 칸뿐이었다. 이제 그 칸에만 검은 판을 얹고 알파를 바꾼다.
+   * 예전에는 1920x1080 배경을 5장 물고 통째로 갈아 끼웠다. 바뀌는 건 창 한 칸뿐인데
+   * 디코드된 텍스처로 33MB(1920×1080×4 × 4장)를 들고 있었다. 이제 그 칸에만
+   * 1.8KB 짜리 검은 판을 얹고 알파를 바꾼다. `bg.title.lamp1~4` 는 슬롯째 지웠다 (사용자 확정).
    *
    * ⚠️ 반투명이라 1비트 그림 위에 팔레트 밖 중간 계조가 생긴다 (00-OVERVIEW §7-1).
-   *    창 안쪽 383x203 에 한정되고 연출이 요구한 것이라 감수한다.
+   *    창 안쪽 384x203 에 한정되고 연출이 요구한 것이라 감수한다.
    *
-   * @returns 판이 없어서 못 켰으면 false — 그때는 예전 방식으로 넘어간다
+   * 판이 없으면 아무것도 안 한다 — 깜빡이지 않는 그림 그대로가 정답이다.
    */
-  private windowFlicker(): boolean {
-    if (!hasTexture(this, 'bg.title.window')) return false;
+  private windowFlicker(): void {
+    if (!hasTexture(this, 'bg.title.window')) return;
 
     const v = WINDOW_BOX;
     const shade = this.add
@@ -218,7 +216,7 @@ export class TitleScene extends Phaser.Scene {
       .setDisplaySize(v.w, v.h)
       .setAlpha(0);
 
-    if (reducedMotion(this.registry)) return true; // 판만 얹고 흔들지 않는다
+    if (reducedMotion(this.registry)) return; // 판만 얹고 흔들지 않는다
 
     let step = 0;
     const advance = (): void => {
@@ -228,7 +226,6 @@ export class TitleScene extends Phaser.Scene {
       this.time.delayedCall(hold, advance);
     };
     advance();
-    return true;
   }
 
   /**
@@ -257,25 +254,6 @@ export class TitleScene extends Phaser.Scene {
       repeat: -1,
       ease: 'Sine.easeInOut',
     });
-  }
-
-  /**
-   * 예전 방식 — 배경 텍스처를 밝기 5단 사이에서 갈아 끼운다.
-   * 4장이 **전부** 있을 때만 켠다. 한 장이라도 없으면 깜빡이지 않는 그림 그대로가 정답이다.
-   */
-  private lampFlicker(bg: Phaser.GameObjects.Image): void {
-    if (reducedMotion(this.registry)) return;
-    if (!LAMP_KEYS.every((k) => hasTexture(this, k))) return;
-
-    const frames = [assetKey('bg.title'), ...LAMP_KEYS.map((k) => assetKey(k))];
-    let step = 0;
-    const advance = (): void => {
-      const [frame, hold] = LAMP_CYCLE[step % LAMP_CYCLE.length] ?? [0, 1000];
-      bg.setTexture(frames[frame] ?? frames[0]!);
-      step += 1;
-      this.time.delayedCall(hold, advance);
-    };
-    advance();
   }
 
   /** 본 아트가 없을 때의 촛불 2프레임 루프 — tallow 점 하나의 밝기만 바꾼다 */

@@ -361,42 +361,6 @@
           ],
           "desc": "타이틀 화면 배경"
         },
-        "bg.title.lamp1": {
-          "type": "image",
-          "file": "bg/title_lamp1.png",
-          "size": [
-            1920,
-            1080
-          ],
-          "desc": "타이틀 램프 밝기 1/4 — 넣으면 창의 불빛이 깜빡인다 (4장 다 있어야 켜진다)"
-        },
-        "bg.title.lamp2": {
-          "type": "image",
-          "file": "bg/title_lamp2.png",
-          "size": [
-            1920,
-            1080
-          ],
-          "desc": "타이틀 램프 밝기 2/4 — 넣으면 창의 불빛이 깜빡인다 (4장 다 있어야 켜진다)"
-        },
-        "bg.title.lamp3": {
-          "type": "image",
-          "file": "bg/title_lamp3.png",
-          "size": [
-            1920,
-            1080
-          ],
-          "desc": "타이틀 램프 밝기 3/4 — 넣으면 창의 불빛이 깜빡인다 (4장 다 있어야 켜진다)"
-        },
-        "bg.title.lamp4": {
-          "type": "image",
-          "file": "bg/title_lamp4.png",
-          "size": [
-            1920,
-            1080
-          ],
-          "desc": "타이틀 램프 밝기 4/4 — 넣으면 창의 불빛이 깜빡인다 (4장 다 있어야 켜진다)"
-        },
         "bg.title.window": {
           "type": "image",
           "file": "bg/title_window.png",
@@ -1376,42 +1340,6 @@
             1080
           ],
           "desc": "타이틀 화면 배경"
-        },
-        "bg.title.lamp1": {
-          "type": "image",
-          "file": "bg/title_lamp1.png",
-          "size": [
-            1920,
-            1080
-          ],
-          "desc": "타이틀 램프 밝기 1/4 — 넣으면 창의 불빛이 깜빡인다 (4장 다 있어야 켜진다)"
-        },
-        "bg.title.lamp2": {
-          "type": "image",
-          "file": "bg/title_lamp2.png",
-          "size": [
-            1920,
-            1080
-          ],
-          "desc": "타이틀 램프 밝기 2/4 — 넣으면 창의 불빛이 깜빡인다 (4장 다 있어야 켜진다)"
-        },
-        "bg.title.lamp3": {
-          "type": "image",
-          "file": "bg/title_lamp3.png",
-          "size": [
-            1920,
-            1080
-          ],
-          "desc": "타이틀 램프 밝기 3/4 — 넣으면 창의 불빛이 깜빡인다 (4장 다 있어야 켜진다)"
-        },
-        "bg.title.lamp4": {
-          "type": "image",
-          "file": "bg/title_lamp4.png",
-          "size": [
-            1920,
-            1080
-          ],
-          "desc": "타이틀 램프 밝기 4/4 — 넣으면 창의 불빛이 깜빡인다 (4장 다 있어야 켜진다)"
         },
         "bg.title.window": {
           "type": "image",
