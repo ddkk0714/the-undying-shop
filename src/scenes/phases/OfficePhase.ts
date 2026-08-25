@@ -3,7 +3,7 @@ import Phaser from 'phaser';
 import { content } from '../../core/content';
 import { isEarlyClosure } from '../../core/systems/narrative';
 import { key, starArt } from '../../render/assets';
-import { L, actionX, ACTION_W } from '../../ui/layout';
+import { L, actionX, ACTION_W, slotX } from '../../ui/layout';
 import { Button } from '../../ui/Button';
 import { onboard } from '../../ui/Onboarding';
 import { playBgm } from '../../audio/Sfx';
@@ -26,12 +26,11 @@ type BenchMode = 'CONTRACT' | 'SHELF';
 const SLOT_NAMES = ['무기', '방어구', '기타'] as const;
 const INVENTORY_COLUMNS = 4;
 const INVENTORY_VISIBLE_ROWS = 2;
-// 새 작업대 원화의 세 사각 홈을 1920×1080 편성실 좌표로 옮긴 값.
-// 원화를 가로 캔버스에 여백으로 확장했으므로, 그림의 실제 비율을 보존한다.
+// 작업대 위 세 진열 카드의 실제 드롭 영역.
 const SHELF_SLOTS = [
-  { x: 1074, y: 227, w: 182, h: 218 },
-  { x: 1263, y: 227, w: 175, h: 218 },
-  { x: 1448, y: 227, w: 176, h: 218 },
+  { x: slotX(0) + 10, y: L.slot3.y + 28, w: L.slot3.w - 20, h: L.slot3.h - 40 },
+  { x: slotX(1) + 10, y: L.slot3.y + 28, w: L.slot3.w - 20, h: L.slot3.h - 40 },
+  { x: slotX(2) + 10, y: L.slot3.y + 28, w: L.slot3.w - 20, h: L.slot3.h - 40 },
 ] as const;
 
 export class OfficePhase extends PhaseScene {
@@ -220,35 +219,37 @@ export class OfficePhase extends PhaseScene {
     const alive = s.stars.filter((star) => star.status === 'ALIVE');
 
     this.label(
-      SHELF_SLOTS[0].x,
-      SHELF_SLOTS[0].y - 28,
+      L.slot3.x,
+      L.slot3.y - 28,
       this.inventoryOpen ? '장비를 끌거나 선택한 뒤, 맞는 진열대를 누르세요.' : '하단 진열을 눌러 인벤토리를 여세요.',
       'dust',
     );
     for (let i = 0; i < 3; i += 1) {
+      const x = slotX(i);
+      const y = L.slot3.y;
       const slot = SHELF_SLOTS[i]!;
-      const { x, y, w, h } = slot;
+      const { w, h } = slot;
       const itemId = s.shelf[i] ?? null;
       const def = itemId === null ? undefined : content.items.find((item) => item.id === itemId);
 
-      // 원화에 그려진 사각 홈이 곧 놓는 자리다. 별도의 카드·배경은 덮지 않는다.
+      // 예시 UI처럼 배경 질감은 남기되, 장비를 두는 카드 면만 읽히게 만든다.
       const selected = this.selectedItemId === null ? undefined : content.items.find((item) => item.id === this.selectedItemId);
       const acceptsSelected = selected !== undefined && content.balance.equipment.slotByItem[selected.id] === i;
-      if (acceptsSelected) this.frame(x, y, w, h, 'wax');
-      const dropZone = this.add.zone(x, y, w, h).setOrigin(0, 0);
+      this.add.rectangle(slot.x, slot.y, w, h, 0x07110b, 0.42).setOrigin(0, 0);
+      this.frame(slot.x, slot.y, w, h, acceptsSelected ? 'wax' : def === undefined ? 'dust' : 'bone');
+      const dropZone = this.add.zone(slot.x, slot.y, w, h).setOrigin(0, 0);
       dropZone.setInteractive({ cursor: acceptsSelected ? 'pointer' : 'default' });
       dropZone.on('pointerup', () => this.placeSelected(i));
-      this.text(x + 12, y + 10, SLOT_NAMES[i]!, 'bone').setScale(0.75);
+      this.label(x + L.pad, y + 4, `진열 ${i + 1}`, 'dust');
       if (def === undefined) {
-        this.text(x + 12, y + 72, '여기로 끌기', 'bone').setScale(0.75);
-        this.text(x + 12, y + 98, i === 0 ? '무기' : i === 1 ? '방어구' : '물약·유물', 'bone').setScale(0.75);
+        this.text(x + L.pad, y + 90, '비어 있음', 'dust');
         continue;
       }
 
-      const art = this.itemArt(def, { x: x + 14, y: y + 34, w: w - 28, h: 100 });
+      const art = this.itemArt(def, { x: x + 26, y: y + 50, w: L.slot3.w - 52, h: 132 });
       if (art !== null) this.wireShelfDrag(art, i, { x: art.x, y: art.y });
-      this.text(x + 12, y + 142, this.clip(def.name, Math.floor((w - 24) / 0.75), 'body'), 'bone').setScale(0.75);
-      this.text(x + 12, y + 168, this.clip(this.itemStats(def), Math.floor((w - 24) / 0.75), 'body'), 'bone').setScale(0.75);
+      this.label(x + L.pad, y + 190, this.clip(def.name, L.slot3.w - L.pad * 2, 'label'), def.isRelic ? 'wax' : 'bone');
+      this.label(x + L.pad, y + 216, this.itemStats(def), 'dust');
     }
 
     // 오늘의 출연자 — 램프와 장부 사이. 소품 자리를 침범하지 않는다
