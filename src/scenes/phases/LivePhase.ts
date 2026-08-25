@@ -84,6 +84,24 @@ const CHAT_SPAWN_MS = 750;
 const WITNESS_HOLD_MS = 1200;
 const CHAT_SILENCE_MS = 3000;
 
+/**
+ * 적 반격 — 스프라이트가 튕기듯 커졌다가 돌아오고 화면이 흔들린다 (사용자 확정).
+ *
+ * 커지는 건 앞 1/4 구간에서 단숨에, 돌아오는 건 나머지 3/4 에 걸쳐 제곱으로 잦아든다.
+ * 좌우 대칭으로 하면 「부풀었다 꺼진다」가 되고, 이렇게 해야 「맞았다」로 읽힌다.
+ *
+ * 카메라 흔들림 세기는 화면 폭의 비율이다 — 0.004 × 1920 ≈ 7px.
+ */
+const COUNTER_MS = 240;
+const COUNTER_BOUNCE = 0.18;
+const COUNTER_SHAKE_MS = 180;
+const COUNTER_SHAKE = 0.004;
+
+function bounceAmount(t: number): number {
+  const k = t < 0.25 ? t / 0.25 : (1 - (t - 0.25) / 0.75) ** 2;
+  return COUNTER_BOUNCE * k;
+}
+
 export class LivePhase extends PhaseScene {
   private ticker: Phaser.Time.TimerEvent | null = null;
   private chatPump: Phaser.Time.TimerEvent | null = null;
@@ -104,6 +122,12 @@ export class LivePhase extends PhaseScene {
   private deathAt: number | null = null;
   private lastFans = -1;
   private fanDropUntil = 0;
+  /** 적이 한 대 먹인 순간 (반격 연출 시작 시각). 끝나면 null */
+  private counterAt: number | null = null;
+  /** 용사 체력을 지켜보다 **줄어드는 순간**을 반격으로 읽는다 (아래 build 참조) */
+  private lastHeroHp = -1;
+  /** 튕길 적 스프라이트와 원래 자리·크기. build 가 매번 다시 채운다 */
+  private enemyBounce: { img: Phaser.GameObjects.Image; x: number; y: number; w: number; h: number } | null = null;
 
   /** 프레임마다 손보는 오브젝트 — build() 가 매번 다시 채운다 */
   private blinkers: (Phaser.GameObjects.Rectangle | Phaser.GameObjects.Image)[] = [];
@@ -130,6 +154,9 @@ export class LivePhase extends PhaseScene {
     this.chatSilentUntil = 0;
     this.deathAt = null;
     this.lastFans = -1;
+    this.counterAt = null;
+    this.lastHeroHp = -1;
+    this.enemyBounce = null;
     this.fanDropUntil = 0;
 
     this.chat = new Ticker(this, { x: L.live.chat.x + L.pad, y: L.live.chat.y + 58, w: L.live.chat.w - L.pad * 2, h: L.live.chat.h - 80 },
@@ -205,6 +232,18 @@ export class LivePhase extends PhaseScene {
       }
     }
 
+    // 반격 — 매 프레임 크기를 다시 먹인다. 트윈을 쓰면 채팅이 들어올 때마다(750ms)
+    // 화면을 다시 그리면서 스프라이트가 파괴돼 연출이 중간에 끊긴다
+    if (this.counterAt !== null) {
+      const t = (now - this.counterAt) / COUNTER_MS;
+      if (t >= 1) {
+        this.counterAt = null;
+        this.applyBounce(0);
+      } else {
+        this.applyBounce(bounceAmount(t));
+      }
+    }
+
     if (this.noiseArt !== null) {
       // 잡음은 뒤집어도 잡음이다 — 1182x936 텍스처를 여러 장 물고 있을 이유가 없다
       const step = Math.floor(now / 110);
@@ -219,6 +258,23 @@ export class LivePhase extends PhaseScene {
     this.shaken = [];
     this.noiseLayer = null;
     this.noiseArt = null;
+    this.enemyBounce = null;
+
+    /**
+     * 적이 반격했는지는 **용사 체력이 줄었는가**로 읽는다.
+     *
+     * `pendingFx` 로는 알 수 없다 — `HIT`/`GUARD`/`APPEAL_POSE` 는 플레이어가 무엇을
+     * 골랐는지를 말할 뿐, 적이 실제로 맞혔는지는 담고 있지 않다 (`core/systems/combat.ts`:
+     * 공격은 `counterChance`, 어필은 `hitChance` 로 갈린다). 새 fx 종류를 넣으려면
+     * `types.ts` 를 고쳐야 하는데 그건 동결된 계약 파일이다.
+     * 조우 중일 때만 본다 — 층 이동 중 피해까지 반격으로 읽지 않기 위해서다.
+     */
+    const hp = s.today?.hero.hp ?? -1;
+    if (this.lastHeroHp >= 0 && hp >= 0 && hp < this.lastHeroHp && s.today?.encounter != null) {
+      this.counterAt = this.time.now;
+      if (!this.reduced) this.cameras.main.shake(COUNTER_SHAKE_MS, COUNTER_SHAKE);
+    }
+    this.lastHeroHp = hp;
     this.watch(s);
 
     // 상단 144 는 DayScene 의 HUD 다 — 목업(전투화면.png)에서도 방송 중에 그대로 떠 있다.
@@ -450,7 +506,10 @@ export class LivePhase extends PhaseScene {
 
     if (enc !== null) {
       // 적 CG — 512x512 원본을 정확히 1/2 로. 소수배로 줄이면 디더가 깨진다
-      if (!this.spriteFit(e, [enc.enemyKey])) this.enemyShape(e.x - 32, e.y - 20, 320, 300, enc.enemyKey);
+      const img = this.spriteFitObject(e, [enc.enemyKey]);
+      if (img === null) this.enemyShape(e.x - 32, e.y - 20, 320, 300, enc.enemyKey);
+      // 반격 때 여기서 잡아 둔 원래 자리·크기를 기준으로 튕긴다
+      else this.enemyBounce = { img, x: img.x, y: img.y, w: img.displayWidth, h: img.displayHeight };
 
       // 체력바는 적 스프라이트 **바로 아래**. 바 하나만 둔다 (사용자 확정) —
       // 이름·숫자·판까지 얹었더니 몬스터 발밑이 정보창이 됐다.
@@ -648,6 +707,20 @@ export class LivePhase extends PhaseScene {
     // 이 방송의 누적 슈퍼챗. **시청자 수는 여기 안 쓴다** — 방송바에 이미 있어서
     // 한 화면에 같은 숫자가 둘이 떴다 (사용자 확정)
     this.label(info.x + L.pad, info.y + 168, `+${run.superchat} G`, 'bone');
+  }
+
+  /**
+   * 반격 순간의 부풀림. **발밑을 고정한 채** 위·좌우로만 커진다 —
+   * 가운데를 기준으로 키우면 몬스터가 바닥을 뚫고 내려간다.
+   */
+  private applyBounce(amount: number): void {
+    const b = this.enemyBounce;
+    if (b === null) return;
+    const w = Math.round(b.w * (1 + amount));
+    const h = Math.round(b.h * (1 + amount));
+    b.img
+      .setDisplaySize(w, h)
+      .setPosition(Math.round(b.x - (w - b.w) / 2), Math.round(b.y - (h - b.h)));
   }
 
   /**
