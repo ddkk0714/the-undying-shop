@@ -1,14 +1,15 @@
 import { SCENES } from '../../config';
+import Phaser from 'phaser';
 import { content } from '../../core/content';
 import { isEarlyClosure } from '../../core/systems/narrative';
 import { officeHero } from '../../core/systems/office';
-import { starArt } from '../../render/assets';
+import { key, starArt } from '../../render/assets';
 import { L, slotX, actionX, ACTION_W } from '../../ui/layout';
 import { Button } from '../../ui/Button';
 import { onboard } from '../../ui/Onboarding';
 import { playBgm } from '../../audio/Sfx';
 import { PhaseScene } from './PhaseScene';
-import type { Contract, GameState, Star } from '../../core/types';
+import type { Contract, GameState, ItemDef, Star } from '../../core/types';
 
 /**
  * M05 편성실 — **상점 화면** (v3.1 레퍼런스 정본, 04-UI-KIT §1 · 00-OVERVIEW §8-2).
@@ -23,12 +24,13 @@ import type { Contract, GameState, Star } from '../../core/types';
  */
 type BenchMode = 'CONTRACT' | 'SHELF';
 
+const SLOT_NAMES = ['무기', '방어구', '기타'] as const;
+const INVENTORY_COLUMNS = 7;
+
 export class OfficePhase extends PhaseScene {
   private mode: BenchMode = 'SHELF';
   /** 계약서가 2장 올 수 있다 (M05). 지금 보고 있는 장 */
   private contractIndex = 0;
-  /** 인벤토리에서 지금 보고 있는 물건 (HO-017 · CCR-003) */
-  private itemIndex = 0;
 
   constructor() {
     super(SCENES.PHASE_OFFICE);
@@ -40,7 +42,6 @@ export class OfficePhase extends PhaseScene {
    * 어제 남긴 필드를 지우지 않으면 다음 날 화면이 어제 상태로 시작한다.
    */
     this.contractIndex = 0;
-    this.itemIndex = 0;
     this.mode = 'SHELF';
     super.create();
     playBgm(this, 'bgm.shop');
@@ -159,38 +160,58 @@ export class OfficePhase extends PhaseScene {
     if (s.visitors.length > 1) {
       this.label(ox, p.y + L.pad * 4 + 56, `${this.contractIndex + 1} / ${s.visitors.length} 장`, 'dust');
     }
+    this.buildContractStamp(s, visitor, p);
   }
 
-  /* ── 작업대 B · 진열 3칸 ──────────────────────────────── */
+  /** 계약서는 버튼보다 도장으로 처리한다. Papers, Please처럼 종이 위에서 직접 결재한다. */
+  private buildContractStamp(s: Readonly<GameState>, visitor: Contract, paper: { x: number; y: number; w: number; h: number }): void {
+    if (!this.hasArt('prop.stamp')) return;
+    const stamp = this.add.image(paper.x + paper.w - 88, paper.y + paper.h - 116, key('prop.stamp'))
+      .setDisplaySize(64, 104);
+    this.label(paper.x + paper.w - 220, paper.y + paper.h - 24, '도장을 눌러 수락', 'dust');
+    if (s.gold < visitor.fee) {
+      stamp.setAlpha(0.32);
+      return;
+    }
+
+    let stamped = false;
+    const accept = () => {
+      if (stamped) return;
+      stamped = true;
+      stamp.setY(stamp.y + 12).setAngle(8);
+      this.time.delayedCall(100, () => this.store.dispatch({ type: 'OFFICE/CONTRACT_ACCEPT', starId: visitor.starId }));
+    };
+    stamp.setInteractive({ cursor: 'pointer' });
+    stamp.on('pointerdown', accept);
+    this.input.keyboard?.on('keydown-FIVE', accept);
+  }
+
+  /* ── 작업대 B · 장비 진열 ─────────────────────────────── */
 
   private buildShelf(s: Readonly<GameState>): void {
     const alive = s.stars.filter((star) => star.status === 'ALIVE');
 
+    this.label(L.slot3.x, L.slot3.y - 28, '장비를 인벤토리에서 끌어 진열대에 놓으세요.', 'dust');
     for (let i = 0; i < 3; i += 1) {
       const x = slotX(i);
       const y = L.slot3.y;
       const itemId = s.shelf[i] ?? null;
       const def = itemId === null ? undefined : content.items.find((item) => item.id === itemId);
-      this.rect(x, y, L.slot3.w, L.slot3.h, 'ink');
-      this.frame(x, y, L.slot3.w, L.slot3.h, 'bone');
 
-      const ix = x + L.pad;
-      const inner = L.slot3.w - L.pad * 2;
+      // 카드가 아니라 작업대 위의 실제 놓는 자리다. 배경 그림을 가리지 않고 테두리만 남긴다.
+      this.frame(x + 10, y + 28, L.slot3.w - 20, L.slot3.h - 40, def === undefined ? 'dust' : 'bone');
+      this.label(x + L.pad, y + 4, SLOT_NAMES[i]!);
       if (def === undefined) {
-        this.label(ix, y + L.pad, `진열 ${i + 1}`, 'dust');
-        this.text(ix, y + 72, '비어 있음', 'dust');
+        this.label(x + L.pad, y + 56, '여기로 끌기', 'dust');
+        this.label(x + L.pad, y + 80, i === 0 ? '무기' : i === 1 ? '방어구' : '물약·유물', 'dust');
         continue;
       }
-      this.label(ix, y + L.pad, `진열 ${i + 1}`, 'dust');
-      this.text(ix, y + 56, this.clip(def.name, inner));
-      this.text(ix, y + 104, `HP+${def.hp}`, 'dust');
-      this.text(ix, y + 144, `공+${def.atk} 방+${def.def}`, 'dust');
-      // CCR-003 — 진열은 판매가 아니라 장착이다. 값을 적으면 파는 것처럼 읽힌다
-      new Button(this, {
-        x: ix, y: y + L.slot3.h - 76, w: inner, h: 56,
-        label: '내린다', variant: 'ghost',
-        onClick: () => this.store.dispatch({ type: 'OFFICE/PLACE', slot: i, itemId: null }),
-      });
+
+      const art = this.itemArt(def, { x: x + 26, y: y + 50, w: L.slot3.w - 52, h: 132 });
+      if (art !== null) this.wireShelfDrag(art, i, { x: art.x, y: art.y });
+      this.label(x + L.pad, y + 190, this.clip(def.name, L.slot3.w - L.pad * 2, 'label'), def.isRelic ? 'wax' : 'bone');
+      this.label(x + L.pad, y + 216, this.itemStats(def), 'dust');
+      this.label(x + L.pad, y + 240, '인벤토리로 끌어 회수', 'dust');
     }
 
     // 오늘의 출연자 — 램프와 장부 사이. 소품 자리를 침범하지 않는다
@@ -223,40 +244,22 @@ export class OfficePhase extends PhaseScene {
     this.buildInventory(s, alive[0]);
   }
 
-  /* ── 작업대 B · 인벤토리 (HO-017 · CCR-003) ───────────── */
+  /* ── 작업대 B · 인벤토리 ───────────────────────────────── */
 
-  /**
-   * 진열은 **판매가 아니라 장착**이다. 올린 물건은 인벤토리에 남고, 내리기 전에는 팔 수 없다.
-   * 파는 것은 따로다 — 그리고 진실 유품 2종은 팔면 `leak` 이 오른다 (M05 §5).
-   *
-   * 물건을 하나씩 넘겨 보고(5) 올리거나 내리고(6) 판다(7). 3칸은 눌러서도 내려진다.
-   */
   private buildInventory(s: Readonly<GameState>, star: Star | undefined): void {
     const b = L.bench;
-    const iy = b.y + 600;          // 「오늘의 출연자」 줄 아래, Day1 온보딩 띠(884) 위
-    const ih = 128;
+    const iy = b.y + b.h - 204;
+    const ih = 180;
     const px = b.x + L.pad;
     const pw = b.w - L.pad * 2;
-    const ox = b.x + L.pad * 2;
+    const ox = px + L.pad;
 
-    // 위아래로 옅어지는 판 — 위는 넓게, 아래는 작업대 끝이라 짧게 끊는다
-    ([3, 2, 1] as const).forEach((weight, i) => {
-      // 위 꼬리는 「이 사람으로」 버튼(720 에서 끝난다)을 덮지 않는 만큼만 쓴다
-      this.scrim(px, iy - 8 * (i + 1), pw, 8, weight);
-      this.scrim(px, iy + ih + 8 * i, pw, 8, weight);
-    });
-    this.rect(px, iy, pw, ih, 'ink');
+    this.scrimRow(px, iy, pw, ih);
+    this.frame(px, iy, pw, ih, 'dust');
 
     const stacks = s.inventory.filter((stack) => stack.qty > 0);
-    if (this.itemIndex >= stacks.length) this.itemIndex = 0;
-    const stack = stacks[this.itemIndex];
-    const def = stack === undefined ? undefined : content.items.find((item) => item.id === stack.id);
-    const shelved = def !== undefined && s.shelf.includes(def.id);
-
-    const head = stacks.length === 0
-      ? '인벤토리'
-      : `인벤토리 ${this.itemIndex + 1} / ${stacks.length}${shelved ? '  ·  진열 중' : ''}`;
-    this.label(ox, iy + 8, head, shelved ? 'wax' : 'dust');
+    this.label(ox, iy + 8, `인벤토리  ${stacks.length}종`, 'bone');
+    const hint = this.label(ox + 260, iy + 8, '장비 도트를 끌어 맞는 진열대에 놓으세요.', 'dust');
 
     // 진열의 결과를 숫자로 보여준다 — 「진열 확정 시 출연자 스탯이 갱신된다」(M05 §8)
     const totals = s.shelf.reduce(
@@ -268,52 +271,96 @@ export class OfficePhase extends PhaseScene {
     );
     if (star !== undefined) {
       const hero = officeHero(s, star);
-      this.label(ox + 320, iy + 8,
-        `장비 HP+${totals.hp} 공+${totals.atk} 방+${totals.def}   →   출연자 ${hero.maxHp} · 공 ${hero.atk} · 방 ${hero.def}`,
+      this.label(ox + 800, iy + 8,
+        `장비 HP+${totals.hp} 공+${totals.atk} 방+${totals.def} → 출연자 ${hero.maxHp}·공${hero.atk}·방${hero.def}`,
         'dust');
     }
 
-    if (def === undefined || stack === undefined) {
+    if (stacks.length === 0) {
       this.text(ox, iy + 36, '팔 것도 올릴 것도 없다.', 'dust');
       this.text(ox, iy + 80, '시체를 훼손하면 유품이 들어온다.', 'dust');
       return;
     }
 
-    const gear = def.kind === 'GEAR';
-    const full = s.shelf.every((slot) => slot !== null);
-    const spec = gear
-      ? `HP+${def.hp} 공+${def.atk} 방+${def.def}`
-      : def.kind === 'POTION' ? `방송 중 회복 +${def.healing}` : '전투에는 쓸모가 없다';
+    const cellW = Math.floor((pw - L.pad * 2) / INVENTORY_COLUMNS);
+    stacks.slice(0, INVENTORY_COLUMNS * 2).forEach((stack, index) => {
+      const def = content.items.find((item) => item.id === stack.id);
+      if (def === undefined) return;
+      const col = index % INVENTORY_COLUMNS;
+      const row = Math.floor(index / INVENTORY_COLUMNS);
+      const cellX = ox + col * cellW;
+      const cellY = iy + 42 + row * 68;
+      const equipped = s.shelf.includes(def.id);
+      const art = this.itemArt(def, { x: cellX, y: cellY, w: cellW - 16, h: 40 });
+      if (art !== null) {
+        if (equipped) art.setAlpha(0.38);
+        else this.wireInventoryDrag(art, def, { x: art.x, y: art.y });
+        this.wireItemHint(art, def, hint);
+      }
+      this.label(cellX, cellY + 42, this.clip(def.name, cellW - 16, 'label'), equipped ? 'wax' : 'bone');
+      this.label(cellX, cellY + 56, equipped ? '진열 중' : `${this.itemStats(def)}${stack.qty > 1 ? ` ×${stack.qty}` : ''}`, 'dust');
+    });
+  }
 
-    this.text(ox, iy + 36, this.clip(`${def.name}${stack.qty > 1 ? ` x${stack.qty}` : ''}`, 380));
-    this.text(ox, iy + 80, this.clip(spec, 300), 'dust');
-    this.text(ox + 320, iy + 80, `${def.price.toLocaleString('en-US')} G`, def.isRelic ? 'wax' : 'bone');
+  /** 장비 원본 비율을 유지한다. 크기가 제각각인 도트도 찌그러지지 않는다. */
+  private itemArt(item: ItemDef, box: { x: number; y: number; w: number; h: number }): Phaser.GameObjects.Image | null {
+    if (!this.hasArt(item.iconKey)) return null;
+    const texture = key(item.iconKey);
+    const source = this.textures.get(texture).getSourceImage() as { width: number; height: number };
+    const scale = Math.min(box.w / source.width, box.h / source.height);
+    return this.add.image(Math.round(box.x + box.w / 2), Math.round(box.y + box.h / 2), texture)
+      .setDisplaySize(Math.max(1, Math.round(source.width * scale)), Math.max(1, Math.round(source.height * scale)));
+  }
 
-    const bw = 200;
-    const bx = b.x + b.w - L.pad * 2 - bw;
-    const by2 = iy + 32;
-    new Button(this, {
-      x: bx - (bw + 12) * 2, y: by2, w: bw, h: 64,
-      label: '다음', hotkey: '5', variant: 'ghost',
-      enabled: stacks.length > 1,
-      onClick: () => { this.itemIndex = (this.itemIndex + 1) % stacks.length; this.redraw(); },
+  private itemStats(item: ItemDef): string {
+    return item.kind === 'POTION' ? `회복 +${item.healing}` : `HP+${item.hp} 공+${item.atk} 방+${item.def}`;
+  }
+
+  private wireItemHint(image: Phaser.GameObjects.Image, item: ItemDef, hint: Phaser.GameObjects.Text): void {
+    image.on('pointerover', () => hint.setText(`${item.name} · ${this.itemStats(item)} · ${item.price.toLocaleString('en-US')} G`));
+    image.on('pointerout', () => hint.setText('장비 도트를 끌어 맞는 진열대에 놓으세요.'));
+  }
+
+  private wireInventoryDrag(image: Phaser.GameObjects.Image, item: ItemDef, home: { x: number; y: number }): void {
+    image.setInteractive({ cursor: 'grab' });
+    this.input.setDraggable(image);
+    image.on('dragstart', () => image.setDepth(1000).setScale(1.15));
+    image.on('drag', (_pointer: Phaser.Input.Pointer, dragX: number, dragY: number) => image.setPosition(Math.round(dragX), Math.round(dragY)));
+    image.on('dragend', () => {
+      const slot = this.shelfSlotAt(image.x, image.y);
+      if (slot === content.balance.equipment.slotByItem[item.id]) {
+        this.store.dispatch({ type: 'OFFICE/PLACE', slot, itemId: item.id });
+        return;
+      }
+      image.setPosition(home.x, home.y).setScale(1).setDepth(0);
     });
-    new Button(this, {
-      x: bx - (bw + 12), y: by2, w: bw, h: 64,
-      label: shelved ? '내린다' : '진열', hotkey: '6',
-      enabled: gear && (shelved || !full),
-      onClick: () => {
-        const slot = shelved ? s.shelf.indexOf(def.id) : s.shelf.indexOf(null);
-        if (slot < 0) return;
-        this.store.dispatch({ type: 'OFFICE/PLACE', slot, itemId: shelved ? null : def.id });
-      },
+  }
+
+  private wireShelfDrag(image: Phaser.GameObjects.Image, slot: number, home: { x: number; y: number }): void {
+    image.setInteractive({ cursor: 'grab' });
+    this.input.setDraggable(image);
+    image.on('dragstart', () => image.setDepth(1000).setScale(1.15));
+    image.on('drag', (_pointer: Phaser.Input.Pointer, dragX: number, dragY: number) => image.setPosition(Math.round(dragX), Math.round(dragY)));
+    image.on('dragend', () => {
+      if (this.inInventory(image.x, image.y)) {
+        this.store.dispatch({ type: 'OFFICE/PLACE', slot, itemId: null });
+        return;
+      }
+      image.setPosition(home.x, home.y).setScale(1).setDepth(0);
     });
-    new Button(this, {
-      x: bx, y: by2, w: bw, h: 64,
-      label: '판매', hotkey: '7', variant: 'danger',
-      enabled: !shelved,
-      onClick: () => this.store.dispatch({ type: 'OFFICE/SELL', itemId: def.id }),
-    });
+  }
+
+  private shelfSlotAt(x: number, y: number): number | null {
+    for (let i = 0; i < 3; i += 1) {
+      const left = slotX(i);
+      if (x >= left && x <= left + L.slot3.w && y >= L.slot3.y && y <= L.slot3.y + L.slot3.h) return i;
+    }
+    return null;
+  }
+
+  private inInventory(x: number, y: number): boolean {
+    const b = L.bench;
+    return x >= b.x + L.pad && x <= b.x + b.w - L.pad && y >= b.y + b.h - 204 && y <= b.y + b.h - L.pad;
   }
 
   /* ── 하단 4택 ─────────────────────────────────────────── */
@@ -364,13 +411,7 @@ export class OfficePhase extends PhaseScene {
       const sheet = s.visitors[this.contractIndex];
       const by = paper.y + paper.h - L.pad * 4 - 104;
       new Button(this, {
-        x: paper.x + 48, y: by, w: 240, h: 64,
-        label: '계약한다', hotkey: '5',
-        enabled: sheet !== undefined && s.gold >= sheet.fee,
-        onClick: () => sheet && this.store.dispatch({ type: 'OFFICE/CONTRACT_ACCEPT', starId: sheet.starId }),
-      });
-      new Button(this, {
-        x: paper.x + paper.w - 288, y: by, w: 240, h: 64,
+        x: paper.x + 48, y: by, w: 260, h: 64,
         label: '돌려보낸다', hotkey: '6', variant: 'danger',
         enabled: sheet !== undefined,
         onClick: () => sheet && this.store.dispatch({ type: 'OFFICE/CONTRACT_REJECT', starId: sheet.starId }),

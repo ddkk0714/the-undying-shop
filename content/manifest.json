@@ -415,6 +415,132 @@
           ],
           "desc": "작업대의 가격표"
         },
+        "item.lantern_old": {
+          "type": "image",
+          "file": "item/lantern_old.png",
+          "size": [
+            105,
+            192
+          ],
+          "desc": "낡은 랜턴 장비 도트"
+        },
+        "item.dagger_crack": {
+          "type": "image",
+          "file": "item/dagger_crack.png",
+          "size": [
+            99,
+            150
+          ],
+          "desc": "균열난 단검 장비 도트"
+        },
+        "item.rope_hemp": {
+          "type": "image",
+          "file": "item/rope_hemp.png",
+          "size": [
+            117,
+            147
+          ],
+          "desc": "삼줄 장비 도트"
+        },
+        "item.cloak_ash": {
+          "type": "image",
+          "file": "item/cloak_ash.png",
+          "size": [
+            144,
+            171
+          ],
+          "desc": "재의 망토 장비 도트"
+        },
+        "item.blade_tallow": {
+          "type": "image",
+          "file": "item/blade_tallow.png",
+          "size": [
+            174,
+            189
+          ],
+          "desc": "촛농검 장비 도트"
+        },
+        "item.charm_seal": {
+          "type": "image",
+          "file": "item/charm_seal.png",
+          "size": [
+            156,
+            141
+          ],
+          "desc": "봉랍 부적 장비 도트"
+        },
+        "item.boots_quiet": {
+          "type": "image",
+          "file": "item/boots_quiet.png",
+          "size": [
+            165,
+            159
+          ],
+          "desc": "죽은 자의 신발 장비 도트"
+        },
+        "item.mask_bone": {
+          "type": "image",
+          "file": "item/mask_bone.png",
+          "size": [
+            177,
+            129
+          ],
+          "desc": "뼈가면 장비 도트"
+        },
+        "item.tooth_gate": {
+          "type": "image",
+          "file": "item/tooth_gate.png",
+          "size": [
+            129,
+            174
+          ],
+          "desc": "문지기의 이빨 장비 도트"
+        },
+        "item.soil_deep": {
+          "type": "image",
+          "file": "item/soil_deep.png",
+          "size": [
+            102,
+            150
+          ],
+          "desc": "아래의 흙 한 줌 유품 도트"
+        },
+        "item.ring_rust": {
+          "type": "image",
+          "file": "item/ring_rust.png",
+          "size": [
+            108,
+            105
+          ],
+          "desc": "녹슨 반지 장비 도트"
+        },
+        "item.page_torn": {
+          "type": "image",
+          "file": "item/page_torn.png",
+          "size": [
+            156,
+            147
+          ],
+          "desc": "찢어진 낱장 유품 도트"
+        },
+        "item.potion_crimson": {
+          "type": "image",
+          "file": "item/potion_crimson.png",
+          "size": [
+            105,
+            168
+          ],
+          "desc": "붉은 회복약 장비 도트"
+        },
+        "item.potion_moon": {
+          "type": "image",
+          "file": "item/potion_moon.png",
+          "size": [
+            75,
+            159
+          ],
+          "desc": "은빛 회복약 장비 도트"
+        },
         "star.silhouette": {
           "type": "spritesheet",
           "file": "star/silhouette.png",
@@ -1001,6 +1127,132 @@
             104
           ],
           "desc": "작업대의 가격표"
+        },
+        "item.lantern_old": {
+          "type": "image",
+          "file": "item/lantern_old.png",
+          "size": [
+            105,
+            192
+          ],
+          "desc": "낡은 랜턴 장비 도트"
+        },
+        "item.dagger_crack": {
+          "type": "image",
+          "file": "item/dagger_crack.png",
+          "size": [
+            99,
+            150
+          ],
+          "desc": "균열난 단검 장비 도트"
+        },
+        "item.rope_hemp": {
+          "type": "image",
+          "file": "item/rope_hemp.png",
+          "size": [
+            117,
+            147
+          ],
+          "desc": "삼줄 장비 도트"
+        },
+        "item.cloak_ash": {
+          "type": "image",
+          "file": "item/cloak_ash.png",
+          "size": [
+            144,
+            171
+          ],
+          "desc": "재의 망토 장비 도트"
+        },
+        "item.blade_tallow": {
+          "type": "image",
+          "file": "item/blade_tallow.png",
+          "size": [
+            174,
+            189
+          ],
+          "desc": "촛농검 장비 도트"
+        },
+        "item.charm_seal": {
+          "type": "image",
+          "file": "item/charm_seal.png",
+          "size": [
+            156,
+            141
+          ],
+          "desc": "봉랍 부적 장비 도트"
+        },
+        "item.boots_quiet": {
+          "type": "image",
+          "file": "item/boots_quiet.png",
+          "size": [
+            165,
+            159
+          ],
+          "desc": "죽은 자의 신발 장비 도트"
+        },
+        "item.mask_bone": {
+          "type": "image",
+          "file": "item/mask_bone.png",
+          "size": [
+            177,
+            129
+          ],
+          "desc": "뼈가면 장비 도트"
+        },
+        "item.tooth_gate": {
+          "type": "image",
+          "file": "item/tooth_gate.png",
+          "size": [
+            129,
+            174
+          ],
+          "desc": "문지기의 이빨 장비 도트"
+        },
+        "item.soil_deep": {
+          "type": "image",
+          "file": "item/soil_deep.png",
+          "size": [
+            102,
+            150
+          ],
+          "desc": "아래의 흙 한 줌 유품 도트"
+        },
+        "item.ring_rust": {
+          "type": "image",
+          "file": "item/ring_rust.png",
+          "size": [
+            108,
+            105
+          ],
+          "desc": "녹슨 반지 장비 도트"
+        },
+        "item.page_torn": {
+          "type": "image",
+          "file": "item/page_torn.png",
+          "size": [
+            156,
+            147
+          ],
+          "desc": "찢어진 낱장 유품 도트"
+        },
+        "item.potion_crimson": {
+          "type": "image",
+          "file": "item/potion_crimson.png",
+          "size": [
+            105,
+            168
+          ],
+          "desc": "붉은 회복약 장비 도트"
+        },
+        "item.potion_moon": {
+          "type": "image",
+          "file": "item/potion_moon.png",
+          "size": [
+            75,
+            159
+          ],
+          "desc": "은빛 회복약 장비 도트"
         },
         "star.body.karin": {
           "type": "image",
