@@ -38,6 +38,7 @@ export class HelpScene extends Phaser.Scene {
   }
 
   create(): void {
+    this.scene.bringToTop();
     this.cameras.main.setBackgroundColor(PALETTE.ink);
     panel(this, PANEL.x, PANEL.y, PANEL.w, PANEL.h, 'sunken');
 

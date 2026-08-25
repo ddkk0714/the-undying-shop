@@ -203,7 +203,7 @@ export class OfficePhase extends PhaseScene {
     // 빈 칸을 그냥 두면 왜 출격이 잠겼는지 알 길이 없다
     if (cols === 0) {
       this.text(L.bench.x + 380, by + 40, '세울 사람이 없다.', 'wax');
-      this.text(L.bench.x + 380, by + 84, '蘇生(1) 되살리기 · 交渉(3) 계약 · 돈이 없으면 賣却(7) 판다.', 'dust');
+      this.text(L.bench.x + 380, by + 84, '소생으로 되살리기 · 계약으로 새 출연자 맞이 · 돈이 없으면 판매한다.', 'dust');
     }
     alive.slice(0, 3).forEach((star, i) => {
       const picked = s.today?.starId === star.id;
@@ -294,13 +294,13 @@ export class OfficePhase extends PhaseScene {
     const by2 = iy + 32;
     new Button(this, {
       x: bx - (bw + 12) * 2, y: by2, w: bw, h: 64,
-      label: '次 다음', hotkey: '5', variant: 'ghost',
+      label: '다음', hotkey: '5', variant: 'ghost',
       enabled: stacks.length > 1,
       onClick: () => { this.itemIndex = (this.itemIndex + 1) % stacks.length; this.redraw(); },
     });
     new Button(this, {
       x: bx - (bw + 12), y: by2, w: bw, h: 64,
-      label: shelved ? '陳列 내린다' : '陳列 진열', hotkey: '6',
+      label: shelved ? '내린다' : '진열', hotkey: '6',
       enabled: gear && (shelved || !full),
       onClick: () => {
         const slot = shelved ? s.shelf.indexOf(def.id) : s.shelf.indexOf(null);
@@ -310,7 +310,7 @@ export class OfficePhase extends PhaseScene {
     });
     new Button(this, {
       x: bx, y: by2, w: bw, h: 64,
-      label: '賣却 판매', hotkey: '7', variant: 'danger',
+      label: '판매', hotkey: '7', variant: 'danger',
       enabled: !shelved,
       onClick: () => this.store.dispatch({ type: 'OFFICE/SELL', itemId: def.id }),
     });
@@ -330,19 +330,19 @@ export class OfficePhase extends PhaseScene {
     );
     new Button(this, {
       x: actionX(0), y, w: ACTION_W, h,
-      label: '蘇生 소생', hotkey: '1', variant: 'danger',
+      label: '소생', hotkey: '1', variant: 'danger',
       enabled: hasCorpse,
       onClick: () => this.store.dispatch({ type: 'PHASE/GOTO', phase: 'REVIVE' }),
     });
     new Button(this, {
       x: actionX(1), y, w: ACTION_W, h,
-      label: '販売 진열', hotkey: '2',
+      label: '진열', hotkey: '2',
       variant: this.mode === 'SHELF' ? 'default' : 'ghost',
       onClick: () => this.switchMode('SHELF'),
     });
     new Button(this, {
       x: actionX(2), y, w: ACTION_W, h,
-      label: '交渉 계약', hotkey: '3',
+      label: '계약', hotkey: '3',
       variant: this.mode === 'CONTRACT' ? 'default' : 'ghost',
       onClick: () => this.switchMode('CONTRACT'),
     });
@@ -352,7 +352,7 @@ export class OfficePhase extends PhaseScene {
     const closing = s.today === null && isEarlyClosure(s);
     new Button(this, {
       x: actionX(3), y, w: ACTION_W, h,
-      label: closing ? '閉店 폐업' : '出撃 방송', hotkey: '4', variant: 'danger',
+      label: closing ? '폐업' : '방송', hotkey: '4', variant: 'danger',
       enabled: s.today !== null || closing,
       onClick: () => this.store.dispatch({ type: 'OFFICE/CONFIRM' }),
     });
@@ -378,7 +378,7 @@ export class OfficePhase extends PhaseScene {
       if (s.visitors.length > 1) {
         new Button(this, {
           x: paper.x + paper.w - 192, y: paper.y + 32, w: 144, h: 48,
-          label: '次 다음 장', hotkey: '7', variant: 'ghost',
+          label: '다음 장', hotkey: '7', variant: 'ghost',
           onClick: () => {
             this.contractIndex = (this.contractIndex + 1) % s.visitors.length;
             this.redraw();

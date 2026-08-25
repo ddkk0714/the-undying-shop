@@ -29,12 +29,10 @@ export interface ButtonOpts {
  * 그 상태 전용 그림이 없으면 평상 스킨 위에 상태 테두리만 얹는다 —
  * 아트를 한 장만 줘도 hover/press/danger 가 구분된다.
  */
-function skinKeyFor(visual: string, variant: ButtonVariant): string {
-  // There is no final ghost skin yet. Use the final default button rather than
-  // inheriting the placeholder texture, which otherwise reintroduces labeled boxes.
-  if (visual === 'disabled' || variant === 'ghost') return 'ui.button.9s';
-  if (variant === 'danger') return 'ui.button.danger.9s';
-  if (visual === 'hover') return 'ui.button.hover.9s';
+function skinKeyFor(visual: string): string {
+  // 행동 종류와 무관하게 같은 실제 버튼 판을 쓴다. 위험 행동은 붉은 글자만으로
+  // 구분하고, hover/press 때만 활성화 판으로 바꾼다.
+  if (visual === 'hover' || visual === 'press') return 'ui.button.hover.9s';
   return 'ui.button.9s';
 }
 
@@ -61,7 +59,8 @@ export class Button extends Phaser.GameObjects.Container {
         .setOrigin(0, 0);
     }
 
-    const text = opts.hotkey ? `${opts.hotkey}. ${opts.label}` : opts.label;
+    // 숫자키 조작은 유지하되, 아트 위에는 번호/한자 접두어를 덧씌우지 않는다.
+    const text = opts.label;
     this.txt = scene.add
       .text(Math.round(opts.w / 2), Math.round(opts.h / 2), text, { ...FONT, color: css('bone') })
       .setOrigin(0.5);
@@ -109,7 +108,7 @@ export class Button extends Phaser.GameObjects.Container {
     g.clear();
 
     if (this.skin !== null) {
-      const want = skinKeyFor(this.visual, variant);
+      const want = skinKeyFor(this.visual);
       const exact = firstTexture(this.scene, want);
       const tex = exact ?? firstTexture(this.scene, 'ui.button.9s');
       if (tex !== null) this.skin.setTexture(tex);

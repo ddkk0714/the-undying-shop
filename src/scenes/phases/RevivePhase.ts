@@ -220,7 +220,7 @@ export class RevivePhase extends PhaseScene {
     const b = L.bench;
     new Button(this, {
       x: b.x + b.w - 300, y: b.y + b.h - 96, w: 260, h: 64,
-      label: '継承 승계', hotkey: '6', variant: 'danger',
+      label: '승계', hotkey: '6', variant: 'danger',
       onClick: () => {
         this.inheriting = true;
         this.heirIndex = 0;
@@ -309,7 +309,7 @@ export class RevivePhase extends PhaseScene {
     if (heirs.length > 1) {
       new Button(this, {
         x: x + w - L.pad * 2 - 260, y: by, w: 260, h: 72,
-        label: `次 ${this.heirIndex + 1}/${heirs.length}`, hotkey: '3', variant: 'ghost',
+        label: `다음 ${this.heirIndex + 1}/${heirs.length}`, hotkey: '3', variant: 'ghost',
         onClick: () => {
           this.heirIndex = (this.heirIndex + 1) % heirs.length;
           this.redraw();
@@ -325,7 +325,7 @@ export class RevivePhase extends PhaseScene {
     this.label(b.x + b.w - 300, b.y + L.pad * 3, `대기 ${count}구`, 'dust');
     new Button(this, {
       x: b.x + b.w - 300, y: b.y + L.pad * 3 + 28, w: 220, h: 56,
-      label: `次 ${this.index + 1}/${count}`, hotkey: '5', variant: 'ghost',
+      label: `다음 ${this.index + 1}/${count}`, hotkey: '5', variant: 'ghost',
       onClick: () => {
         this.index = (this.index + 1) % Math.max(1, count);
         this.redraw();
@@ -364,7 +364,7 @@ export class RevivePhase extends PhaseScene {
 
     new Button(this, {
       x: actionX(0), y, w: ACTION_W, h,
-      label: quote === null ? '蘇生 소생' : `蘇生 ${fmtGold(quote.cost)}G`,
+      label: quote === null ? '소생' : `소생 ${fmtGold(quote.cost)}G`,
       hotkey: '1', variant: 'danger',
       enabled: quote?.affordable === true,
       onClick: () => {
@@ -375,7 +375,7 @@ export class RevivePhase extends PhaseScene {
     });
     new Button(this, {
       x: actionX(1), y, w: ACTION_W, h,
-      label: '保管 그대로', hotkey: '2',
+      label: '그대로', hotkey: '2',
       enabled: corpse !== undefined,
       onClick: () => {
         if (corpse === undefined) return;
@@ -387,13 +387,13 @@ export class RevivePhase extends PhaseScene {
     // 廢棄 — 몸이 사라지고 유품이 남는다. 되돌릴 수 없다 (M04 §결과표)
     new Button(this, {
       x: actionX(2), y, w: ACTION_W, h,
-      label: '廢棄 폐기', hotkey: '3', variant: 'danger',
+      label: '폐기', hotkey: '3', variant: 'danger',
       enabled: corpse !== undefined && !this.discarding,
       onClick: () => corpse && this.discard(corpse.starId),
     });
     new Button(this, {
       x: actionX(3), y, w: ACTION_W, h,
-      label: '編成 편성실', hotkey: '4',
+      label: '편성실', hotkey: '4',
       onClick: () => this.store.dispatch({ type: 'PHASE/ADVANCE' }),
     });
   }

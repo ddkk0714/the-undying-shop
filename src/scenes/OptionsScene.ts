@@ -26,6 +26,7 @@ export class OptionsScene extends Phaser.Scene {
   }
 
   create(): void {
+    this.scene.bringToTop();
     this.cameras.main.setBackgroundColor(PALETTE.ink);
     panel(this, 24, 16, BASE_W - 48, BASE_H - 62, 'sunken');
     this.add.text(160, 104, '옵션', { ...FONT_TITLE, color: css('bone') });

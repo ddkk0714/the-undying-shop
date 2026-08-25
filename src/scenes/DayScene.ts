@@ -212,6 +212,9 @@ export class DayScene extends Phaser.Scene {
   private openOverlay(scene: string): void {
     this.scene.pause(SCENES.DAY);
     this.scene.launch(scene, { returnTo: SCENES.DAY });
+    // PhaseScene/WipeScene 는 Day 위에서 따로 동작한다. overlay 를 Day만
+    // pause한 뒤 launch하면 이 씬들 뒤에 숨어 보일 수 있으므로 마지막에 올린다.
+    this.scene.bringToTop(scene);
   }
 
   private render(s: Readonly<GameState>): void {
