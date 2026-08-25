@@ -388,7 +388,7 @@ export class OfficePhase extends PhaseScene {
     const w = 400;
     const h = 843;
     const x = Math.max(8, Math.min(L.W - w - 8, pointer.x + 24 <= L.W - w - 8 ? pointer.x + 24 : pointer.x - w - 24));
-    const y = Math.max(L.hud.h + 8, Math.min(L.H - h - 8, pointer.y - h - 16));
+    const y = Math.max(72, Math.min(L.H - h - 8, pointer.y - h - 56));
     const depth = 5000;
 
     if (this.hasArt('ui.inventory.info')) {
