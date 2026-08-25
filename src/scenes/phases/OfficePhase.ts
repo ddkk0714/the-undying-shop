@@ -25,7 +25,8 @@ import type { Contract, GameState, ItemDef } from '../../core/types';
 type BenchMode = 'CONTRACT' | 'SHELF';
 
 const SLOT_NAMES = ['무기', '방어구', '기타'] as const;
-const INVENTORY_COLUMNS = 7;
+const INVENTORY_COLUMNS = 4;
+const INVENTORY_VISIBLE_ROWS = 2;
 
 export class OfficePhase extends PhaseScene {
   private mode: BenchMode = 'SHELF';
@@ -35,6 +36,8 @@ export class OfficePhase extends PhaseScene {
   private inventoryOpen = false;
   /** 서랍에서 클릭해 집은 장비. 맞는 진열대를 누르면 놓인다. */
   private selectedItemId: string | null = null;
+  /** 4칸 한 줄 인벤토리의 현재 첫 번째 행. */
+  private inventoryScrollRow = 0;
 
   constructor() {
     super(SCENES.PHASE_OFFICE);
@@ -49,6 +52,7 @@ export class OfficePhase extends PhaseScene {
     this.mode = 'SHELF';
     this.inventoryOpen = false;
     this.selectedItemId = null;
+    this.inventoryScrollRow = 0;
     super.create();
     playBgm(this, 'bgm.shop');
   }
@@ -309,24 +313,52 @@ export class OfficePhase extends PhaseScene {
     }
 
     const cellW = Math.floor((panel.w - 56) / INVENTORY_COLUMNS);
-    stacks.slice(0, INVENTORY_COLUMNS * 2).forEach((stack, index) => {
+    const totalRows = Math.ceil(stacks.length / INVENTORY_COLUMNS);
+    const maxScrollRow = Math.max(0, totalRows - INVENTORY_VISIBLE_ROWS);
+    this.inventoryScrollRow = Math.min(this.inventoryScrollRow, maxScrollRow);
+    const cellTop = panel.y + 144;
+    const cellHeight = 128;
+    const scrollZone = this.add.zone(panel.x, cellTop, panel.w, panel.h - (cellTop - panel.y)).setOrigin(0, 0).setInteractive();
+    scrollZone.on('wheel', (_pointer: Phaser.Input.Pointer, _dx: number, dy: number) => this.scrollInventory(Math.sign(dy), maxScrollRow));
+
+    if (maxScrollRow > 0) {
+      this.label(panel.x + panel.w - 126, panel.y + 112, `${this.inventoryScrollRow + 1}–${Math.min(totalRows, this.inventoryScrollRow + INVENTORY_VISIBLE_ROWS)} / ${totalRows}`, 'dust');
+      new Button(this, {
+        x: panel.x + panel.w - 128, y: panel.y + 138, w: 52, h: 40,
+        label: '▲', enabled: this.inventoryScrollRow > 0,
+        onClick: () => this.scrollInventory(-1, maxScrollRow),
+      });
+      new Button(this, {
+        x: panel.x + panel.w - 68, y: panel.y + 138, w: 52, h: 40,
+        label: '▼', enabled: this.inventoryScrollRow < maxScrollRow,
+        onClick: () => this.scrollInventory(1, maxScrollRow),
+      });
+    }
+
+    stacks.forEach((stack, index) => {
       const def = content.items.find((item) => item.id === stack.id);
       if (def === undefined) return;
       const col = index % INVENTORY_COLUMNS;
-      const row = Math.floor(index / INVENTORY_COLUMNS);
+      const absoluteRow = Math.floor(index / INVENTORY_COLUMNS);
+      if (absoluteRow < this.inventoryScrollRow || absoluteRow >= this.inventoryScrollRow + INVENTORY_VISIBLE_ROWS) return;
+      const row = absoluteRow - this.inventoryScrollRow;
       const cellX = ix + col * cellW;
-      const cellY = panel.y + 142 + row * 124;
+      const cellY = cellTop + row * cellHeight;
       const equipped = s.shelf.includes(def.id);
       const selected = this.selectedItemId === def.id;
-      if (selected) this.sprite(cellX - 4, cellY - 6, 'ui.inventory.selected', 88, 93);
-      const art = this.itemArt(def, { x: cellX + 4, y: cellY + 8, w: cellW - 12, h: 54 });
+      if (selected) this.sprite(cellX - 2, cellY - 2, 'ui.inventory.selected', 140, 124);
+      const art = this.itemArt(def, { x: cellX + 8, y: cellY + 8, w: cellW - 16, h: 76 });
       if (art !== null) {
         if (equipped) art.setAlpha(0.38);
-        else this.wireInventoryDrag(art, def, { x: art.x, y: art.y });
+        else {
+          this.wireInventoryDrag(art, def, { x: art.x, y: art.y });
+          // 아이콘 위에서도 휠이 작업대가 아니라 인벤토리 행을 넘긴다.
+          art.on('wheel', (_pointer: Phaser.Input.Pointer, _dx: number, dy: number) => this.scrollInventory(Math.sign(dy), maxScrollRow));
+        }
         this.wireItemHint(art, def, hint);
       }
-      this.label(cellX, cellY + 68, this.clip(def.name, cellW - 10, 'label'), equipped ? 'wax' : 'bone');
-      this.label(cellX, cellY + 86, equipped ? '진열 중' : `${this.itemStats(def)}${stack.qty > 1 ? ` ×${stack.qty}` : ''}`, 'dust');
+      this.text(cellX, cellY + 86, this.clip(def.name, Math.floor(cellW / 0.75), 'body'), equipped ? 'wax' : 'bone').setScale(0.75);
+      this.text(cellX, cellY + 112, this.clip(equipped ? '진열 중' : `${this.itemStats(def)}${stack.qty > 1 ? ` ×${stack.qty}` : ''}`, Math.floor(cellW / 0.75), 'body'), 'dust').setScale(0.75);
     });
   }
 
@@ -416,6 +448,13 @@ export class OfficePhase extends PhaseScene {
     return { x: b.x + Math.round((b.w - w) / 2), y: b.y + b.h - h, w, h };
   }
 
+  private scrollInventory(delta: number, maxScrollRow: number): void {
+    const next = Math.max(0, Math.min(maxScrollRow, this.inventoryScrollRow + delta));
+    if (next === this.inventoryScrollRow) return;
+    this.inventoryScrollRow = next;
+    this.redraw();
+  }
+
   /* ── 하단 4택 ─────────────────────────────────────────── */
 
   private buildActions(s: Readonly<GameState>): void {
@@ -493,6 +532,7 @@ export class OfficePhase extends PhaseScene {
     this.mode = 'SHELF';
     this.inventoryOpen = true;
     this.selectedItemId = null;
+    this.inventoryScrollRow = 0;
     this.redraw();
   }
 }
