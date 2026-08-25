@@ -24,13 +24,13 @@ export type OnboardTag =
   | 'ANNOUNCE';
 
 const LINES: Record<OnboardTag, string> = {
-  REVIVE: '어제 리온이 죽었다. 살릴 것인가.',
-  OFFICE_CONTRACT: '그가 적어온 숫자다. 사실인지는 아무도 모른다.',
-  OFFICE_SHELF: '진열한 장비는 그의 무기가 된다. 파는 것은 따로다.',
-  LIVE_COMBAT: '어필하면 돈이 된다. 그리고 그가 더 다친다.',
-  LIVE_RADIO: '갈림길이다. 진짜 지도는 당신만 본다.',
-  AUTOPSY: '온전하면 되살아난다. 그리고 본 것을 말한다.',
-  ANNOUNCE: '공표는 사실과 달라도 된다.',
+  REVIVE: '사망한 출연자를 되살릴지 결정하세요.',
+  OFFICE_CONTRACT: '계약서를 확인하고 수락 또는 거절하세요.',
+  OFFICE_SHELF: '장비를 진열해 출연자를 강화하세요.',
+  LIVE_COMBAT: '어필하면 수입이 늘지만 더 다칩니다.',
+  LIVE_RADIO: '지도를 보고 갈림길을 선택하세요.',
+  AUTOPSY: '시체를 보관하거나 훼손하세요.',
+  ANNOUNCE: '발표할 내용을 선택하세요.',
 };
 
 /** 화면마다 빈 자리가 다르다. 부르는 쪽이 자리를 정한다 */
