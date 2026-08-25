@@ -4,7 +4,7 @@
 마감: **2026-08-26**. 속도보다 **되돌릴 수 없는 실수를 안 하는 것**이 중요하다.
 
 > ⚠️ **이 프로젝트는 Codex와 Claude Code가 동시에 개발한다.**
-> 작업 시작 전 `Project_Project_docs/07-PARALLEL-DEV.md`를 반드시 읽어라. 소유권을 어기면 머지 충돌로 반나절이 날아간다.
+> 작업 시작 전 `Project_docs/07-PARALLEL-DEV.md`를 반드시 읽어라. 소유권을 어기면 머지 충돌로 반나절이 날아간다.
 
 ---
 
@@ -32,7 +32,7 @@ Project_docs/**  (CODEX_LOG.md 제외)
 src/core/types.ts
 src/core/actions.ts
 ```
-고쳐야 한다고 판단되면 **코드를 고치지 말고** `Project_Project_docs/02-DATA-SCHEMA.md`에 변경안을 적고 사람에게 보고해라. (`07-PARALLEL-DEV.md` §5-2)
+고쳐야 한다고 판단되면 **코드를 고치지 말고** `Project_docs/02-DATA-SCHEMA.md`에 변경안을 적고 사람에게 보고해라. (`07-PARALLEL-DEV.md` §5-2)
 
 ### 한 줄
 > **너는 게임의 규칙을 짠다. 화면은 짜지 않는다.**
@@ -41,12 +41,12 @@ src/core/actions.ts
 
 ## 1. 시작 전 반드시 읽을 것
 
-1. `Project_Project_docs/00-OVERVIEW.md` — 게임 전체. 최우선 진실
-2. **`Project_Project_docs/07-PARALLEL-DEV.md` — 소유권과 병렬 규약**
-3. `Project_Project_docs/01-ARCHITECTURE.md` — 코어/렌더 분리 원칙
-4. `Project_Project_docs/modules/M**.md` — 지금 작업할 모듈 1개. **「담당」행의 "Codex 파트"만 구현한다**
-5. `Project_Project_docs/HANDOFF.md` — 상대가 너에게 요청한 게 있는지
-6. `Project_Project_docs/05-PRIORITY.md` — 지금 이게 P0인지
+1. `Project_docs/00-OVERVIEW.md` — 게임 전체. 최우선 진실
+2. **`Project_docs/07-PARALLEL-DEV.md` — 소유권과 병렬 규약**
+3. `Project_docs/01-ARCHITECTURE.md` — 코어/렌더 분리 원칙
+4. `Project_docs/modules/M**.md` — 지금 작업할 모듈 1개. **「담당」행의 "Codex 파트"만 구현한다**
+5. `Project_docs/HANDOFF.md` — 상대가 너에게 요청한 게 있는지
+6. `Project_docs/05-PRIORITY.md` — 지금 이게 P0인지
 
 문서와 코드가 다르면 **문서가 맞다.**
 
@@ -101,7 +101,7 @@ src/core/actions.ts
 
 ## 5. 상대 영역이 필요할 때 — HANDOFF
 
-직접 고치지 말고 `Project_Project_docs/HANDOFF.md`에 항목을 추가해라.
+직접 고치지 말고 `Project_docs/HANDOFF.md`에 항목을 추가해라.
 
 ```md
 ## HO-00N  (from: Codex → to: Claude Code)  D3 14:00

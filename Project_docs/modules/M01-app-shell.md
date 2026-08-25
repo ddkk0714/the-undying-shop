@@ -85,4 +85,4 @@ export const css = (n: PaletteName) => '#' + PALETTE[n].toString(16).padStart(6,
 - [ ] `npm run build` 후 `dist/`를 `python3 -m http.server`로 열어도 동작 (상대경로 확인)
 
 ## Codex 프롬프트 시드
-> `Project_Project_docs/01-ARCHITECTURE.md`와 `Project_Project_docs/modules/M01-app-shell.md`를 읽고 M01을 구현해라. Phaser 3.90.0, TypeScript strict. `src/core/`는 아직 만들지 마라. 스케일러는 반드시 정수배만 허용하고 `Phaser.Scale.FIT`을 쓰지 마라. 완료 후 수용 기준 체크리스트를 하나씩 검증한 결과를 보고해라.
+> `Project_docs/01-ARCHITECTURE.md`와 `Project_docs/modules/M01-app-shell.md`를 읽고 M01을 구현해라. Phaser 3.90.0, TypeScript strict. `src/core/`는 아직 만들지 마라. 스케일러는 반드시 정수배만 허용하고 `Phaser.Scale.FIT`을 쓰지 마라. 완료 후 수용 기준 체크리스트를 하나씩 검증한 결과를 보고해라.

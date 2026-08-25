@@ -4,7 +4,7 @@
 1,캐릭터 · 어필 컷,star/karin_appeal.png,384×480,192×240 (1/2),카린 어필 컷 — 억지 웃음 + 카메라를 본다 (M06 §7 최우선 컷),도착,star.appeal.karin
 1,캐릭터 · 어필 컷,star/mor_appeal.png,384×480,192×240 (1/2),모르 어필 컷,도착,star.appeal.mor
 1,캐릭터 · 어필 컷,star/sela_appeal.png,384×480,192×240 (1/2),셀라 어필 컷,도착,star.appeal.sela
-2,배경,bg/shop_bench.png,1244×792,1:1,② 편성실 우측 — 작업대,도착,bg.shop.bench
+2,배경,bg/shop_bench_crop.png,1645×1123,1:1,② 편성실 우측 — 작업대,도착,bg.shop.bench
 2,배경,bg/shop_room.png,650×792,1:1,② 편성실 좌측 — 방문자가 서는 자리,도착,bg.shop.room
 2,배경,bg/tower.png,1000×792,1:1,③ 생방송 전투 칸 배경 (던전),도착,bg.tower
 2,캐릭터 · 전신,star/body_ilan.png,752×792,1:1,일란 전신,도착,star.body.ilan
@@ -19,9 +19,14 @@
 2,캐릭터 · 초상,star/sela.png,384×480,192×240 생방송(1/2) · 384×480 상점(1:1),셀라 초상,도착,star.portrait.sela
 3,배경,bg/autopsy.png,1920×936,1:1,⑤ 검시실,도착,bg.autopsy
 3,배경,bg/death.png,1920×936,1:1,④ 사망 화면,도착,bg.death
+3,배경,bg/live_desk.png,738×936,1:1,③ 생방송 좌측 책상 판 (지도·무전기가 올라간다),도착,bg.live.desk
+3,배경,bg/live_final.png,1182×936,1:1,③ 던전 · 최종 구역 (31F~),도착,bg.live.final
+3,배경,bg/live_flame.png,1182×936,1:1,③ 던전 · 화염 구역 (23~30F),도착,bg.live.flame
+3,배경,bg/live_ice.png,1182×936,1:1,③ 던전 · 얼음 구역 (23~30F),도착,bg.live.ice
+3,배경,bg/live_stone.png,1182×936,1:1,③ 던전 · 돌 구역 (~22F),도착,bg.live.stone
 3,배경,bg/live.png,1920×1080,1:1,③ 생방송 5분할 바탕 (칸 사이 여백),도착,bg.live
-3,배경,bg/revive_bench.png,1152×792,1:1,① 소생실 우측 (없으면 bg.shop.bench 를 쓴다),도착,bg.revive.bench
-3,배경,bg/revive_room.png,752×792,1:1,① 소생실 좌측 (없으면 bg.shop.room 을 쓴다),도착,bg.revive.room
+3,배경,bg/revive_bench_crop.png,1644×1122,1:1,① 소생실 우측 (없으면 bg.shop.bench 를 쓴다),대기,bg.revive.bench
+3,배경,bg/revive_room.png,650×792,1:1,① 소생실 좌측 (없으면 bg.shop.room 을 쓴다),도착,bg.revive.room
 3,배경,bg/studio.png,1920×936,1:1,⑥ 발표 스튜디오,도착,bg.studio
 3,배경,bg/title_lamp1.png,1920×1080,1:1,타이틀 램프 밝기 1/4 — 넣으면 창의 불빛이 깜빡인다 (4장 다 있어야 켜진다),도착,bg.title.lamp1
 3,배경,bg/title_lamp2.png,1920×1080,1:1,타이틀 램프 밝기 2/4 — 넣으면 창의 불빛이 깜빡인다 (4장 다 있어야 켜진다),도착,bg.title.lamp2
@@ -37,20 +42,41 @@
 3,UI · 버튼,ui/button_ghost.png,208×88,버튼 크기에 맞춰 늘어난다 (모서리 22px 고정),버튼 보조 (테두리만 · 비활성/돌아가기),대기,ui.button.ghost.9s
 3,UI · 버튼,ui/button_hover.png,208×88,버튼 크기에 맞춰 늘어난다 (모서리 22px 고정),버튼 마우스오버,도착,ui.button.hover.9s
 3,UI · 버튼,ui/button.png,208×88,버튼 크기에 맞춰 늘어난다 (모서리 22px 고정),버튼 평상,도착,ui.button.9s
-4,기타,bgm/live.wav,,1:1,생방송 BGM — 하강 중 (긴장),대기,bgm.live
-4,기타,bgm/shop.wav,,1:1,상점 BGM — 소생실·편성실 (낮고 느리게),대기,bgm.shop
-4,소리,sfx/click.wav,,1:1,버튼 누름,대기,sfx.click
-4,소리,sfx/death.wav,,1:1,신호 두절 — 방송 끊김음 + 저역 험 (M06 §8 「소리가 절반이다」),대기,sfx.death
-4,소리,sfx/record.wav,,1:1,신기록 갱신,대기,sfx.record
-4,소리,sfx/revive.wav,,1:1,소생 — 수조에서 몸이 일어난다,대기,sfx.revive
-4,소리,sfx/stamp.wav,,1:1,봉랍 도장 — 검시 판정·폐기 확정,대기,sfx.stamp
-4,소리,sfx/superchat.wav,,1:1,슈퍼챗 알림,대기,sfx.superchat
+4,기타,bgm/live.mp3,,1:1,생방송 BGM — 하강 중 (긴장),도착,bgm.live
+4,기타,bgm/shop.mp3,,1:1,상점 BGM — 소생실·편성실 (낮고 느리게),도착,bgm.shop
+4,기타,bgm/title.mp3,,1:1,타이틀 화면 BGM,도착,bgm.title
+4,기타,item/blade_tallow.png,174×189,1:1,촛농검 장비 도트,도착,item.blade_tallow
+4,기타,item/boots_quiet.png,165×159,1:1,죽은 자의 신발 장비 도트,도착,item.boots_quiet
+4,기타,item/charm_seal.png,156×141,1:1,봉랍 부적 장비 도트,도착,item.charm_seal
+4,기타,item/cloak_ash.png,144×171,1:1,재의 망토 장비 도트,도착,item.cloak_ash
+4,기타,item/dagger_crack.png,99×150,1:1,균열난 단검 장비 도트,도착,item.dagger_crack
+4,기타,item/lantern_old.png,105×192,1:1,낡은 랜턴 장비 도트,도착,item.lantern_old
+4,기타,item/mask_bone.png,177×129,1:1,뼈가면 장비 도트,도착,item.mask_bone
+4,기타,item/page_torn.png,156×147,1:1,찢어진 낱장 유품 도트,도착,item.page_torn
+4,기타,item/potion_crimson.png,105×168,1:1,붉은 회복약 장비 도트,도착,item.potion_crimson
+4,기타,item/potion_moon.png,75×159,1:1,은빛 회복약 장비 도트,도착,item.potion_moon
+4,기타,item/ring_rust.png,108×105,1:1,녹슨 반지 장비 도트,도착,item.ring_rust
+4,기타,item/rope_hemp.png,117×147,1:1,삼줄 장비 도트,도착,item.rope_hemp
+4,기타,item/soil_deep.png,102×150,1:1,아래의 흙 한 줌 유품 도트,도착,item.soil_deep
+4,기타,item/tooth_gate.png,129×174,1:1,문지기의 이빨 장비 도트,도착,item.tooth_gate
+4,소리,sfx/click.mp3,,1:1,버튼 누름,도착,sfx.click
+4,소리,sfx/death.mp3,,1:1,신호 두절 — 방송 끊김음 + 저역 험 (M06 §8 「소리가 절반이다」),도착,sfx.death
+4,소리,sfx/record.mp3,,1:1,신기록 갱신,도착,sfx.record
+4,소리,sfx/revive.mp3,,1:1,소생 — 수조에서 몸이 일어난다,도착,sfx.revive
+4,소리,sfx/stamp.mp3,,1:1,봉랍 도장 — 검시 판정·폐기 확정,도착,sfx.stamp
+4,소리,sfx/superchat.mp3,,1:1,슈퍼챗 알림,도착,sfx.superchat
+4,소리,sfx/text.mp3,,1:1,생방송 채팅이 들어올 때의 낮은 텍스트 틱,도착,sfx.text
+4,소리,sfx/title_door.mp3,,1:1,타이틀의 새 게임: 가게 문이 열리는 소리,도착,sfx.title.door
 4,소품,prop/lamp.png,224×352,1:1,작업대의 실제 석유 램프,도착,prop.lamp
 4,소품,prop/ledger.png,336×264,1:1,작업대의 출연자 서류철,도착,prop.ledger
 4,소품,prop/scroll.png,176×64,1:1,계약서 서류 조각,도착,prop.scroll
 4,소품,prop/stamp.png,128×208,1:1,최종 판정서에서 잘라낸 실물 도장,도착,prop.stamp
 4,소품,prop/tag.png,152×104,1:1,작업대의 가격표,도착,prop.tag
 4,캐릭터 · 기타,star/silhouette.png,1536×480,384×480 프레임 1칸 (1:1),이름 없는 몸 실루엣 4프레임,대기,star.silhouette
+4,UI · 기타,ui/character_cover.png,1087×258,1:1,편성실 좌측 캐릭터 전경 가리개 — 대사 배치용,도착,ui.guest.cover
+4,UI · 기타,ui/clock_hour.png,29×42,1:1,HUD game-clock hour hand,도착,ui.clock.hour
+4,UI · 기타,ui/clock_minute.png,8×56,1:1,HUD game-clock minute hand,도착,ui.clock.minute
+4,UI · 기타,ui/contract_sheet.png,700×914,1:1,Submitted hero contract; click its desk copy to inspect,도착,ui.contract.sheet
 4,UI · 기타,ui/cursor.png,32×32,1:1,"마우스 커서 — 봉랍 도장. 뾰족한 끝이 좌상단(0,0)에 오게 그려라",대기,ui.cursor
 4,UI · 기타,ui/hud_status.png,700×144,1:1,상단바 좌 — DAY·골드·팬·평판 4칸,도착,ui.hud.status
 4,UI · 기타,ui/hud_tools.png,740×144,1:1,상단바 우 — 시계·도달층 게이지,도착,ui.hud.tools
@@ -60,6 +86,25 @@
 4,UI · 기타,ui/icon_options.png,112×112,1:1,상단바 아이콘 · 옵션(톱니),도착,ui.icon.options
 4,UI · 기타,ui/icon_save_hover.png,112×112,1:1,상단바 아이콘 · 저장 (눌림),도착,ui.icon.save.hover
 4,UI · 기타,ui/icon_save.png,112×112,1:1,상단바 아이콘 · 저장,도착,ui.icon.save
+4,UI · 기타,ui/inventory_window.png,1452×831,1:1,편성실 인벤토리 창,도착,ui.inventory.window
+4,UI · 기타,ui/item_info_bottom.png,536×94,1:1,가변 장비 정보창 조립용 하단 프레임,도착,ui.inventory.info.bottom
+4,UI · 기타,ui/item_info_notes.png,536×302,1:1,가변 장비 정보창 조립용 긴 기록 구획,도착,ui.inventory.info.notes
+4,UI · 기타,ui/item_info_section.png,536×238,1:1,가변 장비 정보창 조립용 반복 특성 구획,도착,ui.inventory.info.section
+4,UI · 기타,ui/item_info_stats.png,536×177,1:1,가변 장비 정보창 조립용 스탯 구획,도착,ui.inventory.info.stats
+4,UI · 기타,ui/item_info_top.png,536×318,1:1,가변 장비 정보창 조립용 상단 — 이름·등급·아이콘,도착,ui.inventory.info.top
+4,UI · 기타,ui/item_info_window.png,536×1129,1:1,장비 상세 정보창,도착,ui.inventory.info
+4,UI · 기타,ui/item_selected.png,228×240,1:1,인벤토리 선택 장비 프레임 (우측 하단 없음),도착,ui.inventory.selected
+4,UI · 기타,ui/live_badge.png,206×74,1:1,③ LIVE 표시,도착,ui.live.badge
+4,UI · 기타,ui/live_blink.png,26×28,1:1,③ LIVE 붉은 마름모 (깜빡인다),도착,ui.live.blink
+4,UI · 기타,ui/live_chat.png,424×298,1:1,③ 채팅창. 상단 타이틀 바 42px 는 늘어나지 않는다 (9-slice top),도착,ui.live.chat
+4,UI · 기타,ui/live_dialogue.png,1040×200,1:1,③ 용사 대사 배너 (무전이 열리면 뜬다),도착,ui.live.dialogue
+4,UI · 기타,ui/live_door.png,1182×936,1:1,③ 갈림길 문 오버레이 (무전 3택),도착,ui.live.door
+4,UI · 기타,ui/live_floors.png,210×936,1:1,③ 좌측 층계 게이지 (탑 단면),도착,ui.live.floors
+4,UI · 기타,ui/live_lantern.png,460×568,1:1,③ 랜턴 든 팔 (우하단 전경),도착,ui.live.lantern
+4,UI · 기타,ui/live_map.png,620×786,1:1,③ 플레이어가 보는 지도 (찢어진 종이),도착,ui.live.map
+4,UI · 기타,ui/live_noise.png,1182×936,1:1,③ 방송 잡음 1장 (씬이 뒤집어 가며 쓴다),도착,ui.live.noise
+4,UI · 기타,ui/live_radio.png,220×420,1:1,③ 무전기,도착,ui.live.radio
+4,UI · 기타,ui/live_superchat.png,528×86,1:1,③ 슈퍼챗 한 줄 (고정 크기),도착,ui.live.superchat
 4,UI · 기타,ui/logo.png,960×240,1:1,타이틀 로고,대기,ui.logo
 4,UI · 기타,ui/seal.png,768×192,192×192 프레임 1칸 (1:1),봉랍 도장 4프레임,대기,ui.seal
 4,UI · 기타,ui/suspicion1.png,192×128,1:1,의심도 1/5 — 눈이 떠지는 5단 (5장 다 있어야 승계 화면에 뜬다),도착,ui.suspicion1

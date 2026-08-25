@@ -68,8 +68,8 @@ Codex는 브라우저를 못 보므로 UI를 맡기면 "될 것 같은 코드"�
 | `tools/**` `public/**` `index.html` | **Claude Code** | 읽기만 |
 | `vite.config.ts` `tsconfig.json` `package.json` | **Claude Code** | 추가 필요 시 요청만 |
 | `.github/workflows/**` | **Claude Code** | — |
-| `Project_Project_docs/**` `AGENTS.md` `CLAUDE.md` | **사람(당신)** | 둘 다 제안만, 직접 수정 금지 |
-| `Project_Project_docs/CODEX_LOG.md` | **Codex 우선** | Claude Code는 자기 항목만 추가 |
+| `Project_docs/**` `AGENTS.md` `CLAUDE.md` | **사람(당신)** | 둘 다 제안만, 직접 수정 금지 |
+| `Project_docs/CODEX_LOG.md` | **Codex 우선** | Claude Code는 자기 항목만 추가 |
 
 ### 한 줄 요약
 > **Codex는 `src/core/`, `content/`, `tests/`.
@@ -105,8 +105,8 @@ Codex는 브라우저를 못 보므로 UI를 맡기면 "될 것 같은 코드"�
 `types.ts`와 `actions.ts`는 양쪽이 모두 의존한다. 여기만 관리하면 나머지는 안전하다.
 
 ### 5-1. 계약 동결 (D1 오전, 1회)
-1. `Project_Project_docs/02-DATA-SCHEMA.md`를 그대로 `src/core/types.ts`에 옮긴다 — **Claude Code가 한다**
-2. `Project_Project_docs/modules/M02`의 Action 유니온을 `src/core/actions.ts`에 옮긴다 — **Claude Code가 한다**
+1. `Project_docs/02-DATA-SCHEMA.md`를 그대로 `src/core/types.ts`에 옮긴다 — **Claude Code가 한다**
+2. `Project_docs/modules/M02`의 Action 유니온을 `src/core/actions.ts`에 옮긴다 — **Claude Code가 한다**
 3. 이 두 파일을 커밋하고 **`main`에 먼저 올린다**
 4. 이후 둘 다 이 커밋에서 갈라져 나간다
 
@@ -116,7 +116,7 @@ Codex는 브라우저를 못 보므로 UI를 맡기면 "될 것 같은 코드"�
 계약을 고쳐야 한다고 판단되면 **코드를 고치기 전에**:
 
 ```
-1) 작업을 멈추고 `Project_Project_docs/02-DATA-SCHEMA.md`에 변경안을 적는다
+1) 작업을 멈추고 `Project_docs/02-DATA-SCHEMA.md`에 변경안을 적는다
 2) 사람에게 보고한다: "무엇을, 왜, 상대 영역에 어떤 영향"
 3) 사람이 승인하면 → Claude Code가 계약 파일 수정 + main에 push
 4) 양쪽이 rebase 후 작업 재개
@@ -255,7 +255,7 @@ git worktree add ../ws-codex -b codex-track
 |---|---|
 | 같은 파일 충돌 | **소유자 버전이 이긴다.** 비소유자는 자기 변경을 버리고 HANDOFF로 요청한다 |
 | 상대의 미커밋 파일이 내 커밋에 섞임 | `git reset HEAD <그 파일>` 로 스테이지에서만 빼라. `git checkout`/`reset --hard` 로 되돌리지 마라 |
-| 계약 파일 충돌 | 둘 다 버리고 `Project_Project_docs/02-DATA-SCHEMA.md` 기준으로 사람이 다시 작성 |
+| 계약 파일 충돌 | 둘 다 버리고 `Project_docs/02-DATA-SCHEMA.md` 기준으로 사람이 다시 작성 |
 | `content/*.json` 충돌 | Codex 버전 채택 |
 | `package.json` 충돌 | Claude Code 버전 채택 후 Codex가 rebase |
 | 빌드가 깨진 채 main에 올라감 | **즉시 revert.** 고치려 하지 말고 되돌리고 나서 고친다 |
@@ -301,7 +301,7 @@ core 쪽 변경이 필요하면 직접 고치지 말고 Project_docs/HANDOFF.md 
 
 ## 13. 이 분담이 대회 점수에 주는 효과
 
-- 심사 항목 「Codex 협업」: **게임 규칙 전체(`src/core/`)를 Codex가 작성**한 구조가 된다. `Project_Project_docs/modules/*.md` 12개 + `CODEX_LOG.md` + 커밋 접두어 `[codex]`가 그대로 증빙이다.
+- 심사 항목 「Codex 협업」: **게임 규칙 전체(`src/core/`)를 Codex가 작성**한 구조가 된다. `Project_docs/modules/*.md` 12개 + `CODEX_LOG.md` + 커밋 접두어 `[codex]`가 그대로 증빙이다.
 - 심사 항목 「플레이 가능성」: 통합·브라우저 검증·배포를 Claude Code가 전담하므로, **완주 가능한 빌드**가 매일 존재한다.
 - 발표에서 쓸 한 문장:
   > *"엔진에 의존하지 않는 순수 로직 레이어를 만들어, 게임 규칙 전체를 Codex가 화면 없이 작성하고 1000회 자동 시뮬레이션으로 검증했습니다."*

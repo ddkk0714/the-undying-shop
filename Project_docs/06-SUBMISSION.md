@@ -24,7 +24,7 @@
 
 ### 선택 (가산점 — 전부 낸다)
 - [ ] 데모 영상 3분 이내
-- [ ] Codex 활용 과정 문서 (`Project_Project_docs/CODEX_LOG.md`)
+- [ ] Codex 활용 과정 문서 (`Project_docs/CODEX_LOG.md`)
 
 ---
 
@@ -65,7 +65,7 @@
 - 무음 촬영 후 BGM 1곡 + 효과음만. 나레이션 없음
 - **0:50~1:35 구간이 심사위원이 보는 전부다.** 여기에 편집 시간을 몰아라
 
-## 6. `Project_Project_docs/CODEX_LOG.md` — 가산점 문서
+## 6. `Project_docs/CODEX_LOG.md` — 가산점 문서
 
 심사 항목에 「Codex 협업」이 있다. 개발하면서 **실시간으로** 기록한다. 나중에 쓰려면 못 쓴다.
 
@@ -79,7 +79,7 @@
 ```
 
 **"AI가 다 짜줬다"가 아니라 "문서 → 모듈 → 검증 루프를 설계했다"** 로 서술한다.
-우리 프로젝트는 `Project_Project_docs/modules/*.md` 12개가 그 자체로 증거물이다. 이게 강점이다.
+우리 프로젝트는 `Project_docs/modules/*.md` 12개가 그 자체로 증거물이다. 이게 강점이다.
 
 ## 7. 제출 직전 최종 점검 (D6 12:00)
 

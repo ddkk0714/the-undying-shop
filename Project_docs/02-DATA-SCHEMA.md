@@ -6,8 +6,9 @@
 ## 1. 최상위 GameState
 
 ```ts
+/** v3 — 6단계. CASTING+SHOP → OFFICE, DIVE → LIVE */
 export type PhaseId =
-  | 'REVIVE' | 'CASTING' | 'SHOP' | 'DIVE' | 'DEATH' | 'AUTOPSY' | 'ANNOUNCE';
+  | 'REVIVE' | 'OFFICE' | 'LIVE' | 'DEATH' | 'AUTOPSY' | 'ANNOUNCE';
 
 export interface GameState {
   /** 스키마 버전 — 저장 호환성 판정용 */
@@ -20,7 +21,9 @@ export interface GameState {
   /** 진행 */
   day: number;                 // 1..8
   phase: PhaseId;
-  phaseStartedAt: number;      // ms, 소프트 타이머용
+  phaseStartedAt: number;      // ms
+  /** v3: 제한시간은 없다. 생방송 지체 페널티 계산에만 쓴다 */
+  waitingSince: number | null; // ms, 선택 대기 시작 시각
   isOver: boolean;
   ending: EndingId | null;
 
@@ -35,9 +38,12 @@ export interface GameState {
   viewerFatigue: number;       // 0..100, 28F 이후 상승 → 팬 증가율 감쇠
 
   /** 로스터 */
-  stars: Star[];               // 보유 몸. 최대 3 + 대기
+  stars: Star[];               // 계약된 몸. 최대 3 + 대기
   personas: Persona[];
-  recruitPool: Star[];         // 신인 지원자. 회수 실패 누적 시 고갈
+  recruitPool: Star[];         // 미계약 지원자. 회수 실패 누적 시 고갈
+  /** v3: 오늘 가게에 온 방문자의 계약서 (0~2장) */
+  visitors: Contract[];
+  rejectedStarIds: StarId[];   // 돌려보낸 지원자. 다시 오지 않는다
   corpses: Corpse[];           // 검시 대기 / 은닉 중인 시체
 
   /** 오늘의 방송 */
@@ -72,10 +78,12 @@ export interface Star {
   bodyName: string;         // 본명. 팬들은 모른다
   portraitKey: string;      // Assets.key()
   stats: {
-    grit: number;           // 1..10 생존력 → 층당 사망 확률 감소
-    charisma: number;       // 1..10 슈퍼챗/팬 증가 계수
-    luck: number;           // 1..10 갈림길 성공 보정
+    grit: number;           // 1..10 → 최대 HP / 공격력의 기반
+    charisma: number;       // 1..10 → 어필·슈퍼챗 계수
+    luck: number;           // 1..10 → 갈림길 보정, 반격 회피
   };
+  /** v3: 계약 시 확정되는 자기 신고 정직도. UI 노출 절대 금지 */
+  honesty: number;          // 0.6 ~ 1.3
   reviveCount: number;      // 열화 지표. 0부터
   personaId: PersonaId | null;  // 현재 씌워진 페르소나
   status: 'ALIVE' | 'DEAD' | 'HIDDEN' | 'DISCARDED';
@@ -95,6 +103,49 @@ export interface Persona {
   /** 승계 직후 몇 일간 팬 의심 발생 */
   suspicion: number;        // 0..100
 }
+
+## 2-b. 계약서 (v3 신규)
+
+```ts
+/** 용사가 직접 써서 제출한다. 즉 자기 신고 자료다 */
+export interface Contract {
+  starId: StarId;
+  displayName: string;
+  recognition: 'S'|'A'|'B'|'C'|'F';
+  fandom: number;
+  /** 자기 신고 공략 확률. 플레이어가 보는 유일한 판단 근거 */
+  claimedTiers: { floor: number; rate: number }[];
+  fee: number;              // 계약금 (즉시 지출)
+  /** 실제 실력과의 괴리. 절대 UI 에 노출하지 않는다 */
+  honesty: number;          // <0.85 과장 / >1.15 겸손
+}
+```
+
+**계약 조건은 한 줄이다** — 「시체는 반드시 회수한다. 대신 방송 중 갑의 프로듀스를 따른다.」
+이게 무전 시스템이 성립하는 이유다.
+
+## 2-c. 전투 (v3 신규)
+
+```ts
+export type CombatChoice = 'ATTACK' | 'DEFEND' | 'APPEAL';
+
+export interface Combatant {
+  hp: number; maxHp: number;
+  atk: number; def: number;
+}
+
+export interface Encounter {
+  floor: number;
+  enemyKey: string;          // Assets.key()
+  enemy: Combatant;
+  turn: number;
+  /** 이번 턴 용사가 던진 대사 */
+  line: string;
+  /** 방어 선택 시 다음 피해 감쇄 플래그 */
+  guarding: boolean;
+  log: CombatChoice[];
+}
+```
 
 export type CorpseGrade = 'INTACT' | 'DAMAGED';
 
@@ -117,7 +168,12 @@ export interface TodayRun {
   starId: StarId;
   personaId: PersonaId | null;
   currentFloor: number;
-  targetCeiling: number;       // 장비로 결정된 이론상 최대 도달층
+  /** v3: 용사 본인 전투 상태 */
+  hero: Combatant;
+  encounter: Encounter | null;   // 전투 중이면 non-null
+  appealCount: number;
+  /** 계약서상 예상 도달층 (자기 신고). 실제와 다를 수 있다 */
+  claimedCeiling: number;
   /** 진행 중 발생한 갈림길 */
   forks: ForkRecord[];
   /** 실시간 누적 */
@@ -132,8 +188,8 @@ export interface TodayRun {
 
 export interface ForkRecord {
   floor: number;
-  truth: { left: ForkOutcome; right: ForkOutcome };  // 플레이어만 봄
-  told: 'LEFT' | 'RIGHT' | 'UNKNOWN';
+  truth: { a: ForkOutcome; b: ForkOutcome };  // 플레이어만 봄. 좌우는 시드로 스왑된다
+  told: 'A' | 'B' | 'UNKNOWN';
   wasLie: boolean;
 }
 
@@ -154,9 +210,11 @@ export interface ItemDef {
   id: ItemId;
   name: string;
   iconKey: string;
-  /** 도달 가능 층수 보너스 */
-  depth: number;
-  /** 판매가. 진열대에 올리면 이 값만큼 골드가 들어온다 */
+  /** v3: 도달층 보너스가 아니라 전투 스탯을 준다 */
+  hp: number;
+  atk: number;
+  def: number;
+  /** 판매가. 진열대에 올리면 이 값만큼 골드가 즉시 들어온다 */
   price: number;
   tier: 'S'|'A'|'B'|'C'|'F';
   /** 유품 여부 — 시체에서 나온 것 */
@@ -201,12 +259,15 @@ export interface WitnessEntry {
 export type EndingId = 'A_OPEN' | 'B_REVEAL' | 'B_CONTINUE';
 
 export interface FxEvent {
-  kind: 'RECORD_BREAK' | 'SEAL_STAMP' | 'SUPERCHAT_POP' | 'DEATH_FLASH'
-      | 'PERSONA_INHERIT' | 'TRUTH_WHISPER' | 'FAN_DROP';
+  kind: 'RECORD_BREAK' | 'SEAL_STAMP' | 'SUPERCHAT_POP' | 'SIGNAL_LOST'
+      | 'PERSONA_INHERIT' | 'TRUTH_WHISPER' | 'FAN_DROP'
+      | 'HIT' | 'GUARD' | 'APPEAL_POSE' | 'CONTRACT_SIGN';
   payload?: Record<string, number | string>;
 }
 
 export interface RunStats {
+  appeals: number;          // v3: 어필한 횟수 = 그를 판 횟수
+  contractsRejected: number;
   totalRevived: number;
   totalDiscarded: number;
   liesTold: number;
@@ -232,6 +293,14 @@ function assertShape(cond: boolean, msg: string): asserts cond {
   if (!cond) throw new Error(`[content] ${msg}`);
 }
 ```
+
+## CCR-003 — start inventory and item actions (approved 2026-08-22)
+
+- `ItemDef.kind`: `GEAR | POTION | RELIC`; `healing` is the LIVE healing amount for potions and `0` otherwise.
+- `balance.start.inventory` is the initial inventory list of item IDs.
+- `OFFICE/PLACE` equips only `GEAR`. `OFFICE/SELL` removes and sells one unequipped inventory item.
+- `COMBAT/USE_ITEM` consumes one `POTION` during LIVE and restores the hero's HP by `healing` without using a combat turn.
+- Selling and consuming decrement inventory, so a single item cannot both be equipped and sold or repeatedly resold.
 
 검증 실패 = 즉시 throw. 조용히 넘어가면 6일 일정에서 원인 추적에 시간을 다 쓴다.
 개발 빌드에서는 실패 시 화면에 빨간 텍스트로 파일명+필드명을 띄운다.

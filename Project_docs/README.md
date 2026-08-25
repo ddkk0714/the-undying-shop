@@ -20,7 +20,7 @@
 `00-OVERVIEW` → `05-PRIORITY` → **`07-PARALLEL-DEV`** → **`08-AGENT-COMMANDS`** → `01-ARCHITECTURE` → 담당 모듈 문서
 
 ## 개발 에이전트용
-- Codex → 레포 루트 `AGENTS.md` (+ `Project_Project_docs/07-PARALLEL-DEV.md` 필수)
-- Claude Code → 레포 루트 `CLAUDE.md` (+ `Project_Project_docs/07-PARALLEL-DEV.md` 필수)
+- Codex → 레포 루트 `AGENTS.md` (+ `Project_docs/07-PARALLEL-DEV.md` 필수)
+- Claude Code → 레포 루트 `CLAUDE.md` (+ `Project_docs/07-PARALLEL-DEV.md` 필수)
 
 **두 에이전트를 동시에 돌리기 전에 `07-PARALLEL-DEV.md`를 반드시 읽혀라.** 소유권 표를 모르면 충돌한다.

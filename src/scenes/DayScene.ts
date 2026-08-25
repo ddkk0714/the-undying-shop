@@ -40,13 +40,13 @@ const PHASE_SCENE: Partial<Record<PhaseId, string>> = {
 };
 
 /** HUD 자원 칸 — 레퍼런스의 세로 구분선 3분할 */
-const HUD_LABEL = { ...FONT_LABEL, fontSize: '16px', padding: { x: 0, y: 1 } } as const;
+const HUD_LABEL = { ...FONT_LABEL, fontSize: '24px', padding: { x: 0, y: 1 } } as const;
 const HUD_VALUE = { ...FONT, fontSize: '48px', padding: { x: 0, y: 1 } } as const;
-const HUD_LIVE = { ...FONT, fontSize: '44px', padding: { x: 0, y: 1 } } as const;
+const HUD_LIVE = { ...FONT, fontSize: '40px', padding: { x: 0, y: 1 } } as const;
 
 export class DayScene extends Phaser.Scene {
-  private readonly hudStatus = { x: 8, y: 0, w: 740, h: 144 };
-  private readonly hudTools = { x: 764, y: 0, w: 780, h: 144 };
+  private readonly hudStatus = { x: 8, y: -4, w: 740, h: 144 };
+  private readonly hudTools = { x: 764, y: -4, w: 780, h: 144 };
   private store!: Store;
   private statusFloor!: Phaser.GameObjects.Text;
   private statusViewers!: Phaser.GameObjects.Text;
@@ -61,6 +61,14 @@ export class DayScene extends Phaser.Scene {
   /** M06 §8 — 생방송→사망 교체를 지지직이 끝날 때까지 붙잡는다. 0 이면 지연 없음 */
   private swapAt = 0;
   private skipCurtain = false;
+  /** HUD 시계는 실제 시간과 무관하다. 출격 순간에만 하루의 시간이 진행된다. */
+  private clockMinute: Phaser.GameObjects.Image | null = null;
+  private clockHour: Phaser.GameObjects.Image | null = null;
+  private clockTween: Phaser.Tweens.Tween | null = null;
+  private clockMinutes = 8 * 60;
+  private clockDay = 0;
+  private lastClockPhase: PhaseId | null = null;
+  private clockReady = false;
   /** 엔딩 씬에 한 번만 넘긴다 */
   private handedOver = false;
   /** 기록 갱신 연출용 — 정산이 끝나면 이전 최고층은 state 에서 사라진다 (M08) */
@@ -80,6 +88,14 @@ export class DayScene extends Phaser.Scene {
     this.swapAt = 0;
     this.skipCurtain = false;
     this.fallback = [];
+    this.clockMinute = null;
+    this.clockHour = null;
+    this.clockTween?.stop();
+    this.clockTween = null;
+    this.clockMinutes = 8 * 60;
+    this.clockDay = 0;
+    this.lastClockPhase = null;
+    this.clockReady = false;
 
     // 와이프는 항상 맨 위에 떠 있어야 한다. Phaser 는 목록의 첫 씬만 자동 시작한다
     if (!this.scene.isActive(SCENES.WIPE)) this.scene.launch(SCENES.WIPE);
@@ -97,20 +113,21 @@ export class DayScene extends Phaser.Scene {
     else this.drawFrame(g, this.hudStatus.x, this.hudStatus.y, this.hudStatus.w, this.hudStatus.h);
     if (hasTexture(this, 'ui.hud.tools')) this.add.image(this.hudTools.x, this.hudTools.y, assetKey('ui.hud.tools')).setOrigin(0).setDisplaySize(this.hudTools.w, this.hudTools.h);
     else this.drawFrame(g, this.hudTools.x, this.hudTools.y, this.hudTools.w, this.hudTools.h);
+    this.createGameClock();
 
     // 자원 라벨 3종 — 값은 render() 가 같은 x 에 채운다 (레퍼런스 배치)
-    this.add.text(this.hudStatus.x + 28, this.hudStatus.y + 50, '● LIVE', { ...HUD_LIVE, color: css('bone') });
-    this.addHudField(this.hudStatus.x + 202, 'FLOOR', () => this.statusFloor = this.add.text(this.hudStatus.x + 202, this.hudStatus.y + 62, '', { ...HUD_VALUE, color: css('bone') }));
+    this.add.text(this.hudStatus.x + 28, this.hudStatus.y + 55, '● LIVE', { ...HUD_LIVE, color: css('bone') });
+    this.addHudField(this.hudStatus.x + 212, 'FLOOR', () => this.statusFloor = this.add.text(this.hudStatus.x + 212, this.hudStatus.y + 62, '', { ...HUD_VALUE, color: css('bone') }));
     this.addHudField(this.hudStatus.x + 358, 'VIEWERS', () => this.statusViewers = this.add.text(this.hudStatus.x + 358, this.hudStatus.y + 62, '', { ...HUD_VALUE, color: css('bone') }));
     this.addWatchEye(this.hudStatus.x + 656, this.hudStatus.y + 76);
 
     this.addHudField(this.hudTools.x + 190, 'DAY', () => this.dayValue = this.add.text(this.hudTools.x + 190, this.hudTools.y + 62, '', { ...HUD_VALUE, color: css('bone') }));
-    this.addHudField(this.hudTools.x + 326, 'DEPTH', () => this.depthValue = this.add.text(this.hudTools.x + 326, this.hudTools.y + 62, '', { ...HUD_VALUE, color: css('bone') }));
+    this.addHudField(this.hudTools.x + 336, 'DEPTH', () => this.depthValue = this.add.text(this.hudTools.x + 336, this.hudTools.y + 62, '', { ...HUD_VALUE, color: css('bone') }));
     this.addHudField(this.hudTools.x + 468, 'GOLD', () => this.goldValue = this.add.text(this.hudTools.x + 468, this.hudTools.y + 62, '', { ...HUD_VALUE, color: css('bone') }));
     this.addWatchEye(this.hudTools.x + 684, this.hudTools.y + 76);
-    this.addHudIcon('ui.icon.help', 'ui.icon.help.hover', BASE_W - 360, () => this.openOverlay(SCENES.HELP));
-    this.addHudIcon('ui.icon.options', 'ui.icon.options.hover', BASE_W - 232, () => this.openOverlay(SCENES.OPTIONS));
-    this.addHudIcon('ui.icon.save', 'ui.icon.save.hover', BASE_W - 104, () => saveRun(this.store));
+    this.addHudIcon('ui.icon.help', 'ui.icon.help.hover', BASE_W - 365, () => this.openOverlay(SCENES.HELP));
+    this.addHudIcon('ui.icon.options', 'ui.icon.options.hover', BASE_W - 240, () => this.openOverlay(SCENES.OPTIONS));
+    this.addHudIcon('ui.icon.save', 'ui.icon.save.hover', BASE_W - 119, () => saveRun(this.store));
     // 도달 게이지 — 글자 오른쪽 빈자리. 차오르는 게 보여야 기록이 기록으로 느껴진다
 
     // 본문 (L.stage) — 단계 씬이 들어올 자리
@@ -193,10 +210,68 @@ export class DayScene extends Phaser.Scene {
 
   private addHudIcon(idle: string, hover: string, x: number, onClick: () => void): void {
     if (!hasTexture(this, idle)) return;
-    const icon = this.add.image(x, 16, assetKey(idle)).setOrigin(0).setInteractive({ useHandCursor: true });
+    const icon = this.add.image(x, 12, assetKey(idle)).setOrigin(0).setInteractive({ useHandCursor: true });
     icon.on('pointerover', () => hasTexture(this, hover) && icon.setTexture(assetKey(hover)));
     icon.on('pointerout', () => icon.setTexture(assetKey(idle)));
     icon.on('pointerup', onClick);
+  }
+
+  /** 출격 전 08:00, 출격 뒤 20:00. 실제 경과 시간으로는 절대 움직이지 않는다. */
+  private createGameClock(): void {
+    if (!hasTexture(this, 'ui.clock.minute') || !hasTexture(this, 'ui.clock.hour')) return;
+    // hud_tools 원화의 시계 중심(원화 83, 72)을 현재 표시 폭에 맞춰 환산한다.
+    const centerX = this.hudTools.x + 83 * (this.hudTools.w / 740);
+    const centerY = this.hudTools.y + 72;
+    // 시침 원화는 좌하단의 둥근 축에서 우상단 끝으로 뻗는다.
+    this.clockHour = this.add.image(centerX, centerY, assetKey('ui.clock.hour')).setOrigin(0.16, 0.86);
+    this.clockMinute = this.add.image(centerX, centerY, assetKey('ui.clock.minute')).setOrigin(0.5, 0.98);
+    this.setGameClock(this.clockMinutes);
+  }
+
+  private setGameClock(minutes: number): void {
+    this.clockMinutes = Math.max(0, Math.min(24 * 60, minutes));
+    // 절대 각도를 유지해야 12시를 넘길 때 침이 0도로 튀지 않고 연속 회전한다.
+    this.clockMinute?.setAngle(this.clockMinutes * 6);
+    // 전달받은 시침 원화의 기본 방향은 약 2시이므로, 실제 시각에 맞춰 34도를 뺀다.
+    this.clockHour?.setAngle((this.clockMinutes / 60) * 30 - 34);
+  }
+
+  private advanceGameClock(toMinutes: number): void {
+    this.clockTween?.stop();
+    if (reducedMotion(this.registry) || this.clockMinute === null || this.clockHour === null) {
+      this.setGameClock(toMinutes);
+      return;
+    }
+    const progress = { minutes: this.clockMinutes };
+    this.clockTween = this.tweens.add({
+      targets: progress,
+      minutes: toMinutes,
+      duration: 1350,
+      ease: 'Cubic.Out',
+      onUpdate: () => this.setGameClock(progress.minutes),
+      onComplete: () => {
+        this.setGameClock(toMinutes);
+        this.clockTween = null;
+      },
+    });
+  }
+
+  private syncGameClock(state: Readonly<GameState>): void {
+    const afterDeparture = state.phase === 'LIVE' || state.phase === 'DEATH' || state.phase === 'AUTOPSY' || state.phase === 'ANNOUNCE';
+    if (!this.clockReady) {
+      this.clockReady = true;
+      this.clockDay = state.day;
+      this.setGameClock(afterDeparture ? 20 * 60 : 8 * 60);
+    } else {
+      if (state.day !== this.clockDay) {
+        this.clockDay = state.day;
+        this.clockTween?.stop();
+        this.clockTween = null;
+        this.setGameClock(8 * 60);
+      }
+      if (state.phase === 'LIVE' && this.lastClockPhase !== 'LIVE') this.advanceGameClock(20 * 60);
+    }
+    this.lastClockPhase = state.phase;
   }
 
   private addHudField(x: number, labelText: string, createValue: () => void): void {
@@ -224,6 +299,7 @@ export class DayScene extends Phaser.Scene {
     this.dayValue.setText(String(s.day));
     this.depthValue.setText(`${s.maxFloor}F`);
     this.goldValue.setText(fmtHudGold(s.gold));
+    this.syncGameClock(s);
 
     this.syncPhaseScene(s);
 

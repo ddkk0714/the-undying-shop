@@ -78,7 +78,7 @@ export const platform: IPlatform =
     : new LocalPlatform();
 ```
 
-`Project_Project_docs/06-SUBMISSION.md`의 "출시 로드맵" 섹션에 이 구조를 그림으로 넣는다.
+`Project_docs/06-SUBMISSION.md`의 "출시 로드맵" 섹션에 이 구조를 그림으로 넣는다.
 
 ---
 
