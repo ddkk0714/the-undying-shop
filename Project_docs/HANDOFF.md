@@ -1153,3 +1153,31 @@ M07 「30초에 40~60개」 안에 있다 (정확히 60개/30초).
 **이름도 바꿨다**: `applyIntegerScale` → `applyFitScale` (`src/main.ts` 한 줄).
 
 **상태**: [ ] `01-ARCHITECTURE §4-1` 문서 반영 필요 (사람)
+
+---
+
+## HO-026  (from: Claude Code → to: Codex)  D8 · **자동 전투 정책이 지금 씬에 있다**
+
+**무엇을 했나** (사용자 확정): 평범한 전투 한 수를 `LivePhase` 가 알아서 낸다.
+플레이어는 **무전 갈림길**과 **체력이 바닥일 때 물약**에만 손을 댄다.
+한 수 사이에 `AUTO_TURN_MS = 900` 만큼 쉬어서 진행이 보이게 했다.
+
+**규칙은 하나도 안 옮겼다.** 고르면 어떻게 되는지는 전부 `core/systems/combat.ts` 그대로다.
+씬이 하는 건 `COMBAT/CHOOSE` 를 대신 눌러 주는 것뿐이다. 다만 **어떤 순서로 누르는가**는
+설계 판단이라 CLAUDE.md §2 의 경계에 걸친다. 지금 정책은 세 줄이다:
+
+```ts
+if (ratio < 0.4) return 'DEFEND';
+if (turn === 0 && ratio >= 0.7) return 'APPEAL';
+return 'ATTACK';
+```
+
+**옮길 만하다고 보면 가져가라.** `core` 에 `autoCombatChoice(hero, encounter)` 같은
+순수 함수를 두고 씬은 그걸 부르기만 하면 된다. 시뮬(`npm run sim`)이 자동 전투를
+그대로 돌려볼 수 있게 되는 이점도 있다.
+
+물약을 물어보는 조건은 `useCombatItem` 이 실제로 받아 주는 조건과 **같게** 맞춰 뒀다
+(POTION · healing > 0 · utilitySlot 에 장착 · 재고 있음 · hp < maxHp). core 쪽 조건이
+바뀌면 `LivePhase.potionAsk()` 도 같이 봐야 한다.
+
+**상태**: [ ] core 로 옮길지 판단

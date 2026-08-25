@@ -10,7 +10,8 @@ import { createTooltip } from '../../ui/Tooltip';
 import { playBgm, playSfx } from '../../audio/Sfx';
 import { reducedMotion, speedMul } from '../../ui/options';
 import { PhaseScene } from './PhaseScene';
-import type { ChatMessage, CombatChoice, ForkRecord, GameState } from '../../core/types';
+import type { WipeScene } from '../WipeScene';
+import type { ChatMessage, CombatChoice, ForkRecord, GameState, ItemId } from '../../core/types';
 
 /**
  * M06 생방송 — 5분할 화면 (04-UI-KIT §1 의 `L.live`).
@@ -102,6 +103,42 @@ function bounceAmount(t: number): number {
   return COUNTER_BOUNCE * k;
 }
 
+/**
+ * 자동 전투 (사용자 확정) — 평범한 한 수는 씬이 알아서 낸다.
+ * 플레이어는 **중요한 결정에만** 손을 댄다: 무전 갈림길, 그리고 체력이 바닥일 때 물약.
+ *
+ * 한 수 사이에 한 박자 쉰다. 즉시 처리하면 전투가 한 프레임에 끝나 무슨 일이
+ * 일어났는지 볼 수 없다.
+ *
+ * ⚠️ **정책은 규칙이 아니다.** 무엇을 고르면 어떻게 되는지는 전부 `core/systems/combat.ts`
+ *    가 정한다. 여기 있는 건 「사람 대신 버튼을 누르는 손」이고, 그 손이 어떤 순서로
+ *    누르는지가 아래 세 줄이다. core 로 옮기는 편이 낫다고 판단되면 HANDOFF 로 넘긴다.
+ */
+const AUTO_TURN_MS = 900;
+/** 체력이 이 아래로 내려가면 방어로 돌린다 */
+const AUTO_DEFEND_RATIO = 0.4;
+/** 이 위로 여유가 있으면 조우 첫 수는 어필로 번다 */
+const AUTO_APPEAL_RATIO = 0.7;
+/** 이 아래로 떨어지고 물약이 있으면 **플레이어에게 묻는다** */
+const POTION_ASK_RATIO = 0.35;
+
+function autoChoice(hero: { hp: number; maxHp: number }, turn: number): CombatChoice {
+  const ratio = hero.maxHp <= 0 ? 0 : hero.hp / hero.maxHp;
+  if (ratio < AUTO_DEFEND_RATIO) return 'DEFEND';
+  if (turn === 0 && ratio >= AUTO_APPEAL_RATIO) return 'APPEAL';
+  return 'ATTACK';
+}
+
+const CHOICE_LABEL: Record<CombatChoice, string> = {
+  ATTACK: '공격한다',
+  DEFEND: '방어한다',
+  APPEAL: '어필한다',
+};
+
+/** 층을 하나 클리어하고 내려갈 때 화면이 이만큼 확대됐다가 돌아온다 */
+const DIVE_ZOOM = 1.08;
+const DIVE_ZOOM_MS = 200;
+
 export class LivePhase extends PhaseScene {
   private ticker: Phaser.Time.TimerEvent | null = null;
   private chatPump: Phaser.Time.TimerEvent | null = null;
@@ -128,6 +165,14 @@ export class LivePhase extends PhaseScene {
   private lastHeroHp = -1;
   /** 튕길 적 스프라이트와 원래 자리·크기. build 가 매번 다시 채운다 */
   private enemyBounce: { img: Phaser.GameObjects.Image; x: number; y: number; w: number; h: number } | null = null;
+
+  /** 자동 전투 — 다음 한 수를 낼 시각. 방금 낸 수는 3택 자리에 적어 준다 */
+  private autoAt = 0;
+  private lastAuto: CombatChoice | null = null;
+  /** 이번 조우에서 물약을 「그냥 싸운다」로 넘겼는가 — 넘겼으면 다시 묻지 않는다 */
+  private potionDeclined = false;
+  /** 조우가 끝나는 순간을 잡기 위한 직전 상태 */
+  private wasFighting = false;
 
   /** 프레임마다 손보는 오브젝트 — build() 가 매번 다시 채운다 */
   private blinkers: (Phaser.GameObjects.Rectangle | Phaser.GameObjects.Image)[] = [];
@@ -157,6 +202,10 @@ export class LivePhase extends PhaseScene {
     this.counterAt = null;
     this.lastHeroHp = -1;
     this.enemyBounce = null;
+    this.autoAt = 0;
+    this.lastAuto = null;
+    this.potionDeclined = false;
+    this.wasFighting = false;
     this.fanDropUntil = 0;
 
     this.chat = new Ticker(this, { x: L.live.chat.x + L.pad, y: L.live.chat.y + 58, w: L.live.chat.w - L.pad * 2, h: L.live.chat.h - 80 },
@@ -208,9 +257,54 @@ export class LivePhase extends PhaseScene {
     this.store.dispatch({ type: 'LIVE/TICK', dt: content.balance.dive.floorSeconds });
   }
 
+  /**
+   * 지금 플레이어에게 물약을 물어야 하는가 — 물어야 하면 그 물약의 id.
+   *
+   * 조건을 core 의 `useCombatItem` 이 실제로 받아 주는 것과 **같게** 맞춘다.
+   * 물어봐 놓고 눌렀는데 아무 일도 안 일어나는 게 제일 나쁘다.
+   */
+  private potionAsk(s: Readonly<GameState>): ItemId | null {
+    const run = s.today;
+    if (run === null || run === undefined || run.encounter === null || this.potionDeclined) return null;
+    if (run.hero.maxHp <= 0 || run.hero.hp >= run.hero.maxHp) return null;
+    if (run.hero.hp / run.hero.maxHp > POTION_ASK_RATIO) return null;
+    const id = s.shelf[content.balance.equipment.utilitySlot] ?? null;
+    if (id === null) return null;
+    const item = content.items.find((c) => c.id === id && c.kind === 'POTION' && c.healing > 0);
+    if (item === undefined) return null;
+    return s.inventory.some((c) => c.id === id && c.qty > 0) ? id : null;
+  }
+
+  /**
+   * 자동 전투 한 수. 조우 중이고 **플레이어에게 물어볼 게 없을 때만** 낸다.
+   * 갈림길이 걸려 있으면 조우가 없으므로 여기까지 오지 않는다.
+   */
+  private autoTurn(now: number): void {
+    const s = this.store.getState();
+    const run = s.today;
+    const enc = run?.encounter ?? null;
+    if (s.phase !== 'LIVE' || run === null || run === undefined || enc === null) {
+      this.autoAt = 0;
+      return;
+    }
+    if (this.gatekeeperOpen || now < this.witnessUntil) return;
+    if (this.potionAsk(s)) return;           // 물약을 물어보는 중 — 손을 뗀다
+    if (this.autoAt === 0) {
+      this.autoAt = now + AUTO_TURN_MS;      // 조우가 막 시작됐다. 한 박자 두고 시작한다
+      return;
+    }
+    if (now < this.autoAt) return;
+
+    const choice = autoChoice(run.hero, enc.turn);
+    this.lastAuto = choice;
+    this.autoAt = now + AUTO_TURN_MS;
+    this.store.dispatch({ type: 'COMBAT/CHOOSE', choice });
+  }
+
   override update(): void {
     super.update();
     const now = this.time.now;
+    this.autoTurn(now);
 
     // 목격 정지가 끝나는 순간 한 번만 다시 그린다 (오버레이 제거)
     if (this.witnessFloor !== null && now >= this.witnessUntil) {
@@ -275,6 +369,16 @@ export class LivePhase extends PhaseScene {
       if (!this.reduced) this.cameras.main.shake(COUNTER_SHAKE_MS, COUNTER_SHAKE);
     }
     this.lastHeroHp = hp;
+
+    // 조우가 끝나는 순간 = **층을 클리어하고 내려간다**. 층은 틱마다 바뀌므로
+    // `currentFloor` 로 잡으면 0.35초마다 연출이 터진다 — 조우의 끝으로 잡아야 한 번이다
+    const fighting = s.today?.encounter != null;
+    if (this.wasFighting && !fighting && s.phase === 'LIVE' && hp > 0) this.diveTransition();
+    if (!fighting) {
+      this.potionDeclined = false;   // 다음 조우에서는 다시 묻는다
+      this.lastAuto = null;
+    }
+    this.wasFighting = fighting;
     this.watch(s);
 
     // 상단 144 는 DayScene 의 HUD 다 — 목업(전투화면.png)에서도 방송 중에 그대로 떠 있다.
@@ -627,22 +731,34 @@ export class LivePhase extends PhaseScene {
       return;
     }
 
-    const ready = s.phase === 'LIVE' && s.today?.encounter != null;
-    // 팁은 지어내지 않는다 — `core/systems/combat.ts` 의 세 갈래를 그대로 옮긴 것이다
-    const choices: { label: string; choice: CombatChoice; hotkey: string; tip: string }[] = [
-      { label: '공격한다', choice: 'ATTACK', hotkey: '1', tip: '적의 체력을 깎는다. 못 쓰러뜨리면 반격을 맞을 수 있다.' },
-      { label: '방어한다', choice: 'DEFEND', hotkey: '2', tip: '받는 피해가 줄어든다. 대신 팬이 빠진다.' },
-      { label: '어필한다', choice: 'APPEAL', hotkey: '3', tip: '팬이 늘고 슈퍼챗이 붙는다. 대신 더 다치고, 깊은 층에서는 진실이 새기 쉬워진다.' },
-    ];
-    choices.forEach((c, i) => {
+    // 체력이 바닥나고 물약이 있으면 **여기서 멈추고 묻는다** (사용자 확정).
+    // 자동 전투가 알아서 마셔 버리면 물약을 언제 쓰느냐는 판단이 사라진다
+    const potion = this.potionAsk(s);
+    if (potion !== null) {
+      const item = content.items.find((c) => c.id === potion);
+      const healing = item?.healing ?? 0;
       new Button(this, {
-        ...place(i),
-        label: c.label, hotkey: c.hotkey, tip: c.tip,
-        variant: c.choice === 'APPEAL' ? 'danger' : 'default',
-        enabled: ready,
-        onClick: () => this.store.dispatch({ type: 'COMBAT/CHOOSE', choice: c.choice }),
+        ...place(0), w: buttonW * 2 + gap,
+        label: '물약을 쓴다', hotkey: '1',
+        tip: `체력을 ${healing} 회복한다. 진열대에 올려 둔 한 병이 사라진다.`,
+        onClick: () => this.store.dispatch({ type: 'COMBAT/USE_ITEM', itemId: potion }),
       });
-    });
+      new Button(this, {
+        ...place(2),
+        label: '그냥 싸운다', hotkey: '2', variant: 'ghost',
+        tip: '물약을 아낀다. 이번 조우에서는 다시 묻지 않는다.',
+        onClick: () => { this.potionDeclined = true; },
+      });
+      return;
+    }
+
+    // 평범한 한 수는 씬이 낸다 (사용자 확정). 버튼 대신 **방금 무엇을 냈는지**를 적는다 —
+    // 누를 수 없는 버튼을 세 개 띄워 두면 눌러도 되는 줄 안다
+    const fighting = s.phase === 'LIVE' && s.today?.encounter != null;
+    const line = !fighting ? '자동 전투 대기'
+      : this.lastAuto === null ? '자동 전투 — 살피는 중'
+      : `자동 전투 — ${CHOICE_LABEL[this.lastAuto]}`;
+    this.label(v.x + pad + 8, v.y + Math.round(v.h / 2) - 10, line, fighting ? 'bone' : 'dust');
   }
 
   /* ── ⑦ 용사 초상 — 상태에 따라 변한다 (M06 §7) ──────── */
@@ -747,6 +863,28 @@ export class LivePhase extends PhaseScene {
     // 채워진 눈. 흔들리는 동안에는 가운데에서 어긋난다
     const off = tone === 'dust' ? 3 : 0;
     this.rect(x + 7 + off, y + 7 + off, 10, 10, tone);
+  }
+
+  /**
+   * 층을 클리어하고 내려가는 순간 — **화면이 확대되면서 디더 와이프로 넘어간다** (사용자 확정).
+   *
+   * 와이프는 `WipeScene` 을 그대로 쓴다 (04-UI-KIT — 씬 전환은 디더 와이프).
+   * 페이드를 쓰면 팔레트에 없는 중간 계조가 생긴다. 점이 차오르며 덮는 200ms 와
+   * 확대 200ms 를 겹쳐 놔서, 가장 크게 당겨진 순간에 화면이 덮인다.
+   */
+  private diveTransition(): void {
+    if (this.reduced) return;
+    this.tweens.add({
+      targets: this.cameras.main,
+      zoom: DIVE_ZOOM,
+      duration: DIVE_ZOOM_MS,
+      ease: 'Quad.easeIn',
+      yoyo: true,
+      onComplete: () => this.cameras.main.setZoom(1),
+    });
+    const wipe = this.scene.get(SCENES.WIPE) as WipeScene | null;
+    // 덮인 순간에 할 일은 없다 — 층은 core 가 이미 넘겼다. 연출만 얹는다
+    wipe?.run(() => {});
   }
 
   /**
