@@ -94,8 +94,8 @@
     }
   },
   "opinion": {
-    "chatLifetimeSeconds": 6,
-    "chatMaxVisible": 7,
+    "chatLifetimeSeconds": 9,
+    "chatMaxVisible": 13,
     "nickPoolSize": 1000,
     "midLeakThreshold": 30,
     "truthChanceAtMidLeak": 0.25,
