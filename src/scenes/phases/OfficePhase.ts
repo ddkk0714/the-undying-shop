@@ -370,20 +370,20 @@ export class OfficePhase extends PhaseScene {
       const sheet = s.visitors[this.contractIndex];
       const by = paper.y + paper.h - L.pad * 4 - 104;
       new Button(this, {
-        x: paper.x + L.pad * 4, y: by, w: 300, h: 64,
+        x: paper.x + 48, y: by, w: 240, h: 64,
         label: '계약한다', hotkey: '5',
         enabled: sheet !== undefined && s.gold >= sheet.fee,
         onClick: () => sheet && this.store.dispatch({ type: 'OFFICE/CONTRACT_ACCEPT', starId: sheet.starId }),
       });
       new Button(this, {
-        x: paper.x + L.pad * 4 + 324, y: by, w: 300, h: 64,
+        x: paper.x + paper.w - 288, y: by, w: 240, h: 64,
         label: '돌려보낸다', hotkey: '6', variant: 'danger',
         enabled: sheet !== undefined,
         onClick: () => sheet && this.store.dispatch({ type: 'OFFICE/CONTRACT_REJECT', starId: sheet.starId }),
       });
       if (s.visitors.length > 1) {
         new Button(this, {
-          x: paper.x + L.pad * 4 + 648, y: by, w: 220, h: 64,
+          x: paper.x + paper.w - 192, y: paper.y + 32, w: 144, h: 48,
           label: '次 다음 장', hotkey: '7', variant: 'ghost',
           onClick: () => {
             this.contractIndex = (this.contractIndex + 1) % s.visitors.length;

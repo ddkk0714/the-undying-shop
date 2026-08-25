@@ -4,9 +4,9 @@
 1,캐릭터 · 어필 컷,star/karin_appeal.png,384×480,192×240 (1/2),카린 어필 컷 — 억지 웃음 + 카메라를 본다 (M06 §7 최우선 컷),도착,star.appeal.karin
 1,캐릭터 · 어필 컷,star/mor_appeal.png,384×480,192×240 (1/2),모르 어필 컷,도착,star.appeal.mor
 1,캐릭터 · 어필 컷,star/sela_appeal.png,384×480,192×240 (1/2),셀라 어필 컷,도착,star.appeal.sela
-2,배경,bg/shop_bench.png,1152×792,1:1,② 편성실 우측 — 작업대,도착,bg.shop.bench
-2,배경,bg/shop_room.png,752×792,1:1,② 편성실 좌측 — 방문자가 서는 자리,도착,bg.shop.room
-2,배경,bg/tower.png,744×720,1:1,③ 생방송 전투 칸 배경 (던전),도착,bg.tower
+2,배경,bg/shop_bench.png,1244×792,1:1,② 편성실 우측 — 작업대,도착,bg.shop.bench
+2,배경,bg/shop_room.png,650×792,1:1,② 편성실 좌측 — 방문자가 서는 자리,도착,bg.shop.room
+2,배경,bg/tower.png,1000×792,1:1,③ 생방송 전투 칸 배경 (던전),도착,bg.tower
 2,캐릭터 · 전신,star/body_ilan.png,752×792,1:1,일란 전신,도착,star.body.ilan
 2,캐릭터 · 전신,star/body_juno.png,752×792,1:1,주노 전신,도착,star.body.juno
 2,캐릭터 · 전신,star/body_karin.png,752×792,1:1,카린 전신 (상점 좌측),도착,star.body.karin

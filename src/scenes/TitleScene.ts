@@ -65,11 +65,12 @@ export class TitleScene extends Phaser.Scene {
     }
 
     // 제목 — 로고 아트가 오면 글자 대신 그것을 건다
-    this.veil(560, 168, 800, 168);
+    // Preserve the painted storefront: title occupies the empty upper wall.
+    this.veil(500, 72, 920, 280);
     // 로고는 **본 아트일 때만** 건다. 플레이스홀더 로고는 테두리 친 상자라서
     // 배경 그림 위에 얹으면 하늘을 가리는 흰 판이 된다 — 그럴 바엔 글자가 낫다.
     if (isFinalArt('ui.logo') && hasTexture(this, 'ui.logo')) {
-      this.add.image(BASE_W / 2, 256, assetKey('ui.logo')).setOrigin(0.5);
+      this.add.image(BASE_W / 2, 156, assetKey('ui.logo')).setOrigin(0.5);
     } else {
       // 자간을 벌려 간판처럼
       this.add
@@ -84,14 +85,17 @@ export class TitleScene extends Phaser.Scene {
     const bw = 528;
     const bh = 96;
     const gap = 48;
-    const left = Math.round((BASE_W - bw * 2 - gap) / 2);
+    // Keep the centre counter clear; actions use the two open lower-side bays.
+    const left = 120;
+    const right = BASE_W - 120 - bw;
     // 464 였다. 본 아트가 들어오면서 80px 올렸다 — 그 자리가 정확히 진열창이고,
     // 창의 불빛은 이 그림에서 유일하게 움직이는 것이다. 버튼으로 덮으면 깜빡임이 사라진다.
-    const top = 384;
+    const top = 656;
 
     // 버튼 판 아래를 깔아 둔다. 버튼 자체는 불투명하지만 두 열 사이 48px 틈으로
     // 배경이 그대로 새어 나와 밝은 세로줄처럼 보인다.
-    this.veil(left - 24, top - 24, bw * 2 + gap + 48, bh * 2 + gap + 48);
+    this.veil(left - 24, top - 24, bw + 48, bh * 2 + gap + 48);
+    this.veil(right - 24, top - 24, bw + 48, bh * 2 + gap + 48);
 
     new Button(this, {
       x: left, y: top, w: bw, h: bh,
@@ -99,7 +103,7 @@ export class TitleScene extends Phaser.Scene {
       onClick: () => this.startNewGame(),
     });
     new Button(this, {
-      x: left + bw + gap, y: top, w: bw, h: bh,
+      x: right, y: top, w: bw, h: bh,
       label: '이어하기', hotkey: '2',
       enabled: hasSavedRun(),
       onClick: () => this.continueGame(),
@@ -110,15 +114,15 @@ export class TitleScene extends Phaser.Scene {
       onClick: () => this.scene.start(SCENES.OPTIONS),
     });
     new Button(this, {
-      x: left + bw + gap, y: top + bh + gap, w: bw, h: bh,
+      x: right, y: top + bh + gap, w: bw, h: bh,
       label: '조작 안내', hotkey: '4', variant: 'ghost',
       onClick: () => this.scene.start(SCENES.HELP),
     });
 
     // 이 한 줄은 보도 위에 앉는다 — 거기가 그림에서 가장 밝은 자리다
-    this.veil(640, 816, 640, 72);
+    this.veil(640, 984, 640, 72);
     this.add
-      .text(BASE_W / 2, 848, '당신은 한 세계를 속이고 있다.', { ...FONT, color: css('bone') })
+      .text(BASE_W / 2, 1016, '당신은 한 세계를 속이고 있다.', { ...FONT, color: css('bone') })
       .setOrigin(0.5);
 
     // 폰트 폴백 여부를 화면에 남긴다 (수용 기준 4 확인용)

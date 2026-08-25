@@ -293,7 +293,7 @@
           "type": "image",
           "file": "bg/shop_room.png",
           "size": [
-            752,
+            650,
             792
           ],
           "desc": "② 편성실 좌측 — 방문자가 서는 자리"
@@ -302,7 +302,7 @@
           "type": "image",
           "file": "bg/shop_bench.png",
           "size": [
-            1152,
+            1244,
             792
           ],
           "desc": "② 편성실 우측 — 작업대"
@@ -311,7 +311,7 @@
           "type": "image",
           "file": "bg/revive_room.png",
           "size": [
-            752,
+            650,
             792
           ],
           "desc": "① 소생실 좌측 (없으면 bg.shop.room 을 쓴다)"
@@ -320,7 +320,7 @@
           "type": "image",
           "file": "bg/revive_bench.png",
           "size": [
-            1152,
+            1244,
             792
           ],
           "desc": "① 소생실 우측 (없으면 bg.shop.bench 를 쓴다)"
@@ -338,8 +338,8 @@
           "type": "image",
           "file": "bg/tower.png",
           "size": [
-            744,
-            720
+            1000,
+            792
           ],
           "desc": "③ 생방송 전투 칸 배경 (던전)"
         },
@@ -880,7 +880,7 @@
           "type": "image",
           "file": "bg/shop_room.png",
           "size": [
-            752,
+            650,
             792
           ],
           "desc": "② 편성실 좌측 — 방문자가 서는 자리"
@@ -889,7 +889,7 @@
           "type": "image",
           "file": "bg/shop_bench.png",
           "size": [
-            1152,
+            1244,
             792
           ],
           "desc": "② 편성실 우측 — 작업대"
@@ -898,7 +898,7 @@
           "type": "image",
           "file": "bg/revive_room.png",
           "size": [
-            752,
+            650,
             792
           ],
           "desc": "① 소생실 좌측 (없으면 bg.shop.room 을 쓴다)"
@@ -907,7 +907,7 @@
           "type": "image",
           "file": "bg/revive_bench.png",
           "size": [
-            1152,
+            1244,
             792
           ],
           "desc": "① 소생실 우측 (없으면 bg.shop.bench 를 쓴다)"
@@ -925,8 +925,8 @@
           "type": "image",
           "file": "bg/tower.png",
           "size": [
-            744,
-            720
+            1000,
+            792
           ],
           "desc": "③ 생방송 전투 칸 배경 (던전)"
         },

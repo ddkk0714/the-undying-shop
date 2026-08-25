@@ -1,55 +1,48 @@
 /**
- * 04-UI-KIT §1 — 모든 좌표는 이 상수를 쓴다. 씬에서 좌표를 새로 정하지 않는다.
+ * Shared 1920×1080 layout.
  *
- * v3.1 아트 개편 — 기준 해상도 480x270 → **1920x1080**.
- * LIVE 5분할은 구 값의 정확히 4배, 상점 화면은 레퍼런스에 맞춰 새로 잡았다.
+ * The shop and broadcast art sets define these measurements. UI is positioned
+ * around the artwork rather than stretching the artwork to a generic grid.
  */
 export const L = {
   W: 1920,
   H: 1080,
 
-  // ── 공통 HUD (상단 144) — 액자 박스 2개 + 도구 띠
   hud: { x: 0, y: 0, w: 1920, h: 144 },
-  hudStatus: { x: 8, y: 16, w: 752, h: 112 },   // DAY · LIVE · 골드/팬/평판
-  hudTools: { x: 768, y: 16, w: 1144, h: 112 }, // 시계 · 날짜 · 저장 · 장부 · 옵션
+  hudStatus: { x: 8, y: 16, w: 752, h: 112 },
+  hudTools: { x: 768, y: 16, w: 1144, h: 112 },
+  stage: { x: 0, y: 144, w: 1920, h: 936 },
 
-  stage: { x: 0, y: 144, w: 1920, h: 936 },     // 단계별 본문 영역
-
-  // ── ①② 상점 화면 — 2분할 + 하단 4택 (레퍼런스 정본)
-  guest: { x: 0, y: 144, w: 752, h: 792 },      // 좌: 방문자 / 출연자 전신
-  dialogue: { x: 0, y: 936, w: 752, h: 144 },   // 좌하: 대사 한 줄 + ▼
-  bench: { x: 768, y: 144, w: 1152, h: 792 },   // 우: 작업대 (램프·장부·도장)
-  actions: { x: 768, y: 936, w: 1152, h: 144 }, // 우하: 蘇生 販売 交渉 出撃
-  /** 상점이 아닌 단계(④⑤⑥)의 전폭 액션 바 — 좌측에 인물이 없으므로 화면 전체를 쓴다 */
+  // Source art: room 1086×1324, bench 1748×1112. These preserve both ratios.
+  guest: { x: 0, y: 144, w: 650, h: 792 },
+  dialogue: { x: 0, y: 936, w: 650, h: 144 },
+  bench: { x: 668, y: 144, w: 1244, h: 792 },
+  actions: { x: 668, y: 936, w: 1244, h: 144 },
   actionsFull: { x: 0, y: 936, w: 1920, h: 144 },
 
-  // ── ③ LIVE 전용 — 5분할. 104+496+744+576 = 1920 / 64+1016 = 1080
+  // Broadcast composition follows the supplied desk, map, battle and portrait art.
   live: {
-    bar: { x: 0, y: 0, w: 1920, h: 64 },           // LIVE · 방송 제목 · 시청자 수
-    floors: { x: 0, y: 64, w: 104, h: 1016 },      // 층수 게이지 (아래로 깊어짐)
-    map: { x: 104, y: 64, w: 496, h: 536 },        // 던전 지도 + 현재 위치
-    radio: { x: 104, y: 600, w: 496, h: 480 },     // 무전기 (진짜 지도는 여기에만)
-    combat: { x: 600, y: 64, w: 744, h: 720 },     // 1인칭 전투 화면
-    choices: { x: 600, y: 784, w: 744, h: 296 },   // 공격 / 방어 / 어필
-    portrait: { x: 1344, y: 64, w: 576, h: 400 },  // 용사 초상 (상태 변화)
-    chat: { x: 1344, y: 464, w: 576, h: 616 },     // 채팅
+    bar: { x: 0, y: 0, w: 1920, h: 144 },
+    floors: { x: 0, y: 144, w: 104, h: 792 },
+    map: { x: 104, y: 144, w: 616, h: 792 },
+    radio: { x: 704, y: 576, w: 384, h: 360 },
+    combat: { x: 720, y: 144, w: 1000, h: 792 },
+    choices: { x: 1040, y: 936, w: 840, h: 144 },
+    portrait: { x: 1560, y: 176, w: 336, h: 400 },
+    chat: { x: 832, y: 320, w: 360, h: 240 },
   },
 
-  // ── ② 계약서 심사 (모드A) — guest 는 위 공용 값을 그대로 쓴다
+  // Contract sheet sits on the paper-shaped central area of the workbench.
   office: {
-    paper: { x: 768, y: 144, w: 1152, h: 792 },    // 계약서 전면
+    paper: { x: 928, y: 168, w: 640, h: 720 },
   },
 
-  // ── 3칸 그리드 (진열대 / 캐스팅 / 검시 선택지). 작업대 위쪽에 놓인다
-  slot3: { x: 1024, y: 240, w: 224, h: 272, gap: 16 },
-
+  slot3: { x: 1008, y: 240, w: 224, h: 272, gap: 16 },
   pad: 24,
   line: 2,
 } as const;
 
-/** 슬롯 x 좌표: 1024, 1264, 1504 — 오른쪽 여백 192 는 도장·두루마리 자리 */
 export const slotX = (i: number): number => L.slot3.x + i * (L.slot3.w + L.slot3.gap);
 
-/** 하단 4택 x 좌표: 792, 1071, 1350, 1629 (폭 267, 사이 12) */
-export const ACTION_W = 267;
+export const ACTION_W = 290;
 export const actionX = (i: number): number => L.actions.x + L.pad + i * (ACTION_W + 12);

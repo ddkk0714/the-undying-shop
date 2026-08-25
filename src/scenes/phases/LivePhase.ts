@@ -245,15 +245,15 @@ export class LivePhase extends PhaseScene {
   private buildBar(s: Readonly<GameState>): void {
     const v = L.live;
     this.rect(v.bar.x, v.bar.y, v.bar.w, v.bar.h, 'ink');
-    this.blinkers.push(this.dot(L.pad, 24, 16, 'wax'));
-    this.text(L.pad + 32, 12, 'LIVE', 'wax');
+    this.blinkers.push(this.dot(L.pad, v.bar.y + 64, 16, 'wax'));
+    this.text(L.pad + 32, v.bar.y + 52, 'LIVE', 'wax');
 
     const persona = s.personas.find((p) => p.id === s.today?.personaId);
     const title = `${persona?.displayName ?? '무명 방송'} · ${s.today?.claimedCeiling ?? 0}층 도전`;
-    this.text(L.pad + 160, 12, this.clip(title, 900), 'bone');
+    this.text(L.pad + 160, v.bar.y + 52, this.clip(title, 900), 'bone');
 
-    this.textRight(L.W - L.pad, 12, `시청자 ${fmtFans(s.fans)}`, 'dust');
-    if (this.time.now < this.fanDropUntil) this.textRight(L.W - L.pad - 320, 12, '▼', 'wax');
+    this.textRight(L.W - L.pad, v.bar.y + 52, `시청자 ${fmtFans(s.fans)}`, 'dust');
+    if (this.time.now < this.fanDropUntil) this.textRight(L.W - L.pad - 320, v.bar.y + 52, '▼', 'wax');
   }
 
   /* ── ② 좌측 층수 게이지 — 아래로 깊어진다 (M06 §6) ──── */
@@ -349,9 +349,11 @@ export class LivePhase extends PhaseScene {
       { label: 'B 로 가', dir: 'B', hotkey: '2' },
       { label: '나도 몰라', dir: 'UNKNOWN', hotkey: '3' },
     ];
+    const answerGap = 8;
+    const answerW = Math.floor((inner - answerGap * 2) / 3);
     answers.forEach((a, i) => {
       new Button(this, {
-        x: v.x + L.pad, y: v.y + 284 + i * 66, w: inner, h: 58,
+        x: v.x + L.pad + i * (answerW + answerGap), y: v.y + 292, w: answerW, h: 48,
         label: a.label, hotkey: a.hotkey,
         variant: a.dir === 'UNKNOWN' ? 'ghost' : 'default',
         onClick: () => this.store.dispatch({ type: 'RADIO/ANSWER', dir: a.dir }),
@@ -413,9 +415,11 @@ export class LivePhase extends PhaseScene {
       { label: '방어한다', choice: 'DEFEND', hotkey: '2' },
       { label: '어필한다', choice: 'APPEAL', hotkey: '3' },
     ];
+    const gap = 16;
+    const buttonW = Math.floor((v.w - L.pad * 2 - gap * 2) / 3);
     choices.forEach((c, i) => {
       new Button(this, {
-        x: v.x + L.pad, y: v.y + L.pad + i * 88, w: v.w - L.pad * 2, h: 72,
+        x: v.x + L.pad + i * (buttonW + gap), y: v.y + L.pad, w: buttonW, h: v.h - L.pad * 2,
         label: c.label, hotkey: c.hotkey,
         variant: c.choice === 'APPEAL' ? 'danger' : 'default',
         enabled: ready,
