@@ -262,6 +262,51 @@
           ],
           "desc": "장비 상세 정보창"
         },
+        "ui.inventory.info.top": {
+          "type": "image",
+          "file": "ui/item_info_top.png",
+          "size": [
+            536,
+            318
+          ],
+          "desc": "가변 장비 정보창 조립용 상단 — 이름·등급·아이콘"
+        },
+        "ui.inventory.info.stats": {
+          "type": "image",
+          "file": "ui/item_info_stats.png",
+          "size": [
+            536,
+            177
+          ],
+          "desc": "가변 장비 정보창 조립용 스탯 구획"
+        },
+        "ui.inventory.info.section": {
+          "type": "image",
+          "file": "ui/item_info_section.png",
+          "size": [
+            536,
+            238
+          ],
+          "desc": "가변 장비 정보창 조립용 반복 특성 구획"
+        },
+        "ui.inventory.info.notes": {
+          "type": "image",
+          "file": "ui/item_info_notes.png",
+          "size": [
+            536,
+            302
+          ],
+          "desc": "가변 장비 정보창 조립용 긴 기록 구획"
+        },
+        "ui.inventory.info.bottom": {
+          "type": "image",
+          "file": "ui/item_info_bottom.png",
+          "size": [
+            536,
+            94
+          ],
+          "desc": "가변 장비 정보창 조립용 하단 프레임"
+        },
         "ui.cursor": {
           "type": "image",
           "file": "ui/cursor.png",
@@ -1010,6 +1055,51 @@
             1129
           ],
           "desc": "장비 상세 정보창"
+        },
+        "ui.inventory.info.top": {
+          "type": "image",
+          "file": "ui/item_info_top.png",
+          "size": [
+            536,
+            318
+          ],
+          "desc": "가변 장비 정보창 조립용 상단 — 이름·등급·아이콘"
+        },
+        "ui.inventory.info.stats": {
+          "type": "image",
+          "file": "ui/item_info_stats.png",
+          "size": [
+            536,
+            177
+          ],
+          "desc": "가변 장비 정보창 조립용 스탯 구획"
+        },
+        "ui.inventory.info.section": {
+          "type": "image",
+          "file": "ui/item_info_section.png",
+          "size": [
+            536,
+            238
+          ],
+          "desc": "가변 장비 정보창 조립용 반복 특성 구획"
+        },
+        "ui.inventory.info.notes": {
+          "type": "image",
+          "file": "ui/item_info_notes.png",
+          "size": [
+            536,
+            302
+          ],
+          "desc": "가변 장비 정보창 조립용 긴 기록 구획"
+        },
+        "ui.inventory.info.bottom": {
+          "type": "image",
+          "file": "ui/item_info_bottom.png",
+          "size": [
+            536,
+            94
+          ],
+          "desc": "가변 장비 정보창 조립용 하단 프레임"
         },
         "bg.title": {
           "type": "image",
