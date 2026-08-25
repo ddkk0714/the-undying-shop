@@ -578,13 +578,19 @@
           "desc": "③ 방송 잡음 1장 (씬이 뒤집어 가며 쓴다)"
         },
         "ui.live.chat": {
-          "type": "image",
+          "type": "nineslice",
           "file": "ui/live_chat.png",
           "size": [
-            560,
-            394
+            424,
+            298
           ],
-          "desc": "③ 채팅창 (상단 타이틀 바가 있어 9-slice 불가 · 고정 크기)"
+          "slice": [
+            48,
+            12,
+            42,
+            6
+          ],
+          "desc": "③ 채팅창. 상단 타이틀 바 42px 는 늘어나지 않는다 (9-slice top)"
         },
         "ui.live.superchat": {
           "type": "image",
@@ -1534,13 +1540,19 @@
           "desc": "③ 방송 잡음 1장 (씬이 뒤집어 가며 쓴다)"
         },
         "ui.live.chat": {
-          "type": "image",
+          "type": "nineslice",
           "file": "ui/live_chat.png",
           "size": [
-            560,
-            394
+            424,
+            298
           ],
-          "desc": "③ 채팅창 (상단 타이틀 바가 있어 9-slice 불가 · 고정 크기)"
+          "slice": [
+            48,
+            12,
+            42,
+            6
+          ],
+          "desc": "③ 채팅창. 상단 타이틀 바 42px 는 늘어나지 않는다 (9-slice top)"
         },
         "ui.live.superchat": {
           "type": "image",

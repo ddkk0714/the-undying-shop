@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { SCENES } from '../../config';
 import { content } from '../../core/content';
 import { PALETTE } from '../../render/palette';
-import { starArt } from '../../render/assets';
+import { starArt, key, slice } from '../../render/assets';
 import { L } from '../../ui/layout';
 import { Button } from '../../ui/Button';
 import { Ticker } from '../../ui/Ticker';
@@ -116,7 +116,7 @@ export class LivePhase extends PhaseScene {
     this.lastFans = -1;
     this.fanDropUntil = 0;
 
-    this.chat = new Ticker(this, { x: L.live.chat.x + L.pad, y: L.live.chat.y + 56, w: L.live.chat.w - L.pad * 2, h: L.live.chat.h - 72 },
+    this.chat = new Ticker(this, { x: L.live.chat.x + L.pad, y: L.live.chat.y + 58, w: L.live.chat.w - L.pad * 2, h: L.live.chat.h - 80 },
       (id) => this.store.dispatch({ type: 'CHAT/DELETE', id }));
     this.keepAlive(...this.chat.objects());
 
@@ -490,12 +490,13 @@ export class LivePhase extends PhaseScene {
     // 방송 제목 — 페르소나 이름과 자기 신고 목표층. 계약서에 적힌 그대로다
     const persona = s.personas.find((p) => p.id === s.today?.personaId);
     const title = `${persona?.displayName ?? '무명 방송'}  ·  ${s.today?.claimedCeiling ?? 0}층 도전`;
-    this.text(b.x + b.w + 32, v.y + 22, this.clip(title, 560), 'bone');
+    const mid = v.y + Math.round(v.h / 2);
+    this.text(b.x + b.w + 32, mid, this.clip(title, 560), 'bone').setOrigin(0, 0.5);
 
     // 시청자 수 — 빠지는 중이면 ▼ 가 붙는다 (core 의 지체 페널티가 만든 변화)
     const dropping = this.time.now < this.fanDropUntil;
-    this.textRight(v.x + v.w - 24, v.y + 22,
-      `시청자 ${dropping ? '▼ ' : ''}${fmtFans(s.fans)}`, dropping ? 'wax' : 'dust');
+    this.textRight(v.x + v.w - 24, mid,
+      `시청자 ${dropping ? '▼ ' : ''}${fmtFans(s.fans)}`, dropping ? 'wax' : 'dust').setOrigin(1, 0.5);
   }
 
   /**
@@ -594,16 +595,18 @@ export class LivePhase extends PhaseScene {
     const iw = info.w - L.pad * 2;
     this.rect(info.x, info.y, info.w, info.h, 'ink');
     this.frame(info.x, info.y, info.w, info.h, 'bone');
-    this.title(info.x + L.pad, info.y + 10, this.clip(star.bodyName, iw, 'title'));
-    this.text(info.x + L.pad, info.y + 68, this.clip(state, iw), appealing ? 'wax' : 'dust');
-    this.text(info.x + L.pad, info.y + 110, `공 ${run.hero.atk}   방 ${run.hero.def}`, 'dust');
-    this.bar(info.x + L.pad, info.y + 152, iw, run.hero.hp, run.hero.maxHp, 'bone');
-    this.label(info.x + L.pad, info.y + 182, `${run.hero.hp} / ${run.hero.maxHp}`, 'dust');
+    // 04-UI-KIT — 글자 크기는 16 / 32 / 48 셋뿐이다 (네오둥근모 16px 의 정수배).
+    // 24 같은 값을 지어내면 폰트가 뭉개진다. 그래서 한 단계씩 통째로 내렸다.
+    this.text(info.x + L.pad, info.y + 12, this.clip(star.bodyName, iw));
+    this.label(info.x + L.pad, info.y + 56, this.clip(state, iw * 2), appealing ? 'wax' : 'dust');
+    this.label(info.x + L.pad, info.y + 84, `공 ${run.hero.atk}   방 ${run.hero.def}`, 'dust');
+    this.bar(info.x + L.pad, info.y + 112, iw, run.hero.hp, run.hero.maxHp, 'bone');
+    this.label(info.x + L.pad, info.y + 140, `${run.hero.hp} / ${run.hero.maxHp}`, 'dust');
 
     // 시청자 수와 이 방송의 누적 슈퍼챗 — 예전에는 상단 바에 있었다
     const dropping = this.time.now < this.fanDropUntil;
-    this.label(info.x + L.pad, info.y + 212, `+${run.superchat} G`, 'bone');
-    this.textRight(info.x + info.w - L.pad, info.y + 212,
+    this.label(info.x + L.pad, info.y + 168, `+${run.superchat} G`, 'bone');
+    this.textRight(info.x + info.w - L.pad, info.y + 168,
       `${dropping ? '▼ ' : ''}${fmtFans(s.fans)}`, dropping ? 'wax' : 'dust');
 
     this.buildPotions(s, run.hero.hp < run.hero.maxHp);
@@ -660,7 +663,12 @@ export class LivePhase extends PhaseScene {
   private buildChat(s: Readonly<GameState>): void {
     const v = L.live.chat;
     if (this.hasArt('ui.live.chat')) {
-      this.sprite(v.x, v.y, 'ui.live.chat', v.w, v.h);
+      // **9-slice 다.** 통짜 이미지로 늘리면 상단 타이틀 바(원본 42px)까지 같이 늘어나
+      // 창을 키울수록 머리가 두꺼워진다. 위아래 테두리는 두께를 지키고 가운데만 늘린다
+      const [left, right, top, bottom] = slice('ui.live.chat');
+      this.add
+        .nineslice(v.x, v.y, key('ui.live.chat'), undefined, v.w, v.h, left, right, top, bottom)
+        .setOrigin(0, 0);
     } else {
       this.rect(v.x, v.y, v.w, v.h, 'ink');
       this.label(v.x + L.pad, v.y + 16, '채팅', 'dust');
