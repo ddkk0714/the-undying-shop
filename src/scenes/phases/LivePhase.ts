@@ -93,6 +93,8 @@ export class LivePhase extends PhaseScene {
   private blinkers: (Phaser.GameObjects.Rectangle | Phaser.GameObjects.Image)[] = [];
   private shaken: { obj: Phaser.GameObjects.GameObject & { x: number; y: number }; x: number; y: number }[] = [];
   private noiseLayer: Phaser.GameObjects.Graphics | null = null;
+  /** 신호 두절 잡음 — 받은 아트 한 장을 뒤집어 가며 쓴다 (DeathPhase 와 같은 수법) */
+  private noiseArt: Phaser.GameObjects.Image | null = null;
 
   constructor() {
     super(SCENES.PHASE_LIVE);
@@ -177,6 +179,11 @@ export class LivePhase extends PhaseScene {
       }
     }
 
+    if (this.noiseArt !== null) {
+      // 잡음은 뒤집어도 잡음이다 — 1182x936 텍스처를 여러 장 물고 있을 이유가 없다
+      const step = Math.floor(now / 110);
+      this.noiseArt.setFlipX((step & 1) === 1).setFlipY((step & 2) === 2);
+    }
     if (this.noiseLayer !== null && this.deathAt !== null) this.drawNoise(now - this.deathAt);
   }
 
@@ -185,6 +192,7 @@ export class LivePhase extends PhaseScene {
     this.blinkers = [];
     this.shaken = [];
     this.noiseLayer = null;
+    this.noiseArt = null;
     this.watch(s);
 
     // 상단 144 는 DayScene 의 HUD 다 — 목업(전투화면.png)에서도 방송 중에 그대로 떠 있다.
@@ -226,7 +234,12 @@ export class LivePhase extends PhaseScene {
     }
 
     if (this.witnessFloor !== null) this.buildWitness(this.witnessFloor);
-    if (this.deathAt !== null) this.noiseLayer = this.add.graphics();
+    if (this.deathAt !== null) {
+      // 방송이 끊기는 순간 — 던전 칸 위에 잡음을 덮는다. 절차적 주사선은 그 위에 겹친다
+      const c = L.live.combat;
+      this.noiseArt = this.spriteObject(c.x, c.y, 'ui.live.noise', c.w, c.h);
+      this.noiseLayer = this.add.graphics();
+    }
   }
 
   /* ── state 변화를 연출 타이머로 옮긴다 ────────────────── */
@@ -304,33 +317,64 @@ export class LivePhase extends PhaseScene {
     this.sprite(v.x, v.y, 'ui.live.map', v.w, v.h);
     this.label(v.x + 56, v.y + 56, '단면도', 'ink');
 
+    // 방·복도는 **씬이 그린다.** 받은 종이 아트에는 눈금과 접힌 자국뿐이다 —
+    // 지도는 매 다이브마다 달라야 하므로 그게 맞는 설계다.
+    // 밝은 종이 위라 선은 전부 ink 다. dust/mid 는 종이에 묻힌다.
     const floor = s.today?.currentFloor ?? 0;
     const top = windowTop(floor);
-    const gridY = v.y + 64;
-    const rowH = Math.floor((v.h - 88) / WINDOW_ROWS);
-    const innerX = v.x + L.pad;
-    const innerW = v.w - L.pad * 2;
+    const gridY = v.y + 116;
+    const rowH = Math.floor((v.h - 200) / WINDOW_ROWS);
+    const innerX = v.x + 72;
+    const innerW = v.w - 144;
+    const roomH = Math.max(18, rowH - 10);
+    const wall = L.line * 2;   // 종이가 어수선해서 2px 선은 묻힌다
 
-    let prevCx = innerX + Math.floor(innerW / 2);
+    let prev: { cx: number; bottom: number } | null = null;
     for (let i = 0; i < WINDOW_ROWS; i += 1) {
       const f = top + i;
       const y = gridY + i * rowH;
-      // 층 모양은 시드에 묶는다 — 다시 그려도 통로가 흔들리지 않는다
+      // 방 모양은 시드에 묶는다 — 다시 그려도 지도가 흔들리지 않는다
       const a = hash2(s.seed, f);
       const b = hash2(s.seed ^ 0x5bf03635, f);
-      const w = 96 + Math.floor(b * (innerW - 160));
+      const w = 88 + Math.floor(b * (innerW - 200));
       const x = innerX + Math.floor(a * (innerW - w));
       const cx = x + Math.floor(w / 2);
       const visited = f > 0 && f <= floor;
 
-      this.rect(x, y + rowH - 10, w, L.line, visited ? 'dust' : 'mid');
-      if (visited) {
-        // 지나온 경로만 선으로 남는다
-        this.rect(Math.min(prevCx, cx), y + rowH - 10, Math.abs(cx - prevCx) + L.line, L.line, 'dust');
-        this.rect(cx, y, L.line, rowH - 10, 'dust');
-        prevCx = cx;
+      // 지나온 층은 벽을 그은 방, 아직 안 간 층은 점선 — 「거긴 아직 모른다」
+      if (visited) this.frame(x, y, w, roomH, 'ink');
+      else this.dashedBox(x, y, w, roomH);
+
+      // 복도 — 앞 방 바닥에서 이 방 천장으로. 꺾이는 자리는 ㄱ 자로 잇는다
+      if (visited && prev !== null) {
+        const kink = y - Math.floor((y - prev.bottom) / 2);
+        this.rect(prev.cx, prev.bottom, wall, kink - prev.bottom, 'ink');
+        if (prev.cx !== cx) {
+          this.rect(Math.min(prev.cx, cx), kink, Math.abs(cx - prev.cx) + wall, wall, 'ink');
+        }
+        this.rect(cx, kink, wall, y - kink, 'ink');
       }
-      if (f === floor) this.blinkers.push(this.dot(cx - 6, y + rowH - 20, 12, 'wax'));
+      if (visited) prev = { cx, bottom: y + roomH };
+
+      // 지금 있는 층 — 방 안에서 붉은 점이 깜빡인다
+      if (f === floor) {
+        this.blinkers.push(this.dot(cx - 7, y + Math.floor(roomH / 2) - 7, 14, 'wax'));
+      }
+    }
+  }
+
+  /** 점선 사각형 — 아직 안 가 본 방. 종이 위에 연필로 그어 둔 것처럼 보여야 한다 */
+  private dashedBox(x: number, y: number, w: number, h: number): void {
+    const dash = 8;
+    for (let i = 0; i < w; i += dash * 2) {
+      const d = Math.min(dash, w - i);
+      this.rect(x + i, y, d, L.line, 'mid');
+      this.rect(x + i, y + h - L.line, d, L.line, 'mid');
+    }
+    for (let j = 0; j < h; j += dash * 2) {
+      const d = Math.min(dash, h - j);
+      this.rect(x, y + j, L.line, d, 'mid');
+      this.rect(x + w - L.line, y + j, L.line, d, 'mid');
     }
   }
 
