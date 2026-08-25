@@ -484,8 +484,11 @@ export class LivePhase extends PhaseScene {
       this.frame(b.x, b.y, b.w, b.h, 'bone');
       this.text(b.x + 56, b.y + 18, 'ON AIR', 'bone');
     }
-    const dot = this.spriteObject(b.x + 18, b.y + 24, 'ui.live.blink', 26, 28);
-    this.blinkers.push(dot ?? this.dot(b.x + 24, b.y + 30, 16, 'wax'));
+    // 배지 세로 중앙. 글자를 중앙에 앉히면서 이 마름모만 아래에 남아 있었다 —
+    // b.h 로 계산하니 배지 높이를 또 바꿔도 따라온다
+    const dy = Math.round((b.h - 28) / 2);
+    const dot = this.spriteObject(b.x + 12, b.y + dy, 'ui.live.blink', 26, 28);
+    this.blinkers.push(dot ?? this.dot(b.x + 18, b.y + dy + 6, 16, 'wax'));
 
     // 방송 제목 — 페르소나 이름과 자기 신고 목표층. 계약서에 적힌 그대로다
     const persona = s.personas.find((p) => p.id === s.today?.personaId);
@@ -518,8 +521,9 @@ export class LivePhase extends PhaseScene {
       this.rect(v.x, v.y, v.w, v.h, 'ink');
       this.frame(v.x, v.y, v.w, v.h, 'bone');
     }
-    // 배너가 사선으로 잘린 그림이라 글은 가운데 검은 띠 안에만 놓는다
-    this.text(v.x + 220, v.y + Math.round(v.h / 2) - 20, this.clip(`"${spoken}"`, v.w - 380), 'bone');
+    // 배너가 사선으로 잘린 그림이라 글은 가운데 검은 띠 안에만 놓는다.
+    // 띠의 중심이 그림 한가운데보다 조금 아래에 있어서 그만큼 내려 앉힌다
+    this.text(v.x + 200, v.y + Math.round(v.h / 2) - 4, this.clip(`"${spoken}"`, v.w - 330), 'bone');
   }
 
   private buildChoices(s: Readonly<GameState>): void {
