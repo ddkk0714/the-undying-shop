@@ -348,7 +348,7 @@ export class OfficePhase extends PhaseScene {
       const art = this.itemArt(def, { x: cellX + 3, y: cellY + 5, w: cellW - 6, h: 84 });
       if (art !== null) {
         // 원화의 도트 무게가 오른쪽으로 치우친 경우를 보정해 칸의 시각적 중앙에 둔다.
-        art.setX(Math.round(cellX + cellW / 2 - 8));
+        art.setX(Math.round(cellX + cellW / 2 - 14));
         if (equipped) art.setAlpha(0.38);
         else {
           this.wireInventoryDrag(art, def, { x: art.x, y: art.y });
