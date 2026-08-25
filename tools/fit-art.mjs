@@ -296,20 +296,67 @@ if (!Array.isArray(entry.size)) {
 const [dw, dh] = entry.size;
 const decoded = decodePng(resolve(srcArg));
 
+// --crop=x,y,w,h — 한 장에 여러 조각이 들어 있을 때 (상단정보바 = 좌/우 패널 두 장)
+const cropFlag = flags.find((f) => f.startsWith('--crop='))?.slice(7);
+let cropSrc = decoded;
+if (cropFlag !== undefined) {
+  const n = cropFlag.split(',').map(Number);
+  if (n.length !== 4 || n.some((v) => !Number.isFinite(v))) {
+    console.error(`--crop 은 x,y,w,h 꼴이어야 한다 (받은 값: ${cropFlag})`);
+    process.exit(1);
+  }
+  const [cx, cy, cw, chh] = n;
+  const luma = new Float64Array(cw * chh);
+  const alpha = new Float64Array(cw * chh);
+  for (let y = 0; y < chh; y++) {
+    const sy = y + cy;
+    if (sy < 0 || sy >= decoded.h) continue;
+    for (let x = 0; x < cw; x++) {
+      const sx = x + cx;
+      if (sx < 0 || sx >= decoded.w) continue;
+      luma[y * cw + x] = decoded.luma[sy * decoded.w + sx];
+      alpha[y * cw + x] = decoded.alpha[sy * decoded.w + sx];
+    }
+  }
+  cropSrc = { w: cw, h: chh, luma, alpha };
+}
+
 const canvasFlag = flags.find((f) => f.startsWith('--canvas='))?.slice(9);
-let src = decoded;
+let src = cropSrc;
 if (canvasFlag !== undefined) {
   const m = /^(\d+)x(\d+)$/.exec(canvasFlag);
   if (m === null) {
     console.error(`--canvas 는 640x480 꼴이어야 한다 (받은 값: ${canvasFlag})`);
     process.exit(1);
   }
-  src = padToCanvas(decoded, Number(m[1]), Number(m[2]));
+  src = padToCanvas(cropSrc, Number(m[1]), Number(m[2]));
 }
 
 const rect = fitRect(src.w, src.h, dw, dh, fitMode);
 const small = resampleBox(src, dw, dh, rect);
-const png = encodePng(dw, dh, dither(small));
+const rgba = dither(small);
+
+// 9-slice buttons can have a transparent middle. On request, fill only the
+// stretchable center so the scene behind a button can never show through.
+const fillCenter = flags.find((f) => f.startsWith('--fill-center='))?.slice(14);
+if (fillCenter !== undefined) {
+  if (fillCenter !== 'ink') {
+    console.error(`--fill-center only accepts ink (received: ${fillCenter})`);
+    process.exit(1);
+  }
+  const [left, right, top, bottom] = entry.slice ?? [];
+  if (![left, right, top, bottom].every(Number.isFinite) || left + right >= dw || top + bottom >= dh) {
+    console.error(`--fill-center requires valid 9-slice margins (${slotKey})`);
+    process.exit(1);
+  }
+  for (let y = top; y < dh - bottom; y++) {
+    for (let x = left; x < dw - right; x++) {
+      const offset = (y * dw + x) * 4;
+      rgba[offset] = INK[0]; rgba[offset + 1] = INK[1]; rgba[offset + 2] = INK[2]; rgba[offset + 3] = 255;
+    }
+  }
+}
+const png = encodePng(dw, dh, rgba);
 
 const outFlag = flags.find((f) => f.startsWith('--out='))?.slice(6);
 const dest = outFlag ? resolve(outFlag) : join(ROOT, 'public', manifest.packs.final.root, entry.file);

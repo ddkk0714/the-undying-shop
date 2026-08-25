@@ -30,7 +30,9 @@ export interface ButtonOpts {
  * 아트를 한 장만 줘도 hover/press/danger 가 구분된다.
  */
 function skinKeyFor(visual: string, variant: ButtonVariant): string {
-  if (visual === 'disabled' || variant === 'ghost') return 'ui.button.ghost.9s';
+  // There is no final ghost skin yet. Use the final default button rather than
+  // inheriting the placeholder texture, which otherwise reintroduces labeled boxes.
+  if (visual === 'disabled' || variant === 'ghost') return 'ui.button.9s';
   if (variant === 'danger') return 'ui.button.danger.9s';
   if (visual === 'hover') return 'ui.button.hover.9s';
   return 'ui.button.9s';

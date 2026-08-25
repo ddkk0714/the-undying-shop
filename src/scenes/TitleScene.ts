@@ -6,7 +6,7 @@ import { Button } from '../ui/Button';
 import { key as assetKey, hasTexture, isFinalArt } from '../render/assets';
 import { scrimTexture, SCRIM_TILE } from '../render/scrim';
 import { reducedMotion } from '../ui/options';
-import { newRun } from './run';
+import { hasSavedRun, loadRun, newRun } from './run';
 
 /** 창의 불빛 4단 — 밝은 쪽부터. `bg.title` 자체가 가장 밝은 상태다 */
 const LAMP_KEYS = ['bg.title.lamp1', 'bg.title.lamp2', 'bg.title.lamp3', 'bg.title.lamp4'] as const;
@@ -101,8 +101,8 @@ export class TitleScene extends Phaser.Scene {
     new Button(this, {
       x: left + bw + gap, y: top, w: bw, h: bh,
       label: '이어하기', hotkey: '2',
-      enabled: hasSave(),
-      onClick: () => this.startNewGame(),
+      enabled: hasSavedRun(),
+      onClick: () => this.continueGame(),
     });
     new Button(this, {
       x: left, y: top + bh + gap, w: bw, h: bh,
@@ -200,12 +200,9 @@ export class TitleScene extends Phaser.Scene {
     newRun(this.game);          // 스토어를 새로 만든다 — DayScene 은 이걸 집어 든다
     this.scene.start(SCENES.DAY);
   }
-}
 
-function hasSave(): boolean {
-  try {
-    return localStorage.getItem('undying-shop:save:v1') !== null;
-  } catch {
-    return false;
+  private continueGame(): void {
+    if (loadRun(this.game) === null) return;
+    this.scene.start(SCENES.DAY);
   }
 }

@@ -17,12 +17,12 @@
 2,캐릭터 · 초상,star/karin.png,384×480,192×240 생방송(1/2) · 384×480 상점(1:1),카린 초상 (생방송 우상단),도착,star.portrait.karin
 2,캐릭터 · 초상,star/mor.png,384×480,192×240 생방송(1/2) · 384×480 상점(1:1),모르 초상,도착,star.portrait.mor
 2,캐릭터 · 초상,star/sela.png,384×480,192×240 생방송(1/2) · 384×480 상점(1:1),셀라 초상,도착,star.portrait.sela
-3,배경,bg/autopsy.png,1920×936,1:1,⑤ 검시실,대기,bg.autopsy
+3,배경,bg/autopsy.png,1920×936,1:1,⑤ 검시실,도착,bg.autopsy
 3,배경,bg/death.png,1920×936,1:1,④ 사망 화면,도착,bg.death
-3,배경,bg/live.png,1920×1080,1:1,③ 생방송 5분할 바탕 (칸 사이 여백),대기,bg.live
+3,배경,bg/live.png,1920×1080,1:1,③ 생방송 5분할 바탕 (칸 사이 여백),도착,bg.live
 3,배경,bg/revive_bench.png,1152×792,1:1,① 소생실 우측 (없으면 bg.shop.bench 를 쓴다),도착,bg.revive.bench
 3,배경,bg/revive_room.png,752×792,1:1,① 소생실 좌측 (없으면 bg.shop.room 을 쓴다),도착,bg.revive.room
-3,배경,bg/studio.png,1920×936,1:1,⑥ 발표 스튜디오,대기,bg.studio
+3,배경,bg/studio.png,1920×936,1:1,⑥ 발표 스튜디오,도착,bg.studio
 3,배경,bg/title_lamp1.png,1920×1080,1:1,타이틀 램프 밝기 1/4 — 넣으면 창의 불빛이 깜빡인다 (4장 다 있어야 켜진다),도착,bg.title.lamp1
 3,배경,bg/title_lamp2.png,1920×1080,1:1,타이틀 램프 밝기 2/4 — 넣으면 창의 불빛이 깜빡인다 (4장 다 있어야 켜진다),도착,bg.title.lamp2
 3,배경,bg/title_lamp3.png,1920×1080,1:1,타이틀 램프 밝기 3/4 — 넣으면 창의 불빛이 깜빡인다 (4장 다 있어야 켜진다),도착,bg.title.lamp3
@@ -33,10 +33,10 @@
 3,적,enemy/gatekeeper.png,512×512,256×256 (1/2),문지기 — 31F 이상,도착,enemy.gatekeeper
 3,적,enemy/husk.png,512×512,256×256 (1/2),껍데기 — 22F 이하,도착,enemy.husk
 3,적,enemy/rat.png,512×512,256×256 (1/2),쥐 — 22F 이하,도착,enemy.rat
-3,UI · 버튼,ui/button_danger.png,32×32,버튼/패널 크기에 맞춰 늘어난다,버튼 위험 (소생·어필·훼손),대기,ui.button.danger.9s
-3,UI · 버튼,ui/button_ghost.png,32×32,버튼/패널 크기에 맞춰 늘어난다,버튼 보조 (테두리만 · 비활성/돌아가기),대기,ui.button.ghost.9s
-3,UI · 버튼,ui/button_hover.png,32×32,버튼/패널 크기에 맞춰 늘어난다,버튼 마우스오버,대기,ui.button.hover.9s
-3,UI · 버튼,ui/button.png,32×32,버튼/패널 크기에 맞춰 늘어난다,버튼 평상,대기,ui.button.9s
+3,UI · 버튼,ui/button_danger.png,208×88,버튼 크기에 맞춰 늘어난다 (모서리 22px 고정),버튼 위험 (소생·어필·훼손),도착,ui.button.danger.9s
+3,UI · 버튼,ui/button_ghost.png,208×88,버튼 크기에 맞춰 늘어난다 (모서리 22px 고정),버튼 보조 (테두리만 · 비활성/돌아가기),대기,ui.button.ghost.9s
+3,UI · 버튼,ui/button_hover.png,208×88,버튼 크기에 맞춰 늘어난다 (모서리 22px 고정),버튼 마우스오버,도착,ui.button.hover.9s
+3,UI · 버튼,ui/button.png,208×88,버튼 크기에 맞춰 늘어난다 (모서리 22px 고정),버튼 평상,도착,ui.button.9s
 4,기타,bgm/live.wav,,1:1,생방송 BGM — 하강 중 (긴장),대기,bgm.live
 4,기타,bgm/shop.wav,,1:1,상점 BGM — 소생실·편성실 (낮고 느리게),대기,bgm.shop
 4,소리,sfx/click.wav,,1:1,버튼 누름,대기,sfx.click
@@ -45,13 +45,21 @@
 4,소리,sfx/revive.wav,,1:1,소생 — 수조에서 몸이 일어난다,대기,sfx.revive
 4,소리,sfx/stamp.wav,,1:1,봉랍 도장 — 검시 판정·폐기 확정,대기,sfx.stamp
 4,소리,sfx/superchat.wav,,1:1,슈퍼챗 알림,대기,sfx.superchat
-4,소품,prop/lamp.png,224×352,1:1,작업대 램프 (광원),대기,prop.lamp
-4,소품,prop/ledger.png,336×264,1:1,장부,대기,prop.ledger
-4,소품,prop/scroll.png,176×64,1:1,두루마리,대기,prop.scroll
-4,소품,prop/stamp.png,128×208,1:1,도장,대기,prop.stamp
-4,소품,prop/tag.png,152×104,1:1,가격표,대기,prop.tag
+4,소품,prop/lamp.png,224×352,1:1,작업대의 실제 석유 램프,도착,prop.lamp
+4,소품,prop/ledger.png,336×264,1:1,작업대의 출연자 서류철,도착,prop.ledger
+4,소품,prop/scroll.png,176×64,1:1,계약서 서류 조각,도착,prop.scroll
+4,소품,prop/stamp.png,128×208,1:1,최종 판정서에서 잘라낸 실물 도장,도착,prop.stamp
+4,소품,prop/tag.png,152×104,1:1,작업대의 가격표,도착,prop.tag
 4,캐릭터 · 기타,star/silhouette.png,1536×480,384×480 프레임 1칸 (1:1),이름 없는 몸 실루엣 4프레임,대기,star.silhouette
 4,UI · 기타,ui/cursor.png,32×32,1:1,"마우스 커서 — 봉랍 도장. 뾰족한 끝이 좌상단(0,0)에 오게 그려라",대기,ui.cursor
+4,UI · 기타,ui/hud_status.png,700×144,1:1,상단바 좌 — DAY·골드·팬·평판 4칸,도착,ui.hud.status
+4,UI · 기타,ui/hud_tools.png,740×144,1:1,상단바 우 — 시계·도달층 게이지,도착,ui.hud.tools
+4,UI · 기타,ui/icon_help_hover.png,112×112,1:1,상단바 아이콘 · 조작 안내(책) (눌림),도착,ui.icon.help.hover
+4,UI · 기타,ui/icon_help.png,112×112,1:1,상단바 아이콘 · 조작 안내(책),도착,ui.icon.help
+4,UI · 기타,ui/icon_options_hover.png,112×112,1:1,상단바 아이콘 · 옵션(톱니) (눌림),도착,ui.icon.options.hover
+4,UI · 기타,ui/icon_options.png,112×112,1:1,상단바 아이콘 · 옵션(톱니),도착,ui.icon.options
+4,UI · 기타,ui/icon_save_hover.png,112×112,1:1,상단바 아이콘 · 저장 (눌림),도착,ui.icon.save.hover
+4,UI · 기타,ui/icon_save.png,112×112,1:1,상단바 아이콘 · 저장,도착,ui.icon.save
 4,UI · 기타,ui/logo.png,960×240,1:1,타이틀 로고,대기,ui.logo
 4,UI · 기타,ui/seal.png,768×192,192×192 프레임 1칸 (1:1),봉랍 도장 4프레임,대기,ui.seal
 4,UI · 기타,ui/suspicion1.png,192×128,1:1,의심도 1/5 — 눈이 떠지는 5단 (5장 다 있어야 승계 화면에 뜬다),도착,ui.suspicion1

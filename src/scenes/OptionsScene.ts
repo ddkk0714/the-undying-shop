@@ -15,8 +15,14 @@ import { muted, setMuted } from '../audio/Sfx';
  * 실제 소비는 OPTION/SET 액션으로 넘긴다 (M02 §2).
  */
 export class OptionsScene extends Phaser.Scene {
+  private returnTo: string | null = null;
+
   constructor() {
     super(SCENES.OPTIONS);
+  }
+
+  init(data: { returnTo?: string }): void {
+    this.returnTo = data.returnTo ?? null;
   }
 
   create(): void {
@@ -33,7 +39,7 @@ export class OptionsScene extends Phaser.Scene {
       label: reduced ? '켜짐' : '꺼짐', hotkey: '1',
       onClick: () => {
         this.registry.set('opt.reducedMotion', !reduced);
-        this.scene.restart();
+        this.scene.restart({ returnTo: this.returnTo ?? undefined });
       },
     });
 
@@ -44,7 +50,7 @@ export class OptionsScene extends Phaser.Scene {
       onClick: () => {
         const next = speed >= 3 ? 1 : speed + 1;
         this.registry.set('opt.speed', next);
-        this.scene.restart();
+        this.scene.restart({ returnTo: this.returnTo ?? undefined });
       },
     });
 
@@ -56,7 +62,7 @@ export class OptionsScene extends Phaser.Scene {
       label: off ? '꺼짐' : '켜짐', hotkey: '3',
       onClick: () => {
         setMuted(this, !off);
-        this.scene.restart();
+        this.scene.restart({ returnTo: this.returnTo ?? undefined });
       },
     });
 
@@ -66,8 +72,16 @@ export class OptionsScene extends Phaser.Scene {
     new Button(this, {
       x: BASE_W / 2 - 264, y: BASE_H - 136, w: 528, h: 96,
       label: '돌아가기', hotkey: '4',
-      onClick: () => this.scene.start(SCENES.TITLE),
+      onClick: () => this.close(),
     });
-    this.input.keyboard?.once('keydown-ESC', () => this.scene.start(SCENES.TITLE));
+    this.input.keyboard?.once('keydown-ESC', () => this.close());
+  }
+
+  private close(): void {
+    if (this.returnTo === null) this.scene.start(SCENES.TITLE);
+    else {
+      this.scene.stop();
+      this.scene.resume(this.returnTo);
+    }
   }
 }

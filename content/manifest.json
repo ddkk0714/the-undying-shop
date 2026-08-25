@@ -41,65 +41,137 @@
           "type": "nineslice",
           "file": "ui/button.png",
           "slice": [
-            8,
-            8,
-            8,
-            8
+            22,
+            22,
+            22,
+            22
           ],
           "desc": "버튼 평상",
           "size": [
-            32,
-            32
+            208,
+            88
           ],
-          "display": "버튼/패널 크기에 맞춰 늘어난다"
+          "display": "버튼 크기에 맞춰 늘어난다 (모서리 22px 고정)"
         },
         "ui.button.hover.9s": {
           "type": "nineslice",
           "file": "ui/button_hover.png",
           "slice": [
-            8,
-            8,
-            8,
-            8
+            22,
+            22,
+            22,
+            22
           ],
           "desc": "버튼 마우스오버",
           "size": [
-            32,
-            32
+            208,
+            88
           ],
-          "display": "버튼/패널 크기에 맞춰 늘어난다"
+          "display": "버튼 크기에 맞춰 늘어난다 (모서리 22px 고정)"
         },
         "ui.button.danger.9s": {
           "type": "nineslice",
           "file": "ui/button_danger.png",
           "slice": [
-            8,
-            8,
-            8,
-            8
+            22,
+            22,
+            22,
+            22
           ],
           "desc": "버튼 위험 (소생·어필·훼손)",
           "size": [
-            32,
-            32
+            208,
+            88
           ],
-          "display": "버튼/패널 크기에 맞춰 늘어난다"
+          "display": "버튼 크기에 맞춰 늘어난다 (모서리 22px 고정)"
         },
         "ui.button.ghost.9s": {
           "type": "nineslice",
           "file": "ui/button_ghost.png",
           "slice": [
-            8,
-            8,
-            8,
-            8
+            22,
+            22,
+            22,
+            22
           ],
           "desc": "버튼 보조 (테두리만 · 비활성/돌아가기)",
           "size": [
-            32,
-            32
+            208,
+            88
           ],
-          "display": "버튼/패널 크기에 맞춰 늘어난다"
+          "display": "버튼 크기에 맞춰 늘어난다 (모서리 22px 고정)"
+        },
+        "ui.hud.status": {
+          "type": "image",
+          "file": "ui/hud_status.png",
+          "size": [
+            700,
+            144
+          ],
+          "desc": "상단바 좌 — DAY·골드·팬·평판 4칸"
+        },
+        "ui.hud.tools": {
+          "type": "image",
+          "file": "ui/hud_tools.png",
+          "size": [
+            740,
+            144
+          ],
+          "desc": "상단바 우 — 시계·도달층 게이지"
+        },
+        "ui.icon.help": {
+          "type": "image",
+          "file": "ui/icon_help.png",
+          "size": [
+            112,
+            112
+          ],
+          "desc": "상단바 아이콘 · 조작 안내(책)"
+        },
+        "ui.icon.help.hover": {
+          "type": "image",
+          "file": "ui/icon_help_hover.png",
+          "size": [
+            112,
+            112
+          ],
+          "desc": "상단바 아이콘 · 조작 안내(책) (눌림)"
+        },
+        "ui.icon.options": {
+          "type": "image",
+          "file": "ui/icon_options.png",
+          "size": [
+            112,
+            112
+          ],
+          "desc": "상단바 아이콘 · 옵션(톱니)"
+        },
+        "ui.icon.options.hover": {
+          "type": "image",
+          "file": "ui/icon_options_hover.png",
+          "size": [
+            112,
+            112
+          ],
+          "desc": "상단바 아이콘 · 옵션(톱니) (눌림)"
+        },
+        "ui.icon.save": {
+          "type": "image",
+          "file": "ui/icon_save.png",
+          "size": [
+            112,
+            112
+          ],
+          "desc": "상단바 아이콘 · 저장"
+        },
+        "ui.icon.save.hover": {
+          "type": "image",
+          "file": "ui/icon_save_hover.png",
+          "size": [
+            112,
+            112
+          ],
+          "desc": "상단바 아이콘 · 저장 (눌림)"
         },
         "ui.seal": {
           "type": "spritesheet",
@@ -305,7 +377,7 @@
             224,
             352
           ],
-          "desc": "작업대 램프 (광원)"
+          "desc": "작업대의 실제 석유 램프"
         },
         "prop.ledger": {
           "type": "image",
@@ -314,7 +386,7 @@
             336,
             264
           ],
-          "desc": "장부"
+          "desc": "작업대의 출연자 서류철"
         },
         "prop.stamp": {
           "type": "image",
@@ -323,7 +395,7 @@
             128,
             208
           ],
-          "desc": "도장"
+          "desc": "최종 판정서에서 잘라낸 실물 도장"
         },
         "prop.scroll": {
           "type": "image",
@@ -332,7 +404,7 @@
             176,
             64
           ],
-          "desc": "두루마리"
+          "desc": "계약서 서류 조각"
         },
         "prop.tag": {
           "type": "image",
@@ -341,7 +413,7 @@
             152,
             104
           ],
-          "desc": "가격표"
+          "desc": "작업대의 가격표"
         },
         "star.silhouette": {
           "type": "spritesheet",
@@ -594,6 +666,126 @@
       "root": "assets/packs/final/",
       "inherit": "placeholder",
       "entries": {
+        "ui.button.9s": {
+          "type": "nineslice",
+          "file": "ui/button.png",
+          "slice": [
+            22,
+            22,
+            22,
+            22
+          ],
+          "desc": "버튼 평상",
+          "size": [
+            208,
+            88
+          ],
+          "display": "버튼 크기에 맞춰 늘어난다 (모서리 22px 고정)"
+        },
+        "ui.button.hover.9s": {
+          "type": "nineslice",
+          "file": "ui/button_hover.png",
+          "slice": [
+            22,
+            22,
+            22,
+            22
+          ],
+          "desc": "버튼 마우스오버",
+          "size": [
+            208,
+            88
+          ],
+          "display": "버튼 크기에 맞춰 늘어난다 (모서리 22px 고정)"
+        },
+        "ui.button.danger.9s": {
+          "type": "nineslice",
+          "file": "ui/button_danger.png",
+          "slice": [
+            22,
+            22,
+            22,
+            22
+          ],
+          "desc": "버튼 위험 (소생·어필·훼손)",
+          "size": [
+            208,
+            88
+          ],
+          "display": "버튼 크기에 맞춰 늘어난다 (모서리 22px 고정)"
+        },
+        "ui.hud.status": {
+          "type": "image",
+          "file": "ui/hud_status.png",
+          "size": [
+            700,
+            144
+          ],
+          "desc": "상단바 좌 — DAY·골드·팬·평판 4칸"
+        },
+        "ui.hud.tools": {
+          "type": "image",
+          "file": "ui/hud_tools.png",
+          "size": [
+            740,
+            144
+          ],
+          "desc": "상단바 우 — 시계·도달층 게이지"
+        },
+        "ui.icon.help": {
+          "type": "image",
+          "file": "ui/icon_help.png",
+          "size": [
+            112,
+            112
+          ],
+          "desc": "상단바 아이콘 · 조작 안내(책)"
+        },
+        "ui.icon.help.hover": {
+          "type": "image",
+          "file": "ui/icon_help_hover.png",
+          "size": [
+            112,
+            112
+          ],
+          "desc": "상단바 아이콘 · 조작 안내(책) (눌림)"
+        },
+        "ui.icon.options": {
+          "type": "image",
+          "file": "ui/icon_options.png",
+          "size": [
+            112,
+            112
+          ],
+          "desc": "상단바 아이콘 · 옵션(톱니)"
+        },
+        "ui.icon.options.hover": {
+          "type": "image",
+          "file": "ui/icon_options_hover.png",
+          "size": [
+            112,
+            112
+          ],
+          "desc": "상단바 아이콘 · 옵션(톱니) (눌림)"
+        },
+        "ui.icon.save": {
+          "type": "image",
+          "file": "ui/icon_save.png",
+          "size": [
+            112,
+            112
+          ],
+          "desc": "상단바 아이콘 · 저장"
+        },
+        "ui.icon.save.hover": {
+          "type": "image",
+          "file": "ui/icon_save_hover.png",
+          "size": [
+            112,
+            112
+          ],
+          "desc": "상단바 아이콘 · 저장 (눌림)"
+        },
         "ui.suspicion1": {
           "type": "image",
           "file": "ui/suspicion1.png",
@@ -720,6 +912,15 @@
           ],
           "desc": "① 소생실 우측 (없으면 bg.shop.bench 를 쓴다)"
         },
+        "bg.live": {
+          "type": "image",
+          "file": "bg/live.png",
+          "size": [
+            1920,
+            1080
+          ],
+          "desc": "③ 생방송 5분할 바탕 (칸 사이 여백)"
+        },
         "bg.tower": {
           "type": "image",
           "file": "bg/tower.png",
@@ -737,6 +938,69 @@
             936
           ],
           "desc": "④ 사망 화면"
+        },
+        "bg.autopsy": {
+          "type": "image",
+          "file": "bg/autopsy.png",
+          "size": [
+            1920,
+            936
+          ],
+          "desc": "⑤ 검시실"
+        },
+        "bg.studio": {
+          "type": "image",
+          "file": "bg/studio.png",
+          "size": [
+            1920,
+            936
+          ],
+          "desc": "⑥ 발표 스튜디오"
+        },
+        "prop.lamp": {
+          "type": "image",
+          "file": "prop/lamp.png",
+          "size": [
+            224,
+            352
+          ],
+          "desc": "작업대의 실제 석유 램프"
+        },
+        "prop.ledger": {
+          "type": "image",
+          "file": "prop/ledger.png",
+          "size": [
+            336,
+            264
+          ],
+          "desc": "작업대의 출연자 서류철"
+        },
+        "prop.stamp": {
+          "type": "image",
+          "file": "prop/stamp.png",
+          "size": [
+            128,
+            208
+          ],
+          "desc": "최종 판정서에서 잘라낸 실물 도장"
+        },
+        "prop.scroll": {
+          "type": "image",
+          "file": "prop/scroll.png",
+          "size": [
+            176,
+            64
+          ],
+          "desc": "계약서 서류 조각"
+        },
+        "prop.tag": {
+          "type": "image",
+          "file": "prop/tag.png",
+          "size": [
+            152,
+            104
+          ],
+          "desc": "작업대의 가격표"
         },
         "star.body.karin": {
           "type": "image",

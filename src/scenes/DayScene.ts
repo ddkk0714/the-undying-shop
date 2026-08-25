@@ -7,9 +7,10 @@ import { Button } from '../ui/Button';
 import { label } from '../ui/Label';
 import { reducedMotion } from '../ui/options';
 import { DEATH_CURTAIN_MS } from './phases/LivePhase';
+import { key as assetKey, hasTexture } from '../render/assets';
 import type { WipeScene } from './WipeScene';
 import { content, reputationGrade } from '../core/content';
-import { currentRun, newRun } from './run';
+import { currentRun, newRun, saveRun } from './run';
 import type { Store } from '../core/store';
 import type { GameState, PhaseId } from '../core/types';
 
@@ -42,12 +43,14 @@ const PHASE_SCENE: Partial<Record<PhaseId, string>> = {
 
 /** HUD 자원 칸 — 레퍼런스의 세로 구분선 3분할 */
 const COLS = [
-  { label: 'GOLD', x: 232 },
-  { label: 'FANS', x: 456 },
-  { label: 'REPUTATION', x: 616 },
+  { label: 'GOLD', x: 172 },
+  { label: 'FANS', x: 346 },
+  { label: 'REPUTATION', x: 520 },
 ] as const;
 
 export class DayScene extends Phaser.Scene {
+  private readonly hudStatus = { x: 8, y: 0, w: 700, h: 144 };
+  private readonly hudTools = { x: 724, y: 0, w: 740, h: 144 };
   private store!: Store;
   private hudLeft!: Phaser.GameObjects.Text;
   private hudRight!: Phaser.GameObjects.Text;
@@ -103,26 +106,31 @@ export class DayScene extends Phaser.Scene {
     const g = this.add.graphics();
     g.fillStyle(PALETTE.ink, 1);
     g.fillRect(L.hud.x, L.hud.y, L.hud.w, L.hud.h);
-    this.drawFrame(g, L.hudStatus.x, L.hudStatus.y, L.hudStatus.w, L.hudStatus.h);
-    this.drawFrame(g, L.hudTools.x, L.hudTools.y, L.hudTools.w, L.hudTools.h);
+    if (hasTexture(this, 'ui.hud.status')) this.add.image(this.hudStatus.x, this.hudStatus.y, assetKey('ui.hud.status')).setOrigin(0);
+    else this.drawFrame(g, this.hudStatus.x, this.hudStatus.y, this.hudStatus.w, this.hudStatus.h);
+    if (hasTexture(this, 'ui.hud.tools')) this.add.image(this.hudTools.x, this.hudTools.y, assetKey('ui.hud.tools')).setOrigin(0);
+    else this.drawFrame(g, this.hudTools.x, this.hudTools.y, this.hudTools.w, this.hudTools.h);
 
     // 자원 라벨 3종 — 값은 render() 가 같은 x 에 채운다 (레퍼런스 배치)
     COLS.forEach((col, i) => {
-      label(this, L.hudStatus.x + col.x, L.hudStatus.y + 18, col.label);
-      this.hudValues[i] = this.add.text(L.hudStatus.x + col.x, L.hudStatus.y + 52, '', {
+      label(this, this.hudStatus.x + col.x, this.hudStatus.y + 18, col.label);
+      this.hudValues[i] = this.add.text(this.hudStatus.x + col.x, this.hudStatus.y + 52, '', {
         ...FONT, color: css(col.label === 'REPUTATION' ? 'wax' : 'bone'),
       });
       if (i > 0) {
         g.fillStyle(PALETTE.dust, 1);
-        g.fillRect(L.hudStatus.x + col.x - 24, L.hudStatus.y + 16, L.line, L.hudStatus.h - 32);
+        g.fillRect(this.hudStatus.x + col.x - 24, this.hudStatus.y + 16, L.line, this.hudStatus.h - 32);
       }
     });
 
-    this.hudLeft = this.add.text(L.hudStatus.x + 24, L.hudStatus.y + 30, '', { ...FONT, color: css('bone') });
+    this.hudLeft = this.add.text(this.hudStatus.x + 24, this.hudStatus.y + 30, '', { ...FONT, color: css('bone') });
     this.hudRight = this.add
-      .text(L.hudTools.x + L.hudTools.w - 24, L.hudTools.y + 52, '', { ...FONT, color: css('bone') })
+      .text(this.hudTools.x + this.hudTools.w - 24, this.hudTools.y + 52, '', { ...FONT, color: css('bone') })
       .setOrigin(1, 0);
-    this.hudFloor = this.add.text(L.hudTools.x + 24, L.hudTools.y + 52, '', { ...FONT, color: css('bone') });
+    this.hudFloor = this.add.text(this.hudTools.x + 24, this.hudTools.y + 52, '', { ...FONT, color: css('bone') });
+    this.addHudIcon('ui.icon.help', 'ui.icon.help.hover', BASE_W - 368, () => this.openOverlay(SCENES.HELP));
+    this.addHudIcon('ui.icon.options', 'ui.icon.options.hover', BASE_W - 240, () => this.openOverlay(SCENES.OPTIONS));
+    this.addHudIcon('ui.icon.save', 'ui.icon.save.hover', BASE_W - 112, () => saveRun(this.store));
     // 도달 게이지 — 글자 오른쪽 빈자리. 차오르는 게 보여야 기록이 기록으로 느껴진다
     this.gauge = this.add.graphics();
 
@@ -201,9 +209,9 @@ export class DayScene extends Phaser.Scene {
       this.gaugeShown = this.gaugeTarget;
     }
 
-    const x = L.hudTools.x + 240;
-    const y = L.hudTools.y + 58;
-    const w = 520;
+    const x = this.hudTools.x + 192;
+    const y = this.hudTools.y + 58;
+    const w = 300;
     const h = 16;
     const ratio = target <= 0 ? 0 : Math.max(0, Math.min(1, this.gaugeShown / target));
     const hot = this.time.now < this.gaugeFlashUntil;
@@ -231,6 +239,19 @@ export class DayScene extends Phaser.Scene {
       g.fillRect(x + ox, y + ox, t, h - ox * 2);
       g.fillRect(x + w - ox - t, y + ox, t, h - ox * 2);
     }
+  }
+
+  private addHudIcon(idle: string, hover: string, x: number, onClick: () => void): void {
+    if (!hasTexture(this, idle)) return;
+    const icon = this.add.image(x, 16, assetKey(idle)).setOrigin(0).setInteractive({ useHandCursor: true });
+    icon.on('pointerover', () => hasTexture(this, hover) && icon.setTexture(assetKey(hover)));
+    icon.on('pointerout', () => icon.setTexture(assetKey(idle)));
+    icon.on('pointerup', onClick);
+  }
+
+  private openOverlay(scene: string): void {
+    this.scene.pause(SCENES.DAY);
+    this.scene.launch(scene, { returnTo: SCENES.DAY });
   }
 
   private render(s: Readonly<GameState>): void {
@@ -344,5 +365,3 @@ function fmtFans(n: number): string {
 function fmtGold(n: number): string {
   return n.toLocaleString('en-US');
 }
-
-

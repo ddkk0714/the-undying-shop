@@ -27,8 +27,14 @@ const COL_DESC = 608;
 const ROW_H = 88;
 
 export class HelpScene extends Phaser.Scene {
+  private returnTo: string | null = null;
+
   constructor() {
     super(SCENES.HELP);
+  }
+
+  init(data: { returnTo?: string }): void {
+    this.returnTo = data.returnTo ?? null;
   }
 
   create(): void {
@@ -54,8 +60,16 @@ export class HelpScene extends Phaser.Scene {
     new Button(this, {
       x: BASE_W / 2 - 264, y: BASE_H - 136, w: 528, h: 96,
       label: '돌아가기', hotkey: '1',
-      onClick: () => this.scene.start(SCENES.TITLE),
+      onClick: () => this.close(),
     });
-    this.input.keyboard?.once('keydown-ESC', () => this.scene.start(SCENES.TITLE));
+    this.input.keyboard?.once('keydown-ESC', () => this.close());
+  }
+
+  private close(): void {
+    if (this.returnTo === null) this.scene.start(SCENES.TITLE);
+    else {
+      this.scene.stop();
+      this.scene.resume(this.returnTo);
+    }
   }
 }
