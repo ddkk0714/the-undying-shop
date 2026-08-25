@@ -37,6 +37,7 @@ function autopsyState(seed = 91, grade: Corpse['grade'] = 'INTACT', diedFloor = 
       fansDelta: 0,
       chatQueue: [],
       deletedCount: 0,
+      mental: 100,
       diedFloor,
       deathCause: 'test',
     },

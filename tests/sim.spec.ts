@@ -97,7 +97,7 @@ describe('headless simulation', () => {
       today: {
         starId: initial.stars[0]!.id, personaId: null, currentFloor: 3,
         hero: { hp: 82, maxHp: 82, atk: 13, def: 2 }, encounter: { floor: 3, enemyKey: 'enemy', enemy: { hp: 10, maxHp: 10, atk: 1, def: 0 }, turn: 0, line: '', guarding: false, log: [] },
-        appealCount: 0, claimedCeiling: 30, forks: [], superchat: 0, income: { superchat: 0, shelf: 0, goods: 0 }, fansDelta: 0, chatQueue: [], deletedCount: 0, diedFloor: null, deathCause: null,
+        appealCount: 0, claimedCeiling: 30, forks: [], superchat: 0, income: { superchat: 0, shelf: 0, goods: 0 }, fansDelta: 0, chatQueue: [], deletedCount: 0, mental: 100, diedFloor: null, deathCause: null,
       },
     };
     expect(damageAwarePolicy(live)).toEqual({ type: 'COMBAT/CHOOSE', choice: 'APPEAL' });

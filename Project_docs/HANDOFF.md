@@ -740,3 +740,47 @@ if (hasAliveStar || eligible.length > 0) return false;
 사인이 두 군데에서 정의된다.
 
 **상태**: [ ] 미처리
+
+---
+
+## CCR-004  (승인: 사람, 2026-08-25 · 반영: Claude Code)  D6
+
+**계약 변경**: `TodayRun` 에 `mental: number` 추가.
+
+```ts
+interface TodayRun {
+  // ...
+  mental: number;   // 0..100, 방송 시작 시 100
+}
+```
+
+**왜 `TodayRun` 인가**: 멘탈은 방송 단위로만 산다. 다음 방송은 다시 100 에서 시작한다.
+화면이 매 프레임 읽어 그려야 하므로 `GameState` 최상위가 아니라 오늘의 방송에 둔다.
+
+**설계 (Codex 제안, 그대로 승인)**
+- 큰 피해를 받으면 감소
+- `beast` · `flame` · `gatekeeper` 조우 시 공포 감소
+- 18 / 23 / 28F 목격 이벤트에서 큰 폭 감소
+- 감소량은 `Star.stats.grit` 기반 공포 내성으로 달라진다
+- 한 방송 안에서는 **회복하지 않는다**
+- **0 이어도 즉사시키지 않는다.** 공포 상태 연출·대사만 강해진다
+
+**Claude Code 가 한 것 (계약 반영분만)**
+1. `src/core/types.ts` — 필드 + 위 계약을 주석으로 못박음
+2. `src/core/systems/office.ts:118` — `pickStar` 의 `TodayRun` 리터럴에 `mental: 100`
+3. `tests/{dive,opinion,sim,autopsy}.spec.ts` — 픽스처 5곳에 `mental: 100`
+
+**⚠️ 2·3 은 Codex 소유 파일이다.** 필수 필드라 생성 지점을 같이 안 채우면
+`npm run build` 의 `tsc` 가 깨지고 **배포가 멈춘다** (D6 전날이라 그 위험을 택하지 않았다).
+넣은 값은 계약이 정한 초기값 100 뿐이고 로직·밸런스는 손대지 않았다.
+**감소 로직·상수·테스트는 전부 Codex 몫이다.** 그 줄들도 필요하면 그냥 덮어써라.
+
+`npm run typecheck` · `npm test` (70개) 통과 확인 후 push.
+
+**화면 쪽 (Claude Code, 아직 안 함)**: 생방송 5분할에 멘탈 게이지 자리를 아직 잡지 않았다.
+Codex 가 감소 로직을 올리면 용사 초상 칸에 붙인다.
+
+**상태**: [x] 계약 반영 완료 — 코어 로직 대기
+
+**02-DATA-SCHEMA.md 에도 CCR-004 블록이 들어가야 한다.** 그 파일에 사람의 미커밋 작업이
+84줄 있어 같이 딸려 들어가므로 여기에만 적었다 (CCR-002 때와 같은 처리 · 커밋 68f2476).

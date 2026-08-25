@@ -176,6 +176,21 @@ export interface TodayRun {
   fansDelta: number;
   chatQueue: ChatMessage[];
   deletedCount: number;
+  /**
+   * CCR-004 — 멘탈. 0..100, **방송 시작 시 100.**
+   *
+   * 방송(`TodayRun`) 단위로만 산다. 다음 방송은 다시 100에서 시작한다 —
+   * 몸은 갈아 끼워도 무서웠던 기억은 남지 않는다는 것이 이 게임의 전제다.
+   *
+   * - 한 방송 안에서는 **회복하지 않는다.** 내려가는 동안 단조 감소한다
+   * - **0 이어도 죽지 않는다.** 즉사 판정에 쓰지 않는다 —
+   *   공포 상태 연출과 무전 대사의 강도만 올라간다
+   * - 감소 요인: 큰 피해 · `beast`/`flame`/`gatekeeper` 조우 · 18/23/28F 목격
+   * - 감소량은 `Star.stats.grit` 기반 공포 내성으로 달라진다
+   *
+   * 화면은 이 값을 매 프레임 읽어 그린다. 그래서 `TodayRun` 에 둔다.
+   */
+  mental: number;
   /** 결과 */
   diedFloor: number | null;
   deathCause: string | null;

@@ -28,6 +28,7 @@ function liveState(seed = 71): GameState {
       fansDelta: 0,
       chatQueue: [],
       deletedCount: 0,
+      mental: 100,
       diedFloor: null,
       deathCause: null,
     },
