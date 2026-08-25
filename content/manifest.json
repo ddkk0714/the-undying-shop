@@ -119,6 +119,24 @@
           ],
           "desc": "상단바 우 — 시계·도달층 게이지"
         },
+        "ui.clock.minute": {
+          "type": "image",
+          "file": "ui/clock_minute.png",
+          "size": [
+            8,
+            56
+          ],
+          "desc": "HUD game-clock minute hand"
+        },
+        "ui.clock.hour": {
+          "type": "image",
+          "file": "ui/clock_hour.png",
+          "size": [
+            29,
+            42
+          ],
+          "desc": "HUD game-clock hour hand"
+        },
         "ui.icon.help": {
           "type": "image",
           "file": "ui/icon_help.png",
@@ -939,6 +957,24 @@
           ],
           "desc": "상단바 우 — 시계·도달층 게이지"
         },
+        "ui.clock.minute": {
+          "type": "image",
+          "file": "ui/clock_minute.png",
+          "size": [
+            8,
+            56
+          ],
+          "desc": "HUD game-clock minute hand"
+        },
+        "ui.clock.hour": {
+          "type": "image",
+          "file": "ui/clock_hour.png",
+          "size": [
+            29,
+            42
+          ],
+          "desc": "HUD game-clock hour hand"
+        },
         "ui.icon.help": {
           "type": "image",
           "file": "ui/icon_help.png",
@@ -1190,15 +1226,6 @@
             792
           ],
           "desc": "① 소생실 좌측 (없으면 bg.shop.room 을 쓴다)"
-        },
-        "bg.revive.bench": {
-          "type": "image",
-          "file": "bg/revive_bench_crop.png",
-          "size": [
-            1644,
-            1122
-          ],
-          "desc": "① 소생실 우측 (없으면 bg.shop.bench 를 쓴다)"
         },
         "bg.live": {
           "type": "image",
