@@ -60,9 +60,14 @@ export const DEATH_CURTAIN_MS = 1800;
 /**
  * 채팅을 얼마나 자주 청하는가. **밸런스가 아니라 표시 박자다** —
  * 큐 상한(`balance.opinion.chatMaxVisible`)과 수명은 core 가 관리한다.
- * M07 수용 기준 「30초에 40~60개」 → 0.6초에 하나 = 30초에 50개.
+ * M07 수용 기준 「30초에 40~60개」 → 0.5초에 하나 = 30초에 60개.
+ *
+ * ★ 채팅창에 **몇 줄이 남는지를 정하는 건 상한이 아니라 이 값이다.**
+ *   core 는 `chatLifetimeSeconds`(6초) 지난 줄을 지우므로 살아있는 줄 = 수명 / 간격.
+ *   600ms 이면 10줄이라 상한을 12로 올려도 창이 안 찼다 (실측 — 채팅창연출222).
+ *   500ms 이면 12줄이 되어 창을 채운다.
  */
-const CHAT_SPAWN_MS = 600;
+const CHAT_SPAWN_MS = 500;
 
 /** M06 §9 — 목격 1.2초 정지, 28F 는 채팅이 3초 조용해진다 */
 const WITNESS_HOLD_MS = 1200;
@@ -126,8 +131,13 @@ export class LivePhase extends PhaseScene {
     this.ticker = this.time.addEvent({ delay: stepMs, loop: true, callback: () => this.step() });
 
     // 채팅은 core 에 청하기만 한다. 무슨 말이 나올지는 core 가 정한다 (M07)
+    //
+    // ★ 배속을 나눠 준다. 채팅 수명(`chatLifetimeSeconds`)은 **게임 시간** 기준인데
+    //   (`LIVE/TICK` 이 `phaseStartedAt` 을 밀고, `expireChats` 가 그걸로 잰다)
+    //   펌프만 실시간이면 2배속에서 게임 시간 1.0초에 하나가 되어 줄이 절반으로 준다.
+    //   `stepMs` 와 같은 식으로 나눠야 배속과 무관하게 같은 줄 수가 유지된다.
     this.chatPump = this.time.addEvent({
-      delay: CHAT_SPAWN_MS,
+      delay: Math.max(1, Math.round(CHAT_SPAWN_MS / speedMul(this.registry))),
       loop: true,
       callback: () => {
         if (this.store.getState().phase !== 'LIVE') return;
