@@ -3,6 +3,7 @@ import { PALETTE, css } from '../render/palette';
 import { FONT } from '../render/font';
 import { firstTexture, slice } from '../render/assets';
 import { playSfx } from '../audio/Sfx';
+import { tooltipOf } from './Tooltip';
 import { L } from './layout';
 
 export type ButtonVariant = 'default' | 'danger' | 'ghost';
@@ -20,6 +21,11 @@ export interface ButtonOpts {
   enabled?: boolean;
   /** 기본 클릭음을 바꾸거나 끈다. 생략하면 `sfx.click`, false 면 무음이다. */
   sound?: string | false;
+  /**
+   * 마우스를 올렸을 때 커서 우측 위에 뜨는 한 줄 설명 (사용자 확정).
+   * 씬이 `createTooltip(this)` 를 해 두지 않았으면 조용히 무시된다.
+   */
+  tip?: string;
 }
 
 /**
@@ -79,13 +85,24 @@ export class Button extends Phaser.GameObjects.Container {
         new Phaser.Geom.Rectangle(opts.w / 2, opts.h / 2, opts.w, opts.h),
         Phaser.Geom.Rectangle.Contains,
       );
-      this.on('pointerover', () => this.setVisualState('hover'));
-      this.on('pointerout', () => this.setVisualState('idle'));
+      this.on('pointerover', (p: Phaser.Input.Pointer) => {
+        this.setVisualState('hover');
+        if (opts.tip !== undefined) tooltipOf(scene)?.show(opts.tip, p.x, p.y);
+      });
+      this.on('pointerout', () => {
+        this.setVisualState('idle');
+        if (opts.tip !== undefined) tooltipOf(scene)?.hide();
+      });
       this.on('pointerdown', () => this.setVisualState('press'));
       this.on('pointerup', () => {
         this.setVisualState('hover');
         this.playClickSound();
         opts.onClick();
+      });
+      // 버튼이 사라질 때 툴팁이 남지 않게 한다 — 다시 그리면 버튼은 파괴되는데
+      // 커서는 그 자리에 그대로 있어서 pointerout 이 오지 않는다
+      this.once(Phaser.GameObjects.Events.DESTROY, () => {
+        if (opts.tip !== undefined) tooltipOf(scene)?.hide();
       });
 
       if (opts.hotkey) {

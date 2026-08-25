@@ -6,7 +6,7 @@ import { starArt, key, slice } from '../../render/assets';
 import { L } from '../../ui/layout';
 import { Button } from '../../ui/Button';
 import { Ticker } from '../../ui/Ticker';
-import { onboard } from '../../ui/Onboarding';
+import { createTooltip } from '../../ui/Tooltip';
 import { playBgm, playSfx } from '../../audio/Sfx';
 import { reducedMotion, speedMul } from '../../ui/options';
 import { PhaseScene } from './PhaseScene';
@@ -136,6 +136,10 @@ export class LivePhase extends PhaseScene {
       (id) => this.store.dispatch({ type: 'CHAT/DELETE', id }));
     this.keepAlive(...this.chat.objects());
 
+    // 버튼 툴팁. 채팅이 들어올 때마다 화면을 다시 그리므로 **살려 둬야** 한다 —
+    // 매번 새로 만들면 커서를 올려 둔 채로 툴팁이 깜빡인다
+    this.keepAlive(...createTooltip(this).objects());
+
     super.create();
     playBgm(this, 'bgm.live');
     const stepMs = Math.round((content.balance.dive.floorSeconds * 1000) / speedMul(this.registry));
@@ -246,16 +250,9 @@ export class LivePhase extends PhaseScene {
     this.buildDialogue(s);
     this.buildChoices(s);
 
-    // 5분할이 화면을 꽉 채워 빈 띠가 없다. 온보딩은 방송 정보 바에 태운다 (04-UI-KIT §7)
-    if (s.today !== null) {
-      const asking = pendingFork(s) !== null;
-      if (asking || s.today.encounter !== null) {
-        // 위쪽은 HUD 와 방송 바가 다 쓴다. 지도 아래 책상 빈 띠에 태운다
-        // 무전기가 지도 우하단(580~780)으로 내려와서 폭을 줄였다 — 겹치면 글이 안 읽힌다.
-        // 좁아진 만큼 `onboard` 가 줄을 접으므로 두 줄 높이(80)를 감안해 y 를 올렸다
-        onboard(this, s.day, asking ? 'LIVE_RADIO' : 'LIVE_COMBAT', { x: 160, y: 992, w: 400 });
-      }
-    }
+    // 상시 팁은 걷어냈다 (사용자 확정). 전투 중에 화면 한 구석에 한 줄이 계속 떠 있으면
+    // 거슬리기만 한다. 설명은 이제 **버튼에 마우스를 올렸을 때만** 커서 우측 위에 뜬다
+    // (`Tooltip`, `buildChoices` 의 `tip`). 다른 화면의 `onboard` 는 그대로 둔다.
 
     if (this.witnessFloor !== null) this.buildWitness(this.witnessFloor);
     if (this.deathAt !== null) {
@@ -555,15 +552,15 @@ export class LivePhase extends PhaseScene {
     });
 
     if (pendingFork(s) !== null) {
-      const answers: { label: string; dir: 'A' | 'B' | 'UNKNOWN'; hotkey: string }[] = [
-        { label: 'A 로 가', dir: 'A', hotkey: '1' },
-        { label: 'B 로 가', dir: 'B', hotkey: '2' },
-        { label: '나도 몰라', dir: 'UNKNOWN', hotkey: '3' },
+      const answers: { label: string; dir: 'A' | 'B' | 'UNKNOWN'; hotkey: string; tip: string }[] = [
+        { label: 'A 로 가', dir: 'A', hotkey: '1', tip: 'A 쪽으로 내려보낸다. 더 위험한 길이면 슈퍼챗이 붙는다.' },
+        { label: 'B 로 가', dir: 'B', hotkey: '2', tip: 'B 쪽으로 내려보낸다. 더 위험한 길이면 슈퍼챗이 붙는다.' },
+        { label: '나도 몰라', dir: 'UNKNOWN', hotkey: '3', tip: '아무 쪽도 일러주지 않는다. 층은 그대로다.' },
       ];
       answers.forEach((a, i) => {
         new Button(this, {
           ...place(i),
-          label: a.label, hotkey: a.hotkey,
+          label: a.label, hotkey: a.hotkey, tip: a.tip,
           variant: a.dir === 'UNKNOWN' ? 'ghost' : 'default',
           onClick: () => this.store.dispatch({ type: 'RADIO/ANSWER', dir: a.dir }),
         });
@@ -572,15 +569,16 @@ export class LivePhase extends PhaseScene {
     }
 
     const ready = s.phase === 'LIVE' && s.today?.encounter != null;
-    const choices: { label: string; choice: CombatChoice; hotkey: string }[] = [
-      { label: '공격한다', choice: 'ATTACK', hotkey: '1' },
-      { label: '방어한다', choice: 'DEFEND', hotkey: '2' },
-      { label: '어필한다', choice: 'APPEAL', hotkey: '3' },
+    // 팁은 지어내지 않는다 — `core/systems/combat.ts` 의 세 갈래를 그대로 옮긴 것이다
+    const choices: { label: string; choice: CombatChoice; hotkey: string; tip: string }[] = [
+      { label: '공격한다', choice: 'ATTACK', hotkey: '1', tip: '적의 체력을 깎는다. 못 쓰러뜨리면 반격을 맞을 수 있다.' },
+      { label: '방어한다', choice: 'DEFEND', hotkey: '2', tip: '받는 피해가 줄어든다. 대신 팬이 빠진다.' },
+      { label: '어필한다', choice: 'APPEAL', hotkey: '3', tip: '팬이 늘고 슈퍼챗이 붙는다. 대신 더 다치고, 깊은 층에서는 진실이 새기 쉬워진다.' },
     ];
     choices.forEach((c, i) => {
       new Button(this, {
         ...place(i),
-        label: c.label, hotkey: c.hotkey,
+        label: c.label, hotkey: c.hotkey, tip: c.tip,
         variant: c.choice === 'APPEAL' ? 'danger' : 'default',
         enabled: ready,
         onClick: () => this.store.dispatch({ type: 'COMBAT/CHOOSE', choice: c.choice }),
