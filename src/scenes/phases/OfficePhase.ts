@@ -347,7 +347,7 @@ export class OfficePhase extends PhaseScene {
       const equipped = s.shelf.includes(def.id);
       const selected = this.selectedItemId === def.id;
       if (selected) this.sprite(cellX - 2, cellY - 2, 'ui.inventory.selected', 140, 124);
-      const art = this.itemArt(def, { x: cellX + 8, y: cellY + 8, w: cellW - 16, h: 76 });
+      const art = this.itemArt(def, { x: cellX + 3, y: cellY + 5, w: cellW - 6, h: 84 });
       if (art !== null) {
         if (equipped) art.setAlpha(0.38);
         else {
