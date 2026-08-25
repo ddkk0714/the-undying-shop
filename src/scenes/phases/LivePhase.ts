@@ -689,6 +689,20 @@ export class LivePhase extends PhaseScene {
       }
     }
 
+    // 상태 한 줄은 **초상 안 우측 아래**에 작게 앉는다 (사용자 확정).
+    // 그림 위에 바로 쓰면 머리카락에 묻히므로 글자 크기를 재서 ink 판을 깔고 그 위에 올린다.
+    // 판을 먼저 그릴 수가 없다 — 폭을 알려면 글자가 먼저 있어야 해서, 만들고 재고 되올린다
+    // 16px 라벨이므로 `clip` 에 'label' 을 준다 — 기본값(body, 32px)으로 재면
+    // 폭을 두 배로 잡아 「땀. 눈썹이 ·」처럼 멀쩡한 글이 잘린다 (실측)
+    const tag = this.label(0, 0, this.clip(mood.text, v.w - 24, 'label'), appealing ? 'wax' : 'dust');
+    const tw = Math.ceil(tag.width);
+    const th = Math.ceil(tag.height);
+    const tx = v.x + v.w - 8 - tw;
+    const ty = v.y + v.h - 8 - th;
+    this.rect(tx - 6, ty - 4, tw + 12, th + 8, 'ink');
+    tag.setPosition(tx, ty);
+    this.children.bringToTop(tag);
+
     // HP 15% 이하 — 초상만 미세하게 흔들린다
     if (ratio < 0.15 && !this.reduced) {
       for (const obj of this.children.list.slice(before)) {
@@ -697,19 +711,14 @@ export class LivePhase extends PhaseScene {
       }
     }
 
-    // 초상 **바로 아래** — **상태 한 줄 · 체력바 · 멘탈 아이콘** 셋뿐이다 (사용자 확정).
-    // 이름·공/방·체력 숫자·누적 슈퍼챗은 걷어냈다. 이름은 초상이 말하고, 공/방은 전투 중에
-    // 바뀌지 않으며, 숫자는 바가 이미 보여 준다.
-    // 랜턴 팔이 이 자리 뒤로 지나가 아주 밝다. 솎아 찍는 판(scrim)으로는 안 읽혀서
-    // 초상과 같은 폭의 **불투명 판**을 깐다 — 둘이 한 덩어리로 보이는 편이 낫다
-    this.rect(info.x, info.y, info.w, info.h, 'ink');
-    this.frame(info.x, info.y, info.w, info.h, 'bone');
-    this.label(info.x + L.pad, info.y + 12, this.clip(mood.text, (info.w - L.pad * 2) * 2), appealing ? 'wax' : 'dust');
-    // 바 오른쪽에 아이콘 한 칸(24)과 그 사이 8px 을 비워 둔다
+    // 초상 **바로 아래** — **체력바와 멘탈 아이콘뿐**이다 (사용자 확정).
+    // 검은 판과 흰 테두리는 걷어냈다. 바도 아이콘도 각자 ink 바탕을 갖고 있어서
+    // 랜턴 팔의 밝은 그림 위에서도 그대로 읽힌다 — 판을 한 겹 더 깔 이유가 없다.
+    // 상태 한 줄은 초상 안으로 들어갔다 (위 참조).
     const iconSize = 24;
-    const barW = info.w - L.pad * 2 - iconSize - 8;
-    this.bar(info.x + L.pad, info.y + 44, barW, run.hero.hp, run.hero.maxHp, 'bone');
-    this.mentalIcon(info.x + info.w - L.pad - iconSize, info.y + 44, run.mental);
+    const barW = info.w - iconSize - 8;
+    this.bar(info.x, info.y, barW, run.hero.hp, run.hero.maxHp, 'bone');
+    this.mentalIcon(info.x + info.w - iconSize, info.y, run.mental);
   }
 
   /**
