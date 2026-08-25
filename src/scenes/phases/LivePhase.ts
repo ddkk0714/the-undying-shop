@@ -10,7 +10,7 @@ import { onboard } from '../../ui/Onboarding';
 import { playBgm, playSfx } from '../../audio/Sfx';
 import { reducedMotion, speedMul } from '../../ui/options';
 import { PhaseScene } from './PhaseScene';
-import type { ChatMessage, CombatChoice, ForkRecord, GameState, ItemDef } from '../../core/types';
+import type { ChatMessage, CombatChoice, ForkRecord, GameState } from '../../core/types';
 
 /**
  * M06 생방송 — 5분할 화면 (04-UI-KIT §1 의 `L.live`).
@@ -608,8 +608,6 @@ export class LivePhase extends PhaseScene {
     this.label(info.x + L.pad, info.y + 168, `+${run.superchat} G`, 'bone');
     this.textRight(info.x + info.w - L.pad, info.y + 168,
       `${dropping ? '▼ ' : ''}${fmtFans(s.fans)}`, dropping ? 'wax' : 'dust');
-
-    this.buildPotions(s, run.hero.hp < run.hero.maxHp);
   }
 
   /**
@@ -631,32 +629,6 @@ export class LivePhase extends PhaseScene {
     const cy = Math.min(24, Math.max(0, src.height - ch));
     img.setPosition(v.x - cx, v.y - cy).setCrop(cx, cy, cw, ch);
     return true;
-  }
-
-  /**
-   * HO-017 (CCR-003) — 방송 중 물약. 턴도 RNG 도 쓰지 않으므로 언제 눌러도 된다.
-   * 다 찼을 때는 잠근다 — 눌러도 아무 일이 안 일어나는 버튼을 두지 않는다.
-   */
-  private buildPotions(s: Readonly<GameState>, hurt: boolean): void {
-    const v = L.live.stats;
-    const potions = s.inventory
-      .filter((stack) => stack.qty > 0)
-      .map((stack) => ({ stack, def: content.items.find((item) => item.id === stack.id) }))
-      .filter((row): row is { stack: typeof row.stack; def: ItemDef } => row.def?.kind === 'POTION' && row.def.healing > 0)
-      .slice(0, 2);
-    if (potions.length === 0) return;
-
-    this.scrimRow(v.x, v.y + v.h + 4, v.w, 104);
-    this.label(v.x + L.pad, v.y + v.h + 12, '물약', 'dust');
-    potions.forEach(({ stack, def }, i) => {
-      new Button(this, {
-        x: v.x + L.pad + i * 116, y: v.y + v.h + 40, w: 104, h: 52,
-        label: this.clip(`+${def.healing}${stack.qty > 1 ? ` x${stack.qty}` : ''}`, 120),
-        hotkey: String(4 + i),
-        enabled: hurt,
-        onClick: () => this.store.dispatch({ type: 'COMBAT/USE_ITEM', itemId: def.id }),
-      });
-    });
   }
 
   /* ── ⑧ 채팅 ────────────────────────────────────────── */
