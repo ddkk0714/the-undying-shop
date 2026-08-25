@@ -1028,4 +1028,36 @@ HO-022 에서 좌표만 넘겼는데, 사람이 **「Claude 가 배치까지」*
 **참고**: 12를 넘기면 창 밖으로 흐른다. `Ticker` 가 상자를 넘치는 줄은 그리지 않으니
 잘려 보이기만 하고 던전 위로 새지는 않는다. 그래도 12 이하로 유지해 주면 좋겠다.
 
-**상태**: [ ] 미처리
+### ⚠️ 추가 — 사람 승인으로 내가 직접 고쳤다 (D7)
+사람이 "직접 진행해도 된다"고 해서 `content/balance.json` 의 `chatMaxVisible` 만 7 → 12 로 바꿨다.
+**같은 파일의 `contract.visitorsPerDay`(네 미커밋 2→1)는 손대지 않았다.** 값 그대로다.
+`tests/opinion.spec.ts` 는 네가 같은 시각에 `chatMaxVisible + 3` 으로 고쳐 놨더라 — 건드리지 않았다.
+`npx vitest run` 74/74 통과, `tsc --noEmit` 통과.
+
+### ⚠️⚠️ 이건 화면 문제가 아니라 **밸런스가 바뀌는 변경**이다 — 네가 판단해 줘
+`LivePhase` 는 채팅을 **600ms 고정**으로 청한다 (`CHAT_SPAWN_MS = 600`, M07 「30초에 40~60개」).
+`chatLifetimeSeconds` 는 6초다. 그러면:
+
+| 상한 | 밀려나는 시점 | 수명(6초)까지 살아남나 |
+|---|---|---|
+| 7 (기존) | 7 × 600ms = **4.2초** | ✗ — 전부 그 전에 `.slice()` 로 조용히 사라진다 |
+| 12 (지금) | 12 × 600ms = **7.2초** | ✓ — 이제 `expireChats()` 를 탄다 |
+
+`appendMessage` 의 `.slice(-chatMaxVisible)` 는 **leak 을 안 매기고** 버린다.
+`expireChats()` 만 `leakPower` 를 더한다. 즉 **상한 7 에서는 채팅發 leak 이 사실상 0이었다.**
+12 로 올리면 그 경로가 처음으로 켜진다 — DOUBT 1 · TRUTH 5.
+casualChance 0.7 이라 DOUBT 가 30%, 600ms 마다 하나 → **대략 초당 +0.5 leak**.
+60초 방송이면 +30. `leakEndingThreshold` 가 70이니 무시할 수치가 아니다.
+
+`src/core/sim.ts` 는 채팅을 안 돌려서 `npm run sim` 으로는 안 잡힌다. 실제 플레이에서만 드러난다.
+
+**셋 중 뭘 할지 정해 줘** (나는 ①이 맞다고 본다):
+1. 그대로 두고 `leakPerIgnoredChat` 을 낮춘다 — 화면도 차고 leak 도 의도한 값으로 돌아온다
+2. `.slice()` 에서 밀려나는 메시지에도 leak 을 매긴다 — 원래 의도가 그거였다면
+3. 되돌린다 (12 → 7). 그러면 채팅창은 다시 7줄만 찬다
+
+**상태**: [x] 상한 12 반영 (커밋 대기 — 아래 참조) / [ ] leak 처리 방향 미정
+
+**커밋 상태**: 샌드박스가 `git add` 를 막아서 **아직 커밋 못 했다.**
+`content/balance.json` 은 네 `visitorsPerDay` 미커밋분과 한 파일에 같이 있으니,
+네 office 작업 커밋할 때 `chatMaxVisible` 줄이 같이 딸려 가도 괜찮다.
