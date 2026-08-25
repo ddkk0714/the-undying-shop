@@ -9,6 +9,8 @@
  *   --fit=cover|contain|stretch   목표 종횡비에 맞추는 방법 (기본 cover)
  *   --pixel                       최근접 이웃 축소 — **도트 아트는 이걸 써라**
  *   --dither                      1비트(ink/bone) 디더로 굽는다 — 배경 연출용
+ *   --trim                        투명 여백을 먼저 깎는다 (적 CG 처럼 여백이 제각각일 때)
+ *   --anchor=bottom               캔버스에 얹을 때 아래로 붙인다 — 바닥에 서야 하는 것
  *   --crop=x,y,w,h                한 장에 여러 조각이 들어 있을 때
  *   --canvas=WxH                  한 동작의 여러 단계를 같은 자리에 맞출 때
  *   --out=경로                     슬롯 대신 다른 곳에 쓴다 (넣기 전에 눈으로 볼 때)
@@ -138,15 +140,33 @@ function cropTo(src, cx, cy, cw, ch) {
   return { w: cw, h: ch, d: out };
 }
 
+/** 투명 여백을 깎아 내용의 경계까지 줄인다 */
+function trimTransparent(src) {
+  let x0 = src.w, y0 = src.h, x1 = -1, y1 = -1;
+  for (let y = 0; y < src.h; y++) {
+    for (let x = 0; x < src.w; x++) {
+      if (src.d[(y * src.w + x) * 4 + 3] < 8) continue;
+      if (x < x0) x0 = x;
+      if (x > x1) x1 = x;
+      if (y < y0) y0 = y;
+      if (y > y1) y1 = y;
+    }
+  }
+  if (x1 < x0 || y1 < y0) return src;
+  return cropTo(src, x0, y0, x1 - x0 + 1, y1 - y0 + 1);
+}
+
 /**
  * 원본을 투명한 WxH 캔버스 가운데에 얹는다.
  * 여러 장이 **한 동작의 단계**일 때 필요하다 — 의심도 1~5 는 눈이 떠지는 5단인데
  * 저마다 내용에 맞게 잘려 와서, 각자 맞추면 감은 눈이 뜬 눈만큼 커진다.
  */
-function padToCanvas(src, cw, ch) {
+function padToCanvas(src, cw, ch, anchor = 'center') {
   const out = Buffer.alloc(cw * ch * 4);
   const ox = Math.round((cw - src.w) / 2);
-  const oy = Math.round((ch - src.h) / 2);
+  // 바닥에 서야 하는 것(적)은 아래로 붙인다. 가운데 정렬하면 발밑에 투명 여백이 남아
+  // 화면에서 **떠 보인다** — 배경의 바닥선에 아무리 맞춰도 안 닿는다
+  const oy = anchor === 'bottom' ? ch - src.h : Math.round((ch - src.h) / 2);
   for (let y = 0; y < src.h; y++) {
     const dy = y + oy;
     if (dy < 0 || dy >= ch) continue;
@@ -232,6 +252,8 @@ if (!Array.isArray(entry.size)) {
 const [dw, dh] = entry.size;
 let src = toRgba(decodePng(resolve(srcArg), { rgb: true }));
 
+if (flags.includes('--trim')) src = trimTransparent(src);
+
 const cropFlag = flags.find((f) => f.startsWith('--crop='))?.slice(7);
 if (cropFlag !== undefined) {
   const n = cropFlag.split(',').map(Number);
@@ -249,7 +271,8 @@ if (canvasFlag !== undefined) {
     console.error(`--canvas 는 640x480 꼴이어야 한다 (받은 값: ${canvasFlag})`);
     process.exit(1);
   }
-  src = padToCanvas(src, Number(m[1]), Number(m[2]));
+  const anchor = flags.find((f) => f.startsWith('--anchor='))?.slice(9) ?? 'center';
+  src = padToCanvas(src, Number(m[1]), Number(m[2]), anchor);
 }
 
 const rect = fitRect(src.w, src.h, dw, dh, fitMode);

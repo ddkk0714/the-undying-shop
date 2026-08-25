@@ -210,7 +210,7 @@ export class LivePhase extends PhaseScene {
     this.buildMap(s);
     this.buildRadio(s);
     this.buildLantern();
-    this.buildBadge();
+    this.buildLiveBar(s);
     this.buildPortrait(s);
     this.buildChat(s);
     this.buildDialogue(s);
@@ -220,8 +220,8 @@ export class LivePhase extends PhaseScene {
     if (s.today !== null) {
       const asking = pendingFork(s) !== null;
       if (asking || s.today.encounter !== null) {
-        // HUD(0~144) 위에 뜨면 상단바 아트를 가린다. 지도 위 빈 띠에 태운다
-        onboard(this, s.day, asking ? 'LIVE_RADIO' : 'LIVE_COMBAT', { x: 220, y: 152, w: 520 });
+        // 위쪽은 HUD 와 방송 바가 다 쓴다. 지도 아래 책상 빈 띠에 태운다
+        onboard(this, s.day, asking ? 'LIVE_RADIO' : 'LIVE_COMBAT', { x: 160, y: 1000, w: 560 });
       }
     }
 
@@ -392,29 +392,22 @@ export class LivePhase extends PhaseScene {
     }
     const enc = run.encounter;
 
-    // 좌상단은 LIVE 표시가, 그 아래는 채팅창이 쓴다.
-    // 전투 정보는 **채팅 오른쪽 · 초상 왼쪽** 띠에 세운다 — 목업에도 이 자리는 비어 있다.
     const e = L.live.enemy;
-    const ix = e.x;
-    const iw = L.live.portrait.x - ix - 24;
 
-    if (enc === null) {
-      this.scrimBlock(ix - 16, v.y + 40, iw + 32, 96);
-      this.label(ix, v.y + 52, `${run.currentFloor}F`, 'dust');
-      this.title(ix, v.y + 84, '하강 중', 'dust');
-    } else {
-      this.scrimBlock(ix - 16, v.y + 40, iw + 32, 96);
-      this.label(ix, v.y + 52, `${enc.floor}F · ${enc.turn}턴`, 'dust');
-      this.title(ix, v.y + 84, this.clip(enemyName(enc.enemyKey), iw, 'title'), 'bone');
-
+    if (enc !== null) {
       // 적 CG — 512x512 원본을 정확히 1/2 로. 소수배로 줄이면 디더가 깨진다
       if (!this.spriteFit(e, [enc.enemyKey])) this.enemyShape(e.x - 32, e.y - 20, 320, 300, enc.enemyKey);
 
-      // 체력바는 적 스프라이트 **바로 아래** — 누구의 체력인지 붙어 있어야 읽힌다
-      this.scrimBlock(e.x - 12, e.y + e.h, e.w + 24, 76);
-      this.bar(e.x, e.y + e.h + 10, e.w, enc.enemy.hp, enc.enemy.maxHp, 'wax');
-      this.label(e.x, e.y + e.h + 42, `적 ${enc.enemy.hp} / ${enc.enemy.maxHp}`, 'dust');
-      if (enc.guarding) this.textRight(e.x + e.w, e.y + e.h + 42, '방어', 'wax');
+      // 체력바는 적 스프라이트 **바로 아래**. 이름도 여기 붙는다 —
+      // 층·이름 창을 없앤 뒤로 이 줄이 「무엇과 싸우는지」를 말하는 유일한 자리다
+      // 층·이름 창을 없앤 뒤로 이 줄이 「무엇과 싸우는지」를 말하는 유일한 자리다.
+      // 16px 라벨로는 배경에 묻혀서 본문 크기로 올리고 판도 불투명하게 깐다
+      const hy = e.y + e.h - 2;
+      this.rect(e.x - 12, hy, e.w + 24, 78, 'ink');
+      this.bar(e.x, hy + 10, e.w, enc.enemy.hp, enc.enemy.maxHp, 'wax');
+      this.text(e.x, hy + 34,
+        `${enemyName(enc.enemyKey)}  ${enc.enemy.hp} / ${enc.enemy.maxHp}`, 'bone');
+      if (enc.guarding) this.textRight(e.x + e.w, hy + 34, '방어', 'wax');
     }
 
     // 용사의 이름·공·방·체력은 초상 바로 아래에 붙는다 (`buildPortrait`).
@@ -429,18 +422,36 @@ export class LivePhase extends PhaseScene {
   }
 
   /**
-   * LIVE 표시 — 액자와 붉은 마름모가 따로 왔다.
-   * 마름모만 깜빡인다 (`blinkers`). 액자까지 깜빡이면 방송이 끊긴 것처럼 보인다.
+   * 방송 오버레이 바 — 진짜 생방송 화면처럼 **ON AIR · 방송 이름 · 시청자 수**를 한 줄에 건다.
+   *
+   * 예전에는 LIVE 표시만 덩그러니 떠 있고, 층·적 이름은 그 아래 별도 창에 있었다.
+   * 그 창은 뺐다 (사용자 확정) — 방송 화면에 「지금 몇 층 · 무슨 적」을 띄우는 방송국은 없다.
+   * 적 이름은 적 체력바 옆으로 갔고, 층은 왼쪽 층계 게이지와 HUD 가 이미 말한다.
+   *
+   * 붉은 마름모만 깜빡인다 (`blinkers`). 액자까지 깜빡이면 방송이 끊긴 것처럼 보인다.
    */
-  private buildBadge(): void {
-    const v = L.live.badge;
-    if (this.spriteObject(v.x, v.y, 'ui.live.badge', v.w, v.h) === null) {
-      this.rect(v.x, v.y, v.w, v.h, 'ink');
-      this.frame(v.x, v.y, v.w, v.h, 'bone');
-      this.text(v.x + 56, v.y + 18, 'LIVE', 'bone');
+  private buildLiveBar(s: Readonly<GameState>): void {
+    const v = L.live.liveBar;
+    const b = L.live.badge;
+    this.rect(v.x, v.y, v.w, v.h, 'ink');
+    this.rect(v.x, v.y + v.h - L.line, v.w, L.line, 'bone');
+
+    if (this.spriteObject(b.x, b.y, 'ui.live.badge', b.w, b.h) === null) {
+      this.frame(b.x, b.y, b.w, b.h, 'bone');
+      this.text(b.x + 56, b.y + 18, 'ON AIR', 'bone');
     }
-    const dot = this.spriteObject(v.x + 18, v.y + 24, 'ui.live.blink', 26, 28);
-    this.blinkers.push(dot ?? this.dot(v.x + 24, v.y + 30, 16, 'wax'));
+    const dot = this.spriteObject(b.x + 18, b.y + 24, 'ui.live.blink', 26, 28);
+    this.blinkers.push(dot ?? this.dot(b.x + 24, b.y + 30, 16, 'wax'));
+
+    // 방송 제목 — 페르소나 이름과 자기 신고 목표층. 계약서에 적힌 그대로다
+    const persona = s.personas.find((p) => p.id === s.today?.personaId);
+    const title = `${persona?.displayName ?? '무명 방송'}  ·  ${s.today?.claimedCeiling ?? 0}층 도전`;
+    this.text(b.x + b.w + 32, v.y + 22, this.clip(title, 560), 'bone');
+
+    // 시청자 수 — 빠지는 중이면 ▼ 가 붙는다 (core 의 지체 페널티가 만든 변화)
+    const dropping = this.time.now < this.fanDropUntil;
+    this.textRight(v.x + v.w - 24, v.y + 22,
+      `시청자 ${dropping ? '▼ ' : ''}${fmtFans(s.fans)}`, dropping ? 'wax' : 'dust');
   }
 
   /**
