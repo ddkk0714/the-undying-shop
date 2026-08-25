@@ -115,12 +115,6 @@ export class OfficePhase extends PhaseScene {
     // 소품 — 작업대를 세 구역으로 나눠 놓는다.
     //   좌: 램프(진열 왼쪽) · 장부(아래)   우: 도장·두루마리(진열 오른쪽 세로 띠)
     //   가운데 아래(local 380~1130 / 400~570)는 출연자 줄이 쓰므로 비워 둔다.
-    this.sprite(b.x + 24, b.y + 30, 'prop.lamp');
-    this.sprite(b.x + 24, b.y + 470, 'prop.ledger', 336, 264);
-    this.sprite(b.x + 980, b.y + 120, 'prop.stamp', 128, 208);
-    this.sprite(b.x + 960, b.y + 350, 'prop.scroll', 176, 64);
-    this.sprite(b.x + 400, b.y + 640, 'prop.tag', 152, 104);
-    this.sprite(b.x + 880, b.y + 660, 'prop.tag', 152, 104);
     this.frame(b.x, b.y, b.w, b.h, 'dust');
   }
 

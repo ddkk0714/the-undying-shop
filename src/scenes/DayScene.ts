@@ -1,10 +1,9 @@
 import Phaser from 'phaser';
 import { BASE_W, SCENES } from '../config';
 import { PALETTE, css } from '../render/palette';
-import { FONT } from '../render/font';
+import { FONT, FONT_LABEL } from '../render/font';
 import { L } from '../ui/layout';
 import { Button } from '../ui/Button';
-import { label } from '../ui/Label';
 import { reducedMotion } from '../ui/options';
 import { DEATH_CURTAIN_MS } from './phases/LivePhase';
 import { key as assetKey, hasTexture } from '../render/assets';
@@ -47,6 +46,11 @@ const COLS = [
   { label: 'FANS', x: 346 },
   { label: 'REPUTATION', x: 520 },
 ] as const;
+
+const HUD_LABEL = { ...FONT_LABEL, fontSize: '20px', padding: { x: 0, y: 1 } } as const;
+const HUD_VALUE = { ...FONT, fontSize: '40px', padding: { x: 0, y: 1 } } as const;
+const HUD_DAY = { ...FONT, fontSize: '30px', padding: { x: 0, y: 1 } } as const;
+const HUD_PHASE = { ...FONT, fontSize: '26px', padding: { x: 0, y: 1 } } as const;
 
 export class DayScene extends Phaser.Scene {
   private readonly hudStatus = { x: 8, y: 0, w: 700, h: 144 };
@@ -113,9 +117,11 @@ export class DayScene extends Phaser.Scene {
 
     // 자원 라벨 3종 — 값은 render() 가 같은 x 에 채운다 (레퍼런스 배치)
     COLS.forEach((col, i) => {
-      label(this, this.hudStatus.x + col.x, this.hudStatus.y + 18, col.label);
-      this.hudValues[i] = this.add.text(this.hudStatus.x + col.x, this.hudStatus.y + 52, '', {
-        ...FONT, color: css(col.label === 'REPUTATION' ? 'wax' : 'bone'),
+      this.add.text(this.hudStatus.x + col.x, this.hudStatus.y + 16, col.label, {
+        ...HUD_LABEL, color: css('dust'),
+      });
+      this.hudValues[i] = this.add.text(this.hudStatus.x + col.x, this.hudStatus.y + 48, '', {
+        ...HUD_VALUE, color: css(col.label === 'REPUTATION' ? 'wax' : 'bone'),
       });
       if (i > 0) {
         g.fillStyle(PALETTE.dust, 1);
@@ -123,11 +129,11 @@ export class DayScene extends Phaser.Scene {
       }
     });
 
-    this.hudLeft = this.add.text(this.hudStatus.x + 24, this.hudStatus.y + 30, '', { ...FONT, color: css('bone') });
+    this.hudLeft = this.add.text(this.hudStatus.x + 24, this.hudStatus.y + 28, '', { ...HUD_DAY, color: css('bone') });
     this.hudRight = this.add
-      .text(this.hudTools.x + this.hudTools.w - 24, this.hudTools.y + 52, '', { ...FONT, color: css('bone') })
+      .text(this.hudTools.x + this.hudTools.w - 24, this.hudTools.y + 52, '', { ...HUD_PHASE, color: css('bone') })
       .setOrigin(1, 0);
-    this.hudFloor = this.add.text(this.hudTools.x + 24, this.hudTools.y + 52, '', { ...FONT, color: css('bone') });
+    this.hudFloor = this.add.text(this.hudTools.x + 24, this.hudTools.y + 48, '', { ...HUD_VALUE, color: css('bone') });
     this.addHudIcon('ui.icon.help', 'ui.icon.help.hover', BASE_W - 368, () => this.openOverlay(SCENES.HELP));
     this.addHudIcon('ui.icon.options', 'ui.icon.options.hover', BASE_W - 240, () => this.openOverlay(SCENES.OPTIONS));
     this.addHudIcon('ui.icon.save', 'ui.icon.save.hover', BASE_W - 112, () => saveRun(this.store));
@@ -265,7 +271,7 @@ export class DayScene extends Phaser.Scene {
     this.gaugeTarget = s.maxFloor;
 
     this.hudLeft.setText(`DAY ${s.day}\n/${content.balance.start.days}`);
-    this.hudValues[0]?.setText(`${fmtGold(s.gold)} G`);
+    this.hudValues[0]?.setText(fmtHudGold(s.gold));
     this.hudValues[1]?.setText(fmtFans(s.fans));
     this.hudValues[2]?.setText(reputationGrade(s.reputation));
     this.hudFloor.setText(`${s.maxFloor} / ${content.balance.start.targetFloor} F`);
@@ -364,4 +370,10 @@ function fmtFans(n: number): string {
 
 function fmtGold(n: number): string {
   return n.toLocaleString('en-US');
+}
+
+/** HUD fields are intentionally narrow: preserve legibility instead of clipping large gold totals. */
+function fmtHudGold(n: number): string {
+  if (n >= 10_000) return `${(n / 1000).toFixed(1)}K`;
+  return fmtGold(n);
 }
