@@ -136,7 +136,7 @@ describe('live dive', () => {
     state = reducer(state, { type: 'LIVE/TICK', dt: content.balance.dive.floorSeconds });
     expect(state.phase).toBe('DEATH');
     expect(state.today?.diedFloor).toBe(7);
-    expect(state.today?.deathCause).toBe('descent limit');
+    expect(state.today?.deathCause).toBe('하강 한계 도달');
     expect(state.corpses).toHaveLength(1);
     expect(state.maxFloor).toBe(26);
   });

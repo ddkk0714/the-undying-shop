@@ -90,7 +90,7 @@ export function tickLive(state: GameState, dt: number): GameState {
     if (today === null) return nextState;
     const floor = today.currentFloor + 1;
     if (floor >= actualCeiling(nextState) + content.floors.encounterEvery) {
-      return { ...nextState, phase: 'DEATH', waitingSince: null, today: { ...today, currentFloor: floor, diedFloor: floor, deathCause: 'descent limit' }, pendingFx: [...nextState.pendingFx, { kind: 'SIGNAL_LOST' }] };
+      return { ...nextState, phase: 'DEATH', waitingSince: null, today: { ...today, currentFloor: floor, diedFloor: floor, deathCause: '하강 한계 도달' }, pendingFx: [...nextState.pendingFx, { kind: 'SIGNAL_LOST' }] };
     }
     const witnessFloor = Object.keys(content.balance.opinion.leakPerWitnessRevive).map(Number).find((value) => value === floor && !nextState.seenWitnessFloors.includes(value));
     if (witnessFloor !== undefined) {
