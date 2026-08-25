@@ -5,8 +5,16 @@ import { FONT, FONT_TITLE } from '../render/font';
 import { Button } from '../ui/Button';
 import { key as assetKey, hasTexture, isFinalArt } from '../render/assets';
 import { scrimTexture, SCRIM_TILE } from '../render/scrim';
+import { reducedMotion } from '../ui/options';
 import { hasSavedRun, loadRun, newRun } from './run';
 
+const LAMP_KEYS = ['bg.title.lamp1', 'bg.title.lamp2', 'bg.title.lamp3', 'bg.title.lamp4'] as const;
+
+const LAMP_CYCLE: ReadonlyArray<readonly [number, number]> = [
+  [0, 1500], [1, 110], [0, 780], [1, 80], [2, 60], [1, 90],
+  [0, 1800], [1, 100], [2, 70], [3, 50], [2, 90], [1, 110],
+  [0, 1200], [1, 80], [2, 60], [3, 50], [4, 40], [3, 70], [1, 130],
+];
 /** 창의 불빛 4단 — 밝은 쪽부터. `bg.title` 자체가 가장 밝은 상태다 */
 
 /**
@@ -50,6 +58,7 @@ export class TitleScene extends Phaser.Scene {
       this.add
         .tileSprite(0, 0, BASE_W, BASE_H, scrimTexture(this, 1))
         .setOrigin(0, 0);
+      this.lampFlicker(bg);
     } else {
       // 본 아트가 없을 때만 — 절차적 촛불이 이 화면의 유일한 불빛이다.
       // 그림이 들어오면 그 안에 이미 창의 불빛이 있으므로 덧그리지 않는다.
@@ -155,6 +164,21 @@ export class TitleScene extends Phaser.Scene {
    * 창의 불빛 깜빡임 — 배경 텍스처를 밝기 5단 사이에서 갈아 끼운다.
    * 4장이 **전부** 있을 때만 켠다. 한 장이라도 없으면 깜빡이지 않는 그림 그대로가 정답이다.
    */
+  private lampFlicker(bg: Phaser.GameObjects.Image): void {
+    if (reducedMotion(this.registry)) return;
+    if (!LAMP_KEYS.every((k) => hasTexture(this, k))) return;
+
+    const frames = [assetKey('bg.title'), ...LAMP_KEYS.map((k) => assetKey(k))];
+    let step = 0;
+    const advance = (): void => {
+      const [frame, hold] = LAMP_CYCLE[step % LAMP_CYCLE.length] ?? [0, 1000];
+      bg.setTexture(frames[frame] ?? frames[0]!);
+      step += 1;
+      this.time.delayedCall(hold, advance);
+    };
+    advance();
+  }
+
   /** 본 아트가 없을 때의 촛불 2프레임 루프 — tallow 점 하나의 밝기만 바꾼다 */
   private candleFlicker(): void {
     const candle = this.add.graphics();
