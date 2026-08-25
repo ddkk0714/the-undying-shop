@@ -6,6 +6,8 @@
  *   node tools/fit-art.mjs "아트/타이틀 화면/타이틀 배경.png" bg.title
  *
  * `--out` 은 final 팩 대신 다른 곳에 쓴다 — 슬롯에 넣기 전에 눈으로 볼 때만.
+ * `--canvas=WxH` 는 원본을 그 크기 캔버스 가운데에 먼저 얹는다 — 한 동작의 여러 단계를
+ * 같은 자리에 맞출 때 (의심도 1~5 처럼).
  *
  * 왜 필요한가 — 받은 원본은 규격 크기가 아니다 (타이틀 배경 2835x1594, 슬롯은 1920x1080).
  * 그대로 넣으면 Phaser 가 `setDisplaySize` 로 **소수배 축소**를 하고, 그 순간
@@ -199,6 +201,31 @@ function resampleBox(src, dw, dh, rect) {
   return { w: dw, h: dh, luma, alpha };
 }
 
+/**
+ * 원본을 투명한 WxH 캔버스 가운데에 얹는다.
+ *
+ * 여러 장이 **한 동작의 단계**일 때 필요하다. 의심도 1~5 는 눈이 떠지는 5단인데
+ * 저마다 내용에 딱 맞게 잘려 와서(642x245 ~ 593x429) 각자 따로 맞추면 감은 눈이
+ * 뜬 눈만큼 커진다. 제일 큰 칸에 다 같이 얹어야 5장이 같은 자리에서 자란다.
+ */
+function padToCanvas(src, cw, ch) {
+  const luma = new Float64Array(cw * ch);
+  const alpha = new Float64Array(cw * ch);
+  const ox = Math.round((cw - src.w) / 2);
+  const oy = Math.round((ch - src.h) / 2);
+  for (let y = 0; y < src.h; y++) {
+    const dy = y + oy;
+    if (dy < 0 || dy >= ch) continue;
+    for (let x = 0; x < src.w; x++) {
+      const dx = x + ox;
+      if (dx < 0 || dx >= cw) continue;
+      luma[dy * cw + dx] = src.luma[y * src.w + x];
+      alpha[dy * cw + dx] = src.alpha[y * src.w + x];
+    }
+  }
+  return { w: cw, h: ch, luma, alpha };
+}
+
 /** 원본에서 잘라낼 사각형 — 목표 종횡비에 맞춘다 */
 function fitRect(sw, sh, dw, dh, mode) {
   if (mode === 'stretch') return { x0: 0, y0: 0, x1: sw, y1: sh };
@@ -267,7 +294,19 @@ if (!Array.isArray(entry.size)) {
 }
 
 const [dw, dh] = entry.size;
-const src = decodePng(resolve(srcArg));
+const decoded = decodePng(resolve(srcArg));
+
+const canvasFlag = flags.find((f) => f.startsWith('--canvas='))?.slice(9);
+let src = decoded;
+if (canvasFlag !== undefined) {
+  const m = /^(\d+)x(\d+)$/.exec(canvasFlag);
+  if (m === null) {
+    console.error(`--canvas 는 640x480 꼴이어야 한다 (받은 값: ${canvasFlag})`);
+    process.exit(1);
+  }
+  src = padToCanvas(decoded, Number(m[1]), Number(m[2]));
+}
+
 const rect = fitRect(src.w, src.h, dw, dh, fitMode);
 const small = resampleBox(src, dw, dh, rect);
 const png = encodePng(dw, dh, dither(small));

@@ -177,6 +177,33 @@ export class RevivePhase extends PhaseScene {
    * 이름이 붙어 있던 몸이 더는 살아 있지 않고 시체가 남아 있을 때,
    * 이름 없는 산 몸에 옮겨 씌울 수 있다.
    */
+  /**
+   * 의심도 — 눈이 떠지는 5단.
+   *
+   * 「팬들은 대부분 모른다」 옆에 두는 그림이다. 대부분은 모르지만 **눈 하나는 떠 있고,**
+   * 이름을 갈아 끼울 때마다 조금 더 떠진다. 승계가 공짜가 아니라는 걸 숫자 말고 그림으로 말한다.
+   *
+   * 아트 5장이 다 있을 때만 그린다 — 한 칸이라도 비면 게이지가 거짓말을 한다.
+   * 증가량은 `balance.roster.inheritSuspicion` 을 읽는다 (씬에 숫자를 두지 않는다).
+   */
+  private suspicionRow(x: number, y: number, persona: Persona): void {
+    const before = persona.suspicion;
+    const after = Math.min(100, before + content.balance.roster.inheritSuspicion);
+    if (!this.suspicionEye(x, y, before)) return;
+    this.title(x + 108, y + 6, '→', 'wax');
+    this.suspicionEye(x + 160, y, after);
+    this.label(x, y + 76, `의심  ${before} → ${after}`, 'dust');
+  }
+
+  /** 0..100 을 눈 5칸으로 본다. 표시 단계일 뿐 규칙이 아니다 — 규칙은 core 가 가진다 */
+  private suspicionEye(x: number, y: number, value: number): boolean {
+    const step = Math.max(1, Math.min(5, 1 + Math.floor(value / 25)));
+    const artKey = `ui.suspicion${step}`;
+    if (!this.hasArt('ui.suspicion1') || !this.hasArt('ui.suspicion5') || !this.hasArt(artKey)) return false;
+    this.sprite(x, y, artKey, 96, 64);   // 192x128 의 정확히 1/2
+    return true;
+  }
+
   private inheritable(s: Readonly<GameState>): { persona: Persona; from: Star; heirs: Star[] } | null {
     for (const persona of s.personas) {
       const from = s.stars.find((x) => x.personaId === persona.id && x.status !== 'ALIVE');
@@ -257,6 +284,9 @@ export class RevivePhase extends PhaseScene {
     const after = Math.floor(persona.fandom * (1 - loss));
     this.text(mx, ly + 210, `팬덤 ${fmtGold(persona.fandom)}`, 'dust');
     this.text(mx, ly + 250, `  → ${fmtGold(after)}  (-${Math.round(loss * 100)}%)`, 'wax');
+
+    // 팬덤 바로 아래 — 이름을 갈아 끼우면 의심이 올라간다. 같은 문법으로 이어 붙인다
+    this.suspicionRow(mx, ly + 300, persona);
 
     // 이 한 문장이 이 화면의 전부다 (M03). 이름·계보 아래, 버튼 위에 혼자 놓는다
     this.title(x + L.pad * 2, ly + slot.h + 100, '팬들은 대부분 모른다.', 'bone');

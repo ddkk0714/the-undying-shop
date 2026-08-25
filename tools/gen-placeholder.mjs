@@ -573,7 +573,10 @@ const written = [];
  * 「깜빡이지 않는다」이지 「더미가 깜빡인다」가 아니다.
  * 씬은 4장이 **전부** 있을 때만 깜빡임을 켠다 (TitleScene).
  */
-const OPTIONAL = new Set(['bg.title.lamp1', 'bg.title.lamp2', 'bg.title.lamp3', 'bg.title.lamp4']);
+const OPTIONAL = new Set([
+  'bg.title.lamp1', 'bg.title.lamp2', 'bg.title.lamp3', 'bg.title.lamp4',
+  'ui.suspicion1', 'ui.suspicion2', 'ui.suspicion3', 'ui.suspicion4', 'ui.suspicion5',
+]);
 
 for (const [key, entry] of Object.entries(pack.entries)) {
   if (OPTIONAL.has(key)) continue;

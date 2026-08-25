@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { SCENES } from '../../config';
 import { content } from '../../core/content';
+import { key } from '../../render/assets';
 import { PALETTE } from '../../render/palette';
 import { L } from '../../ui/layout';
 import { Button } from '../../ui/Button';
@@ -97,7 +98,8 @@ export class DeathPhase extends PhaseScene {
   protected build(s: Readonly<GameState>): void {
     this.rows = [];
     this.stageBackdrop();
-    this.spriteCover(L.stage, ['bg.death']);
+    this.staticNoise();
+    this.scrimBlock(L.pad, L.stage.y + L.pad - 8, 480, 80);
     this.heading('신호 두절', 'wax');
 
     const run = s.today;
@@ -113,6 +115,8 @@ export class DeathPhase extends PhaseScene {
 
     const ox = L.pad * 4;
     let oy = L.stage.y + 380;
+    // 잡음 위에 그대로 얹으면 글자가 먹힌다 (본 아트가 오기 전에는 배경이 비어 있어서 몰랐다)
+    this.scrimBlock(ox - 32, oy - 28, 920, 332);
     this.title(ox, oy, `${persona?.displayName ?? '무명'} · ${star?.bodyName ?? '-'}`);
     oy += 88;
     this.title(ox, oy, `${floor}F 에서 끊겼다`, 'wax');
@@ -128,6 +132,32 @@ export class DeathPhase extends PhaseScene {
       x: L.W / 2 - 264, y: L.actionsFull.y + L.pad, w: 528, h: 96,
       label: '검시실로', hotkey: '1',
       onClick: () => this.store.dispatch({ type: 'PHASE/ADVANCE' }),
+    });
+  }
+
+  /**
+   * 「신호 두절」 — 방송이 끊긴 화면.
+   *
+   * 잡음 한 장을 매 프레임 뒤집어 가며 쓴다. 프레임을 여러 장 두면 1920x936 텍스처가
+   * 장수만큼 메모리에 남는데, 잡음은 **뒤집어도 여전히 잡음**이라 한 장이면 충분하다.
+   * 가로줄이 흐르는 그림이라 상하 반전이 특히 다르게 보인다.
+   */
+  private staticNoise(): void {
+    if (!this.hasArt('bg.death')) return;
+    const img = this.add
+      .image(L.stage.x, L.stage.y, key('bg.death'))
+      .setOrigin(0, 0)
+      .setDisplaySize(L.stage.w, L.stage.h);
+    if (this.reduced) return;
+
+    let step = 0;
+    this.time.addEvent({
+      delay: 110,
+      loop: true,
+      callback: () => {
+        step += 1;
+        img.setFlipX((step & 1) === 1).setFlipY((step & 2) === 2);
+      },
     });
   }
 

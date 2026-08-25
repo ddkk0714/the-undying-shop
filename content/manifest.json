@@ -118,6 +118,51 @@
           ],
           "desc": "타이틀 로고"
         },
+        "ui.suspicion1": {
+          "type": "image",
+          "file": "ui/suspicion1.png",
+          "size": [
+            192,
+            128
+          ],
+          "desc": "의심도 1/5 — 눈이 떠지는 5단 (5장 다 있어야 승계 화면에 뜬다)"
+        },
+        "ui.suspicion2": {
+          "type": "image",
+          "file": "ui/suspicion2.png",
+          "size": [
+            192,
+            128
+          ],
+          "desc": "의심도 2/5 — 눈이 떠지는 5단 (5장 다 있어야 승계 화면에 뜬다)"
+        },
+        "ui.suspicion3": {
+          "type": "image",
+          "file": "ui/suspicion3.png",
+          "size": [
+            192,
+            128
+          ],
+          "desc": "의심도 3/5 — 눈이 떠지는 5단 (5장 다 있어야 승계 화면에 뜬다)"
+        },
+        "ui.suspicion4": {
+          "type": "image",
+          "file": "ui/suspicion4.png",
+          "size": [
+            192,
+            128
+          ],
+          "desc": "의심도 4/5 — 눈이 떠지는 5단 (5장 다 있어야 승계 화면에 뜬다)"
+        },
+        "ui.suspicion5": {
+          "type": "image",
+          "file": "ui/suspicion5.png",
+          "size": [
+            192,
+            128
+          ],
+          "desc": "의심도 5/5 — 눈이 떠지는 5단 (5장 다 있어야 승계 화면에 뜬다)"
+        },
         "ui.cursor": {
           "type": "image",
           "file": "ui/cursor.png",
@@ -549,6 +594,51 @@
       "root": "assets/packs/final/",
       "inherit": "placeholder",
       "entries": {
+        "ui.suspicion1": {
+          "type": "image",
+          "file": "ui/suspicion1.png",
+          "size": [
+            192,
+            128
+          ],
+          "desc": "의심도 1/5 — 눈이 떠지는 5단 (5장 다 있어야 승계 화면에 뜬다)"
+        },
+        "ui.suspicion2": {
+          "type": "image",
+          "file": "ui/suspicion2.png",
+          "size": [
+            192,
+            128
+          ],
+          "desc": "의심도 2/5 — 눈이 떠지는 5단 (5장 다 있어야 승계 화면에 뜬다)"
+        },
+        "ui.suspicion3": {
+          "type": "image",
+          "file": "ui/suspicion3.png",
+          "size": [
+            192,
+            128
+          ],
+          "desc": "의심도 3/5 — 눈이 떠지는 5단 (5장 다 있어야 승계 화면에 뜬다)"
+        },
+        "ui.suspicion4": {
+          "type": "image",
+          "file": "ui/suspicion4.png",
+          "size": [
+            192,
+            128
+          ],
+          "desc": "의심도 4/5 — 눈이 떠지는 5단 (5장 다 있어야 승계 화면에 뜬다)"
+        },
+        "ui.suspicion5": {
+          "type": "image",
+          "file": "ui/suspicion5.png",
+          "size": [
+            192,
+            128
+          ],
+          "desc": "의심도 5/5 — 눈이 떠지는 5단 (5장 다 있어야 승계 화면에 뜬다)"
+        },
         "bg.title": {
           "type": "image",
           "file": "bg/title.png",
@@ -638,6 +728,15 @@
             720
           ],
           "desc": "③ 생방송 전투 칸 배경 (던전)"
+        },
+        "bg.death": {
+          "type": "image",
+          "file": "bg/death.png",
+          "size": [
+            1920,
+            936
+          ],
+          "desc": "④ 사망 화면"
         },
         "star.body.karin": {
           "type": "image",
