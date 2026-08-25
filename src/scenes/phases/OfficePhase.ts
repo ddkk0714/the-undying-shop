@@ -219,6 +219,8 @@ export class OfficePhase extends PhaseScene {
       // 카드가 아니라 작업대 위의 실제 놓는 자리다. 배경 그림을 가리지 않고 테두리만 남긴다.
       const selected = this.selectedItemId === null ? undefined : content.items.find((item) => item.id === this.selectedItemId);
       const acceptsSelected = selected !== undefined && content.balance.equipment.slotByItem[selected.id] === i;
+      // 작업대의 질감은 살리고, 장비를 두는 면만 읽히도록 반투명 잉크를 깐다.
+      this.add.rectangle(x + 10, y + 28, L.slot3.w - 20, L.slot3.h - 40, 0x07110b, 0.42).setOrigin(0, 0);
       this.frame(x + 10, y + 28, L.slot3.w - 20, L.slot3.h - 40, acceptsSelected ? 'wax' : def === undefined ? 'dust' : 'bone');
       const dropZone = this.add.zone(x + 10, y + 28, L.slot3.w - 20, L.slot3.h - 40).setOrigin(0, 0);
       dropZone.setInteractive({ cursor: acceptsSelected ? 'pointer' : 'default' });
