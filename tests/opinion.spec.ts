@@ -42,10 +42,11 @@ function message(id: string, tone: ChatMessage['tone'], bornAt = 0, nick = `view
 describe('opinion and superchat core', () => {
   it('uses seeded chat generation, keeps at most seven lines, and forces TRUTH after the leak threshold', () => {
     const initial = { ...liveState(72), leak: content.balance.opinion.leakEndingThreshold };
-    const generated = Array.from({ length: 10 }).reduce<GameState>((state) => spawnChat(state), initial);
+    const spawnCount = content.balance.opinion.chatMaxVisible + 3;
+    const generated = Array.from({ length: spawnCount }).reduce<GameState>((state) => spawnChat(state), initial);
     expect(generated.today?.chatQueue).toHaveLength(content.balance.opinion.chatMaxVisible);
     expect(generated.today?.chatQueue.every((entry) => entry.tone === 'TRUTH')).toBe(true);
-    expect(Array.from({ length: 10 }).reduce<GameState>((state) => spawnChat(state), initial)).toEqual(generated);
+    expect(Array.from({ length: spawnCount }).reduce<GameState>((state) => spawnChat(state), initial)).toEqual(generated);
 
     const firstTruth = spawnChat(initial);
     const deleted = moderateChat(firstTruth, firstTruth.today!.chatQueue[0]!.id, false);

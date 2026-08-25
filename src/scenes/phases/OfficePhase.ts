@@ -8,7 +8,7 @@ import { Button } from '../../ui/Button';
 import { onboard } from '../../ui/Onboarding';
 import { playBgm } from '../../audio/Sfx';
 import { PhaseScene } from './PhaseScene';
-import type { Contract, GameState, ItemDef, Persona } from '../../core/types';
+import type { GameState, ItemDef, Persona } from '../../core/types';
 
 /**
  * M05 편성실 — **상점 화면** (v3.1 레퍼런스 정본, 04-UI-KIT §1 · 00-OVERVIEW §8-2).
@@ -21,20 +21,17 @@ import type { Contract, GameState, ItemDef, Persona } from '../../core/types';
  * 하단 4택이 「방」을 바꾸는 게 아니라 **작업대 위에 무엇을 올릴지**를 바꾼다.
  * 계약서의 honesty 는 절대 그리지 않는다 (02-DATA-SCHEMA §2-b).
  */
-type BenchMode = 'CONTRACT' | 'SHELF';
-
 const SLOT_NAMES = ['무기', '방어구', '기타'] as const;
 const INVENTORY_COLUMNS = 4;
 const INVENTORY_VISIBLE_ROWS = 2;
 // 원화의 아래만 잘라 작업대 비율로 맞춘 뒤, 세 사각 홈을 옮긴 값.
 const SHELF_SLOTS = [
-  { x: 1016, y: 246, w: 223, h: 266 },
-  { x: 1248, y: 246, w: 214, h: 266 },
-  { x: 1473, y: 246, w: 214, h: 266 },
+  { x: 1016, y: 249, w: 223, h: 266 },
+  { x: 1248, y: 249, w: 214, h: 266 },
+  { x: 1473, y: 249, w: 214, h: 266 },
 ] as const;
 
 export class OfficePhase extends PhaseScene {
-  private mode: BenchMode = 'SHELF';
   /** 계약서가 2장 올 수 있다 (M05). 지금 보고 있는 장 */
   private contractIndex = 0;
   /** 하단 「진열」을 눌렀을 때만 여는 장비 서랍 */
@@ -47,6 +44,10 @@ export class OfficePhase extends PhaseScene {
   private itemDetail: Phaser.GameObjects.GameObject[] = [];
   /** 드래그 중에는 hover 상세창을 다시 열지 않는다. */
   private draggingInventoryItem = false;
+  /** 작업대에 놓인 계약서 축소본을 왼쪽 클릭하면, 같은 종이를 읽기 크기로 펼친다. */
+  private contractReaderOpen = false;
+  /** 첫날에는 배경의 문을 직접 열기 전까지 손님을 맞지 않는다. */
+  private shopOpened = false;
 
   constructor() {
     super(SCENES.PHASE_OFFICE);
@@ -58,12 +59,13 @@ export class OfficePhase extends PhaseScene {
    * 어제 남긴 필드를 지우지 않으면 다음 날 화면이 어제 상태로 시작한다.
    */
     this.contractIndex = 0;
-    this.mode = 'SHELF';
     this.inventoryOpen = false;
     this.selectedItemId = null;
     this.inventoryScrollRow = 0;
     this.itemDetail = [];
     this.draggingInventoryItem = false;
+    this.contractReaderOpen = false;
+    this.shopOpened = false;
     super.create();
     playBgm(this, 'bgm.shop');
   }
@@ -72,24 +74,45 @@ export class OfficePhase extends PhaseScene {
     // redraw()가 이전 동적 오브젝트를 정리한 뒤 새 화면을 만든다.
     this.itemDetail = [];
     this.draggingInventoryItem = false;
-    // 심사할 계약서가 없으면 계약 모드에 머무를 이유가 없다.
-    // 여기 갇히면 「오늘의 출연자」를 고를 수 없어 하루가 넘어가지 않는다.
-    if (this.mode === 'CONTRACT' && s.visitors.length === 0) this.mode = 'SHELF';
-
     this.stageBackdrop();
+    if (s.day === 1 && !this.shopOpened) {
+      this.buildShopStart();
+      return;
+    }
     this.buildGuest(s);
     this.buildBenchBackdrop();
-    if (this.mode === 'CONTRACT') this.buildContract(s);
-    else {
-      this.buildShelf(s);
-      if (this.inventoryOpen) this.buildInventory(s);
-    }
+    this.buildShelf(s);
+    this.buildSubmittedContracts(s);
+    if (this.inventoryOpen) this.buildInventory(s);
+    // 확대는 별도 장면이 아니라, 이미 그린 작업대 위에 원본 종이를 얹는다.
+    if (this.contractReaderOpen) this.buildContract(s);
     this.buildActions(s);
-    onboard(this, s.day, this.mode === 'CONTRACT' ? 'OFFICE_CONTRACT' : 'OFFICE_SHELF',
+    onboard(this, s.day, 'OFFICE_SHELF',
       { x: L.dialogue.x, y: L.dialogue.y + 44, w: L.dialogue.w });
   }
 
   /* ── 좌 · 방문자 / 출연자 ─────────────────────────────── */
+
+  /** 첫 영업은 버튼이 아니라, shop_room 원화의 오른쪽 문을 눌러 시작한다. */
+  private buildShopStart(): void {
+    const g = L.guest;
+    this.rect(g.x, g.y, g.w, g.h, 'ink');
+    this.spriteCover(g, ['bg.shop.room']);
+    this.frame(g.x, g.y, g.w, g.h, 'dust');
+    this.buildBenchBackdrop();
+
+    // 원화의 문(약 x=500~640, y=180~510)에 맞춘 클릭 영역이다.
+    const door = { x: g.x + 548, y: g.y + 326, w: 170, h: 326 };
+    const handle = this.add.zone(door.x, door.y, door.w, door.h).setOrigin(0, 0).setInteractive({ cursor: 'pointer' });
+    handle.on('pointerup', () => {
+      this.shopOpened = true;
+      this.redraw();
+    });
+    this.label(g.x + 44, g.y + 44, '첫 영업', 'bone').setScale(1.25);
+    this.text(g.x + 44, g.y + 88, '문을 눌러 장사를 시작하세요.', 'bone').setScale(0.78);
+    this.label(door.x - 8, door.y + door.h + 10, '문을 열기', 'bone').setScale(0.74);
+    this.label(L.bench.x + 70, L.bench.y + 70, '문이 열리면 첫 손님이 계약서를 들고 옵니다.', 'dust').setScale(0.86);
+  }
 
   private buildGuest(s: Readonly<GameState>): void {
     const g = L.guest;
@@ -100,7 +123,7 @@ export class OfficePhase extends PhaseScene {
     // 계약 모드에서 좌측에 서 있는 사람은 **방문자**다. 아직 계약 전이라 recruitPool 에 있다.
     // 이름만 방문자로 바꾸고 그림은 기존 출연자를 쓰면, 이름과 얼굴이 어긋난다
     const visitor = s.visitors[this.contractIndex] ?? s.visitors[0];
-    const contracting = this.mode === 'CONTRACT' && visitor !== undefined;
+    const contracting = visitor !== undefined;
     const guest = contracting ? s.recruitPool.find((x) => x.id === visitor.starId) : undefined;
     const star = guest
       ?? s.stars.find((x) => x.id === s.today?.starId)
@@ -134,7 +157,7 @@ export class OfficePhase extends PhaseScene {
     this.sprite(coverX, coverY, 'ui.guest.cover', coverW, coverH);
     const d = L.dialogue;
     this.rect(d.x, d.y, d.w, d.h, 'ink');
-    const line = this.mode === 'CONTRACT' ? '...일할 자리 있나요?' : '...강한 무기 있나요?';
+    const line = contracting ? '...일할 자리 있나요?' : '...강한 무기 있나요?';
     this.title(coverX + L.pad, coverY + 52, this.clip(line, coverW - 96, 'title'), 'bone').setScale(0.78);
     this.text(coverX + coverW - 48, coverY + 64, '▼', 'dust');
   }
@@ -153,76 +176,69 @@ export class OfficePhase extends PhaseScene {
 
   /* ── 작업대 A · 계약서 심사 ───────────────────────────── */
 
+  /** 축소 계약서에서 열리는 유일한 확대 상태. 다른 팝업/계약서 경로는 만들지 않는다. */
   private buildContract(s: Readonly<GameState>): void {
-    const p = L.office.paper;
-    if (this.contractIndex >= s.visitors.length) this.contractIndex = 0;
-    const visitor: Contract | undefined = s.visitors[this.contractIndex];
-
-    this.rect(p.x + L.pad * 2, p.y + L.pad * 2, p.w - L.pad * 4, p.h - L.pad * 4, 'mid');
-    this.frame(p.x + L.pad * 2, p.y + L.pad * 2, p.w - L.pad * 4, p.h - L.pad * 4, 'bone');
-    const ox = p.x + L.pad * 4;
-    let oy = p.y + L.pad * 4;
-
-    this.title(ox, oy, '계 약 서');
+    const visitor = s.visitors[this.contractIndex];
     if (visitor === undefined) {
-      this.text(ox, oy + 96, '오늘은 문 앞이 조용하다.', 'dust');
-      this.text(ox, oy + 144, '심사할 계약서가 없다.', 'dust');
+      this.contractReaderOpen = false;
       return;
     }
+    const body = s.recruitPool.find((candidate) => candidate.id === visitor.starId);
+    // 원본 비율(700×914)을 유지한다. 읽기 상태에서는 HUD까지 쓰는 1.43배 크기로
+    // 올려, 서류의 표기와 실제 입력값을 한눈에 읽을 수 있게 한다.
+    const paper = { x: 900, y: 18, w: 800, h: 1045 };
+    const asset = this.contractSheetAsset();
+    if (asset === null) return;
+    const paperDepth = 800;
+    const scale = paper.w / 700;
+    const textScale = paper.w / 560;
+    const at = (x: number, y: number, value: string, textScale = 0.72) =>
+      this.text(paper.x + x * scale, paper.y + y * scale, value, 'ink').setScale(textScale * (paper.w / 560)).setDepth(paperDepth + 2);
 
-    this.textRight(p.x + p.w - L.pad * 4, oy + 12, `계약금 ${visitor.fee.toLocaleString('en-US')} G`);
-    oy += 88;
-    this.text(ox, oy, '시체는 반드시 회수한다.', 'dust');
-    this.text(ox, oy + 40, '대신 방송 중 갑의 프로듀스를 따른다.', 'dust');
+    // 종이를 별도 팝업처럼 검게 가리지 않는다. 원래 진열대 위에서 집어 든 서류처럼
+    // 작업대 배경을 그대로 남긴다. 입력은 build()의 모달 분기로 이미 차단되어 있다.
+    this.add.image(paper.x, paper.y, key(asset)).setOrigin(0, 0).setDisplaySize(paper.w, paper.h).setDepth(paperDepth);
 
-    oy += 120;
-    this.label(ox, oy, '자기 신고 공략률', 'dust');
-    visitor.claimedTiers.slice(0, 5).forEach((tier, i) => {
-      const ty = oy + 32 + i * 44;
-      this.text(ox, ty, `${tier.floor}F 까지`);
-      this.textRight(p.x + p.w - L.pad * 4, ty, `${Math.round(tier.rate * 100)}%`, 'dust');
+    // 펼침을 만든 첫 클릭과 충돌하지 않도록, 다음 프레임부터만 접기 입력을 받는다.
+    const page = this.add.zone(paper.x, paper.y, paper.w, paper.h).setOrigin(0, 0).setDepth(paperDepth + 1);
+    this.time.delayedCall(0, () => {
+      if (!page.active) return;
+      page.setInteractive({ cursor: 'pointer' });
+      page.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+        if (!pointer.leftButtonDown()) return;
+        this.contractReaderOpen = false;
+        this.redraw();
+      });
     });
 
-    this.text(ox, p.y + p.h - L.pad * 4 - 40, `인지도 ${visitor.recognition} · 팬덤 ${visitor.fandom.toLocaleString('en-US')}`, 'dust');
+    // 상단 개인정보 칸
+    // 초상칸 오른쪽의 기입선에 맞춘 개인정보 블록.
+    const identityX = 325;
+    at(identityX, 130, '예명', 0.50);
+    at(identityX, 150, this.clip(visitor.displayName, 240, 'title'), 0.82);
+    at(identityX, 190, '본명', 0.50);
+    at(identityX, 210, body?.bodyName ?? '미상', 0.82);
+    at(identityX, 250, '출신', 0.50);
+    at(identityX, 270, '미등록 구역', 0.64);
+    at(identityX, 300, '직종', 0.50);
+    at(identityX, 320, '하강 용병', 0.64);
+    at(326, 350, visitor.recognition, 0.88);
+    at(525, 350, visitor.fandom.toLocaleString('en-US'), 0.82);
 
-    // 계약금을 낼 수 없으면 그렇다고 말한다. 눌리는데 아무 일도 안 일어나는 버튼이 제일 나쁘다
-    if (s.gold < visitor.fee) {
-      this.textRight(p.x + p.w - L.pad * 4, oy - 40, `자금 부족 · 보유 ${s.gold.toLocaleString('en-US')} G`, 'wax');
-    }
-    if (s.visitors.length > 1) {
-      this.label(ox, p.y + L.pad * 4 + 56, `${this.contractIndex + 1} / ${s.visitors.length} 장`, 'dust');
-    }
-    this.buildContractStamp(s, visitor, p);
-  }
-
-  /** 계약서는 버튼보다 도장으로 처리한다. Papers, Please처럼 종이 위에서 직접 결재한다. */
-  private buildContractStamp(s: Readonly<GameState>, visitor: Contract, paper: { x: number; y: number; w: number; h: number }): void {
-    if (!this.hasArt('prop.stamp')) return;
-    const stamp = this.add.image(paper.x + paper.w - 88, paper.y + paper.h - 116, key('prop.stamp'))
-      .setDisplaySize(64, 104);
-    this.label(paper.x + paper.w - 220, paper.y + paper.h - 24, '도장을 눌러 수락', 'dust');
-    if (s.gold < visitor.fee) {
-      stamp.setAlpha(0.32);
-      return;
-    }
-
-    let stamped = false;
-    const accept = () => {
-      if (stamped) return;
-      stamped = true;
-      stamp.setY(stamp.y + 12).setAngle(8);
-      this.time.delayedCall(100, () => this.store.dispatch({ type: 'OFFICE/CONTRACT_ACCEPT', starId: visitor.starId }));
-    };
-    stamp.setInteractive({ cursor: 'pointer' });
-    stamp.on('pointerdown', accept);
-    this.input.keyboard?.on('keydown-FIVE', accept);
+    // 하단 계약 조건 칸. honesty는 의도적으로 어느 곳에도 적지 않는다.
+    const target = visitor.claimedTiers.at(-1)?.floor ?? 0;
+    at(90, 526, '계약금', 0.46);
+    at(300, 552, `${visitor.fee.toLocaleString('en-US')} G`, 0.82);
+    at(90, 582, '목표층', 0.46);
+    at(300, 607, `${target} F`, 0.92);
+    const rates = visitor.claimedTiers.map((tier) => `${tier.floor}F ${Math.round(tier.rate * 100)}%`).join(' · ');
+    at(90, 694, this.clip(rates, 500, 'body'), 0.46);
+    this.label(paper.x + 72, paper.y + paper.h - 62, '종이를 누르면 접기 · 하단 계약을 누르면 수락', 'ink').setScale(0.62 * textScale).setDepth(paperDepth + 2);
   }
 
   /* ── 작업대 B · 장비 진열 ─────────────────────────────── */
 
   private buildShelf(s: Readonly<GameState>): void {
-    const alive = s.stars.filter((star) => star.status === 'ALIVE');
-
     this.label(
       SHELF_SLOTS[0].x,
       SHELF_SLOTS[0].y - 28,
@@ -254,35 +270,49 @@ export class OfficePhase extends PhaseScene {
       this.text(x + 12, y + 168, this.clip(this.itemStats(def), Math.floor((w - 24) / 0.75), 'body'), 'bone').setScale(0.75);
     }
 
-    // 오늘의 출연자 — 램프와 장부 사이. 소품 자리를 침범하지 않는다
-    const by = L.slot3.y + L.slot3.h + 40;
-    const colW = 240;
-    // 판은 실제로 쓰는 칸만큼만 깐다. 출연자가 없는 날 빈 검은 상자가 남으면 안 된다
-    const cols = Math.min(3, alive.length);
-    this.scrimBlock(L.bench.x + 356, by - 20, cols > 0 ? colW * cols + 16 * (cols - 1) + 48 : 700, 216);
-    this.label(L.bench.x + 380, by, '오늘의 출연자', 'dust');
-    // 빈 칸을 그냥 두면 왜 출격이 잠겼는지 알 길이 없다
-    if (cols === 0) {
-      this.text(L.bench.x + 380, by + 40, '세울 사람이 없다.', 'wax');
-      this.text(L.bench.x + 380, by + 84, '소생으로 되살리기 · 계약으로 새 출연자 맞이 · 돈이 없으면 판매한다.', 'dust');
-    }
-    alive.slice(0, 3).forEach((star, i) => {
-      const picked = s.today?.starId === star.id;
-      const x = L.bench.x + 380 + i * (colW + 16);
-      const persona = s.personas.find((p) => p.id === star.personaId);
-      this.text(x, by + 28, this.clip(persona?.displayName ?? '무명', colW), picked ? 'wax' : 'bone');
-      this.text(x, by + 68, this.clip(`${star.bodyName} · ${star.reviveCount}회`, colW), 'dust');
-      new Button(this, {
-        x, y: by + 112, w: colW, h: 56,
-        label: picked ? '출연 확정' : '이 사람으로',
-        variant: picked ? 'ghost' : 'default',
-        enabled: !picked,
-        onClick: () => this.store.dispatch({ type: 'OFFICE/PICK_STAR', starId: star.id }),
-      });
-    });
   }
 
   /* ── 작업대 B · 인벤토리 ───────────────────────────────── */
+
+  /** 방문자는 계약서를 버튼으로 건네지 않는다. 책상 하단에 놓고, 플레이어가 직접 집어 든다. */
+  private buildSubmittedContracts(s: Readonly<GameState>): void {
+    const asset = this.contractSheetAsset();
+    if (asset === null) return;
+    const b = L.bench;
+    const paper = { w: 180, h: 235 };
+    const visitor = s.visitors[0];
+    if (visitor === undefined) return;
+    const home = { x: b.x + b.w - 128, y: b.y + b.h - 138 };
+    const index = 0;
+    const sheet = this.add.image(home.x, home.y, key(asset))
+      .setOrigin(0.5, 0.5)
+      .setDisplaySize(paper.w, paper.h)
+      .setDepth(20)
+      .setInteractive({ cursor: 'pointer' });
+      // 축소된 종이에도 최소한의 식별 정보가 있어, 어떤 계약서를 집는지 바로 알 수 있다.
+      const left = home.x - paper.w / 2;
+      const top = home.y - paper.h / 2;
+    this.label(left + 18, top + 16, '하강 계약서', 'ink').setScale(0.58).setDepth(21);
+    this.text(left + 18, top + 46, this.clip(visitor.displayName, 150, 'body'), 'ink').setScale(0.54).setDepth(21);
+    this.label(left + 18, top + 78, `계약금 ${visitor.fee.toLocaleString('en-US')} G`, 'ink').setScale(0.52).setDepth(21);
+    const target = visitor.claimedTiers.at(-1)?.floor ?? 0;
+    this.label(left + 18, top + 102, `목표 ${target}F · 클릭하여 확인`, 'ink').setScale(0.46).setDepth(21);
+
+    // 축소본은 이동할 수 없다. 좌클릭 한 번만 확대라는 유일한 입력으로 쓴다.
+    sheet.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      if (!pointer.leftButtonDown()) return;
+      this.contractIndex = index;
+      this.contractReaderOpen = true;
+      this.redraw();
+    });
+  }
+
+  /** 새 계약서 텍스처는 HMR 중 아직 프리로드되지 않을 수 있다. 그때도 기존 장부로 종이를 유지한다. */
+  private contractSheetAsset(): string | null {
+    if (this.hasArt('ui.contract.sheet')) return 'ui.contract.sheet';
+    if (this.hasArt('prop.ledger')) return 'prop.ledger';
+    return null;
+  }
 
   private buildInventory(s: Readonly<GameState>): void {
     const panel = this.inventoryRect();
@@ -306,7 +336,6 @@ export class OfficePhase extends PhaseScene {
         this.redraw();
       },
     });
-
     if (stacks.length === 0) {
       this.text(ix, panel.y + 150, '팔 것도 올릴 것도 없다.', 'dust');
       this.text(ix, panel.y + 198, '시체를 훼손하면 유품이 들어온다.', 'dust');
@@ -574,60 +603,55 @@ export class OfficePhase extends PhaseScene {
       variant: this.inventoryOpen ? 'default' : 'ghost',
       onClick: () => this.openInventory(),
     });
+    const expanded = this.contractReaderOpen ? s.visitors[this.contractIndex] : undefined;
     new Button(this, {
       x: actionX(2), y, w: ACTION_W, h,
       label: '계약', hotkey: '3',
-      variant: this.mode === 'CONTRACT' ? 'default' : 'ghost',
-      onClick: () => this.switchMode('CONTRACT'),
+      variant: expanded !== undefined && s.gold >= expanded.fee ? 'default' : 'ghost',
+      // 확대 중에는 종이 아래에 남긴다. 실제 수락은 좌측의 문서 전용 버튼으로만 한다.
+      enabled: false,
+      onClick: () => undefined,
     });
-    // 세울 사람이 없으면 core 의 `startLive` 가 state 를 그대로 돌려준다 —
-    // 즉 눌러도 아무 일이 안 일어난다. 그건 이 화면에서 제일 나쁜 버튼이므로 잠근다.
-    // 단 「더는 세울 수도 되살릴 수도 없는」 날은 이 버튼이 가게를 닫는 유일한 출구다.
+    const waiting = s.visitors[0];
+    if (waiting !== undefined) {
+      const canAccept = expanded !== undefined && s.gold >= expanded.fee;
+      new Button(this, {
+        x: L.dialogue.x + 24, y: L.dialogue.y + 14, w: 232, h: 50,
+        label: '수락 후 방송', hotkey: '3', variant: 'default', enabled: canAccept,
+        onClick: () => {
+          if (expanded === undefined) return;
+          this.contractReaderOpen = false;
+          this.store.dispatch({ type: 'OFFICE/CONTRACT_ACCEPT', starId: expanded.starId });
+        },
+      });
+      const returnButton = new Button(this, {
+        // 대사/힌트 아래의 고정 위치: 계약서를 펼치지 않아도 언제든 돌려보낼 수 있다.
+        x: L.dialogue.x + 24, y: L.dialogue.y + 76, w: 232, h: 50,
+        label: '돌려보내기', hotkey: '6', variant: 'danger',
+        onClick: () => {
+          this.contractReaderOpen = false;
+          this.store.dispatch({ type: 'OFFICE/CONTRACT_REJECT', starId: waiting.starId });
+        },
+      });
+      returnButton.setDepth(100);
+    }
+    // 수동 출연자 선택은 없다. 방송을 누르면 코어가 현재 생존 용사를 자동으로 고른다.
     const closing = s.today === null && isEarlyClosure(s);
+    const hasAutomaticCaster = s.stars.some((star) => star.status === 'ALIVE');
     new Button(this, {
       x: actionX(3), y, w: ACTION_W, h,
       label: closing ? '폐업' : '방송', hotkey: '4', variant: 'danger',
-      enabled: s.today !== null || closing,
+      enabled: hasAutomaticCaster || closing,
       onClick: () => this.store.dispatch({ type: 'OFFICE/CONFIRM' }),
     });
 
-    // 계약 모드에서는 「출격」 자리 위에 수락/거절을 겹치지 않고, 작업대 안에서 처리한다.
-    // 하단 4택이 1~4 를 쓰므로 여기는 5·6·7 을 쓴다
-    if (this.mode === 'CONTRACT') {
-      const paper = L.office.paper;
-      const sheet = s.visitors[this.contractIndex];
-      const by = paper.y + paper.h - L.pad * 4 - 104;
-      new Button(this, {
-        x: paper.x + 48, y: by, w: 260, h: 64,
-        label: '돌려보낸다', hotkey: '6', variant: 'danger',
-        enabled: sheet !== undefined,
-        onClick: () => sheet && this.store.dispatch({ type: 'OFFICE/CONTRACT_REJECT', starId: sheet.starId }),
-      });
-      if (s.visitors.length > 1) {
-        new Button(this, {
-          x: paper.x + paper.w - 192, y: paper.y + 32, w: 144, h: 48,
-          label: '다음 장', hotkey: '7', variant: 'ghost',
-          onClick: () => {
-            this.contractIndex = (this.contractIndex + 1) % s.visitors.length;
-            this.redraw();
-          },
-        });
-      }
-    }
-  }
-
-  private switchMode(mode: BenchMode): void {
-    this.mode = mode;
-    this.inventoryOpen = false;
-    this.selectedItemId = null;
-    this.redraw();
   }
 
   private openInventory(): void {
-    this.mode = 'SHELF';
     this.inventoryOpen = true;
     this.selectedItemId = null;
     this.inventoryScrollRow = 0;
+    this.contractReaderOpen = false;
     this.redraw();
   }
 }

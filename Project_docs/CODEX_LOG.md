@@ -79,3 +79,6 @@
 **프로젝트**: 받은 V2 UI와 작업대 소품을 실제 슬롯에 연결하고, 저장/이어하기 흐름을 완성했다.
 **결정**: 투명한 9-slice 버튼 중앙은 ink로 채우고, 최종 ghost 스킨이 도착하기 전에는 기본 최종 버튼으로 폴백한다. 작업대는 원본 서류철·계약서·판정 도장·가격표·램프 크롭을 비율 보존으로 사용한다.
 **검증**: `npm run art` 본 아트 55/70, `npm run typecheck`, `npm test` 10개 파일·73개, `npm run build` 통과.
+## D6 — M05 sequential contract desk loop
+**Delivered**: The office exposes exactly one seeded visitor contract at a time. Rejecting a contract permanently excludes that applicant and immediately produces the next eligible applicant. Accepting a contract charges its fee, recruits that applicant, creates the run, and transitions directly into LIVE.
+**Verification**: `npm run typecheck`; `npm test` (10 files, 74 tests); `npm run sim` (1,000-seed policy suite); and `npm run build` all passed on 2026-08-25.

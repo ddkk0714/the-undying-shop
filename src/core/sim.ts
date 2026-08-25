@@ -19,16 +19,16 @@ export const randomPolicy: Policy = (state) => {
     return corpse === undefined || quote === undefined || !quote.affordable || (hasAliveStar && roll < 0.2) ? { type: 'PHASE/ADVANCE' } : { type: 'REVIVE/PAY', starId: corpse.starId };
   }
   if (state.phase === 'OFFICE') {
-    const choices = state.stars.filter((star) => star.status === 'ALIVE');
     if (state.today !== null) return { type: 'OFFICE/CONFIRM' };
-    if (choices.length === 0) {
-      const affordable = state.visitors.filter((visitor) => state.gold >= visitor.fee);
-      const visitor = affordable[Math.floor(roll * affordable.length)] ?? affordable[0];
-      if (visitor !== undefined) return { type: 'OFFICE/CONTRACT_ACCEPT', starId: visitor.starId };
+    const affordable = state.visitors.filter((visitor) => state.gold >= visitor.fee);
+    const visitor = affordable[Math.floor(roll * affordable.length)] ?? affordable[0];
+    if (visitor !== undefined) return { type: 'OFFICE/CONTRACT_ACCEPT', starId: visitor.starId };
+    const waiting = state.visitors[0];
+    if (waiting !== undefined) {
       const emergencyStock = mostValuableSellableItem(state);
-      return emergencyStock === undefined ? { type: 'OFFICE/CONFIRM' } : { type: 'OFFICE/SELL', itemId: emergencyStock };
+      return emergencyStock === undefined ? { type: 'OFFICE/CONTRACT_REJECT', starId: waiting.starId } : { type: 'OFFICE/SELL', itemId: emergencyStock };
     }
-    return { type: 'OFFICE/PICK_STAR', starId: choices[Math.floor(roll * choices.length)]?.id ?? choices[0]!.id };
+    return { type: 'OFFICE/CONFIRM' };
   }
   if (state.phase === 'LIVE') {
     const pendingFork = state.today?.forks.at(-1);

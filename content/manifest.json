@@ -1004,43 +1004,59 @@
         },
         "sfx.stamp": {
           "type": "audio",
-          "file": "sfx/stamp.wav",
+          "file": "sfx/stamp.mp3",
           "desc": "봉랍 도장 — 검시 판정·폐기 확정"
         },
         "sfx.superchat": {
           "type": "audio",
-          "file": "sfx/superchat.wav",
+          "file": "sfx/superchat.mp3",
           "desc": "슈퍼챗 알림"
         },
         "sfx.death": {
           "type": "audio",
-          "file": "sfx/death.wav",
+          "file": "sfx/death.mp3",
           "desc": "신호 두절 — 방송 끊김음 + 저역 험 (M06 §8 「소리가 절반이다」)"
         },
         "sfx.revive": {
           "type": "audio",
-          "file": "sfx/revive.wav",
+          "file": "sfx/revive.mp3",
           "desc": "소생 — 수조에서 몸이 일어난다"
         },
         "sfx.click": {
           "type": "audio",
-          "file": "sfx/click.wav",
+          "file": "sfx/click.mp3",
           "desc": "버튼 누름"
         },
         "sfx.record": {
           "type": "audio",
-          "file": "sfx/record.wav",
+          "file": "sfx/record.mp3",
           "desc": "신기록 갱신"
+        },
+        "sfx.title.door": {
+          "type": "audio",
+          "file": "sfx/title_door.mp3",
+          "desc": "타이틀의 새 게임: 가게 문이 열리는 소리"
+        },
+        "sfx.text": {
+          "type": "audio",
+          "file": "sfx/text.mp3",
+          "desc": "생방송 채팅이 들어올 때의 낮은 텍스트 틱"
+        },
+        "bgm.title": {
+          "type": "audio",
+          "file": "bgm/title.mp3",
+          "loop": true,
+          "desc": "타이틀 화면 BGM"
         },
         "bgm.shop": {
           "type": "audio",
-          "file": "bgm/shop.wav",
+          "file": "bgm/shop.mp3",
           "loop": true,
           "desc": "상점 BGM — 소생실·편성실 (낮고 느리게)"
         },
         "bgm.live": {
           "type": "audio",
-          "file": "bgm/live.wav",
+          "file": "bgm/live.mp3",
           "loop": true,
           "desc": "생방송 BGM — 하강 중 (긴장)"
         }
@@ -1955,6 +1971,64 @@
           ],
           "desc": "문지기 — 31F 이상",
           "display": "256×256 (1/2)"
+        },
+        "sfx.stamp": {
+          "type": "audio",
+          "file": "sfx/stamp.mp3",
+          "desc": "봉랍 도장 — 검시 판정·폐기 확정"
+        },
+        "sfx.superchat": {
+          "type": "audio",
+          "file": "sfx/superchat.mp3",
+          "desc": "슈퍼챗 알림"
+        },
+        "sfx.death": {
+          "type": "audio",
+          "file": "sfx/death.mp3",
+          "desc": "신호 두절 — 방송 끊김음 + 저역 험 (M06 §8 「소리가 절반이다」)"
+        },
+        "sfx.revive": {
+          "type": "audio",
+          "file": "sfx/revive.mp3",
+          "desc": "소생 — 수조에서 몸이 일어난다"
+        },
+        "sfx.click": {
+          "type": "audio",
+          "file": "sfx/click.mp3",
+          "desc": "버튼 누름"
+        },
+        "sfx.record": {
+          "type": "audio",
+          "file": "sfx/record.mp3",
+          "desc": "신기록 갱신"
+        },
+        "sfx.title.door": {
+          "type": "audio",
+          "file": "sfx/title_door.mp3",
+          "desc": "타이틀의 새 게임: 가게 문이 열리는 소리"
+        },
+        "sfx.text": {
+          "type": "audio",
+          "file": "sfx/text.mp3",
+          "desc": "생방송 채팅이 들어올 때의 낮은 텍스트 틱"
+        },
+        "bgm.title": {
+          "type": "audio",
+          "file": "bgm/title.mp3",
+          "loop": true,
+          "desc": "타이틀 화면 BGM"
+        },
+        "bgm.shop": {
+          "type": "audio",
+          "file": "bgm/shop.mp3",
+          "loop": true,
+          "desc": "상점 BGM — 소생실·편성실 (낮고 느리게)"
+        },
+        "bgm.live": {
+          "type": "audio",
+          "file": "bgm/live.mp3",
+          "loop": true,
+          "desc": "생방송 BGM — 하강 중 (긴장)"
         }
       }
     }

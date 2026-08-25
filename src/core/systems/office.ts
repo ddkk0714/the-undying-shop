@@ -1,7 +1,6 @@
 import { content } from '../content';
 import { draw } from '../rng';
 import { createHero } from './combat';
-import { recruitCapacity } from './roster';
 import type { Combatant, Contract, GameState, ItemDef, Star, TodayRun } from '../types';
 
 function signedContractKey(starId: string): string {
@@ -15,41 +14,27 @@ function haggledContractKey(starId: string): string {
 export function populateVisitors(state: GameState): GameState {
   if (state.phase !== 'OFFICE' || state.visitors.length > 0 || state.recruitPool.length === 0) return state;
   const eligible = state.recruitPool.filter((star) => !state.rejectedStarIds.includes(star.id));
-  const hasAliveStar = state.stars.some((star) => star.status === 'ALIVE');
-  const candidateLimit = hasAliveStar ? recruitCapacity(state) : Math.max(1, recruitCapacity(state));
-  const candidates = eligible.slice(0, candidateLimit);
+  const candidates = eligible;
   if (candidates.length === 0) return state;
 
   const rules = content.balance.contract;
-  const [countRoll, afterCount] = draw(state);
-  const requestedCount = Math.floor(countRoll * (rules.visitorsPerDay + 1));
-  const count = Math.min(candidates.length, hasAliveStar ? requestedCount : Math.max(1, requestedCount));
-  const remaining = [...candidates];
-  const visitors: Contract[] = [];
-  let next = afterCount;
-
-  for (let index = 0; index < count; index += 1) {
-    const [candidateRoll, afterCandidate] = draw(next);
-    const candidateIndex = Math.floor(candidateRoll * remaining.length);
-    const [star] = remaining.splice(candidateIndex, 1);
-    if (star === undefined) break;
-    const [honestyRoll, afterHonesty] = draw(afterCandidate);
-    const honesty = rules.honestyMin + honestyRoll * (rules.honestyMax - rules.honestyMin);
-    const fandom = rules.fandomBase + star.stats.charisma * rules.fandomPerCharisma;
-    const fee = Math.max(0, Math.round(rules.feeBase + star.stats.charisma * rules.feePerFandomK + (1 - honesty) * rules.feeHonestyBias));
-    visitors.push({
-      starId: star.id,
-      displayName: star.bodyName,
-      recognition: 'C',
-      fandom,
-      claimedTiers: rules.claimedTiers.map((tier) => ({ ...tier })),
-      fee,
-      honesty,
-    });
-    next = afterHonesty;
-  }
-
-  return { ...next, visitors };
+  const [candidateRoll, afterCandidate] = draw(state);
+  const star = candidates[Math.floor(candidateRoll * candidates.length)];
+  if (star === undefined) return afterCandidate;
+  const [honestyRoll, next] = draw(afterCandidate);
+  const honesty = rules.honestyMin + honestyRoll * (rules.honestyMax - rules.honestyMin);
+  const fandom = rules.fandomBase + star.stats.charisma * rules.fandomPerCharisma;
+  const fee = Math.max(0, Math.round(rules.feeBase + star.stats.charisma * rules.feePerFandomK + (1 - honesty) * rules.feeHonestyBias));
+  const visitor: Contract = {
+    starId: star.id,
+    displayName: star.bodyName,
+    recognition: 'C',
+    fandom,
+    claimedTiers: rules.claimedTiers.map((tier) => ({ ...tier })),
+    fee,
+    honesty,
+  };
+  return { ...next, visitors: [visitor] };
 }
 
 function equippedItems(state: GameState): ItemDef[] {

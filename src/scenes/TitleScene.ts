@@ -6,6 +6,7 @@ import { Button } from '../ui/Button';
 import { key as assetKey, hasTexture, isFinalArt } from '../render/assets';
 import { scrimTexture, SCRIM_TILE } from '../render/scrim';
 import { reducedMotion } from '../ui/options';
+import { playBgm, playSfx } from '../audio/Sfx';
 import { hasSavedRun, loadRun, newRun } from './run';
 
 const LAMP_KEYS = ['bg.title.lamp1', 'bg.title.lamp2', 'bg.title.lamp3', 'bg.title.lamp4'] as const;
@@ -43,6 +44,7 @@ export class TitleScene extends Phaser.Scene {
 
   create(): void {
     this.cameras.main.setBackgroundColor(PALETTE.ink);
+    playBgm(this, 'bgm.title', 0.24);
 
     // 배경: 밤의 가게 앞 1컷.
     //
@@ -202,6 +204,7 @@ export class TitleScene extends Phaser.Scene {
   }
 
   private startNewGame(): void {
+    playSfx(this, 'sfx.title.door', 0.62);
     newRun(this.game);          // 스토어를 새로 만든다 — DayScene 은 이걸 집어 든다
     this.scene.start(SCENES.DAY);
   }

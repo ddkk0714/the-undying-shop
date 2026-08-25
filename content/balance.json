@@ -138,7 +138,7 @@
   },
   "recruit": { "baseSlots": 2, "lossPerFailures": 2 },
   "contract": {
-    "visitorsPerDay": 2,
+    "visitorsPerDay": 1,
     "feeBase": 400,
     "feePerFandomK": 60,
     "feeHonestyBias": -300,

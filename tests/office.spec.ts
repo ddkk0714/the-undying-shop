@@ -46,8 +46,7 @@ describe('office', () => {
     };
     const office = reducer(blocked, { type: 'PHASE/ADVANCE' });
     expect(office.phase).toBe('OFFICE');
-    expect(office.visitors.length).toBeGreaterThanOrEqual(1);
-    expect(office.visitors.length).toBeLessThanOrEqual(content.balance.contract.visitorsPerDay);
+    expect(office.visitors).toHaveLength(content.balance.contract.visitorsPerDay);
     expect(new Set(office.visitors.map((visitor) => visitor.starId)).size).toBe(office.visitors.length);
     expect(office.visitors.some((visitor) => visitor.starId === rejectedId)).toBe(false);
     expect(office.visitors[0]?.claimedTiers).toEqual(content.balance.contract.claimedTiers);
@@ -56,8 +55,9 @@ describe('office', () => {
     expect(randomPolicy(office)).toMatchObject({ type: 'OFFICE/CONTRACT_ACCEPT' });
     const accepted = reducer(office, { type: 'OFFICE/CONTRACT_ACCEPT', starId: visitor!.starId });
     expect(accepted.stars.some((star) => star.id === visitor!.starId && star.status === 'ALIVE')).toBe(true);
-    const picked = reducer(accepted, { type: 'OFFICE/PICK_STAR', starId: visitor!.starId });
-    expect(picked.today?.claimedCeiling).toBe(Math.max(...content.balance.contract.claimedTiers.map((tier) => tier.floor)));
+    expect(accepted.phase).toBe('LIVE');
+    expect(accepted.today?.starId).toBe(visitor!.starId);
+    expect(accepted.today?.claimedCeiling).toBe(Math.max(...content.balance.contract.claimedTiers.map((tier) => tier.floor)));
   });
 
   it('creates a real combatant and a non-stub ceiling when a star is picked', () => {
@@ -78,12 +78,14 @@ describe('office', () => {
 
   it('charges accepted contracts and permanently removes rejected applicants', () => {
     const initial = officeState();
-    const applicant = { ...initial.stars.find((star) => star.id === 'body_sela')!, status: 'HIDDEN' as const };
-    const offered = { ...initial, stars: initial.stars.filter((star) => star.id !== applicant.id), recruitPool: [applicant], visitors: [contractFor(applicant)] };
+    const applicant = initial.recruitPool[0]!;
+    const offered = { ...initial, recruitPool: [applicant], visitors: [contractFor(applicant)] };
     const accepted = reducer(offered, { type: 'OFFICE/CONTRACT_ACCEPT', starId: applicant.id });
     expect(accepted.gold).toBe(offered.gold - 1200);
     expect(accepted.stars.find((star) => star.id === applicant.id)?.honesty).toBe(0.7);
     expect(accepted.visitors).toEqual([]);
+    expect(accepted.phase).toBe('LIVE');
+    expect(accepted.today?.starId).toBe(applicant.id);
     expect(accepted.pendingFx.at(-1)?.kind).toBe('CONTRACT_SIGN');
 
     const rejected = reducer(offered, { type: 'OFFICE/CONTRACT_REJECT', starId: applicant.id });
@@ -94,10 +96,21 @@ describe('office', () => {
     expect(followingDay.visitors.some((visitor) => visitor.starId === applicant.id)).toBe(false);
   });
 
+  it('keeps one visitor on the desk and brings the next candidate after a rejection', () => {
+    const initial = officeState(37);
+    const first = initial.recruitPool[0]!;
+    const second = initial.recruitPool[1]!;
+    const offered = { ...initial, recruitPool: [first, second], visitors: [contractFor(first)] };
+    const rejected = reducer(offered, { type: 'OFFICE/CONTRACT_REJECT', starId: first.id });
+    expect(rejected.visitors).toHaveLength(1);
+    expect(rejected.visitors[0]?.starId).toBe(second.id);
+    expect(rejected.rejectedStarIds).toEqual([first.id]);
+  });
+
   it('discounts an offered contract once, then charges the discounted fee', () => {
     const initial = officeState();
-    const applicant = { ...initial.stars.find((star) => star.id === 'body_sela')!, status: 'HIDDEN' as const };
-    const offered = { ...initial, stars: initial.stars.filter((star) => star.id !== applicant.id), recruitPool: [applicant], visitors: [contractFor(applicant)] };
+    const applicant = initial.recruitPool[0]!;
+    const offered = { ...initial, recruitPool: [applicant], visitors: [contractFor(applicant)] };
     const haggled = reducer(offered, { type: 'OFFICE/CONTRACT_HAGGLE', starId: applicant.id });
     const discountedFee = Math.round(1200 * content.balance.contract.haggleFeeMultiplier);
     expect(haggled.visitors[0]?.fee).toBe(discountedFee);
