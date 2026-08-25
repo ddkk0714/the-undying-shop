@@ -292,7 +292,7 @@ export class OfficePhase extends PhaseScene {
     this.text(ix, panel.y + 16, `인벤토리  ${stacks.length}종`, 'ink');
     const hint = this.label(ix, panel.y + 70, '장비를 끌거나 클릭해 고른 뒤, 맞는 진열대를 누르세요.', 'dust');
     new Button(this, {
-      x: panel.x + panel.w - 156, y: panel.y + 12, w: 128, h: 52,
+      x: panel.x + panel.w + 12, y: panel.y + 8, w: 128, h: 52,
       label: '닫기',
       onClick: () => {
         this.inventoryOpen = false;
