@@ -233,7 +233,6 @@ export class OfficePhase extends PhaseScene {
       // 원화에 그려진 사각 홈이 곧 놓는 자리다. 별도의 카드·배경은 덮지 않는다.
       const selected = this.selectedItemId === null ? undefined : content.items.find((item) => item.id === this.selectedItemId);
       const acceptsSelected = selected !== undefined && content.balance.equipment.slotByItem[selected.id] === i;
-      if (acceptsSelected) this.frame(x, y, w, h, 'wax');
       const dropZone = this.add.zone(x, y, w, h).setOrigin(0, 0);
       dropZone.setInteractive({ cursor: acceptsSelected ? 'pointer' : 'default' });
       dropZone.on('pointerup', () => this.placeSelected(i));
