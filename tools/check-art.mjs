@@ -4,7 +4,8 @@
  *
  *   node tools/check-art.mjs            보고만 한다
  *   node tools/check-art.mjs --strict   위반이 있으면 exit 1  (prebuild 가 이걸 쓴다)
- *   node tools/check-art.mjs --fix      위반 파일을 그 자리에서 다시 디더링한다
+ *   node tools/check-art.mjs --fix      위반 파일을 그 자리에서 고친다
+ *   node tools/check-art.mjs --only=bg/  그 경로만 검사·수정 (상대 작업 구역을 피할 때)
  *
  * ── 왜 필요한가 ────────────────────────────────────────────────
  * 00-OVERVIEW §7-1 은 팔레트 5토큰이고, 중간 계조는 Bayer 디더로만 만든다.
@@ -145,7 +146,21 @@ function redither(img) {
 const strict = process.argv.includes('--strict');
 const fix = process.argv.includes('--fix');
 
-const files = walk(finalRoot).sort();
+/**
+ * `--only=<경로조각>` — 검사·수정을 그 경로에만 건다.
+ *
+ * 두 사람이 같은 팩을 채우는 동안 **일괄 변환이 제일 위험하다.** 실제로 한 번,
+ * 상대가 그 순간 손보고 있던 시계 바늘 PNG 두 장을 전체 `--fix` 가 같이 건드렸다.
+ * 결과는 멀쩡했지만 그건 운이었다. 남의 작업 구역이 열려 있으면 범위를 잘라라.
+ *
+ *   node tools/check-art.mjs --fix --only=bg/      배경만
+ *   node tools/check-art.mjs --fix --only=ui/icon  아이콘만
+ */
+const only = process.argv.find((a) => a.startsWith('--only='))?.slice(7) ?? null;
+
+const files = walk(finalRoot)
+  .filter((f) => only === null || relative(finalRoot, f).split('\\').join('/').includes(only))
+  .sort();
 const bad = [];
 const unreadable = [];
 
@@ -164,7 +179,10 @@ for (const file of files) {
 const rel = (f) => relative(join(ROOT, 'public'), f).split('\\').join('/');
 
 console.log('');
-console.log(`팔레트 검사 — PNG ${files.length}장 · public/${manifest.packs.final.root}`);
+console.log(
+  `팔레트 검사 — PNG ${files.length}장 · public/${manifest.packs.final.root}` +
+    (only === null ? '' : `   (--only=${only})`),
+);
 
 if (unreadable.length > 0) {
   console.log('');
