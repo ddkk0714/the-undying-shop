@@ -847,8 +847,11 @@ export class LivePhase extends PhaseScene {
       this.flownSuperchats.add(msg.id);
 
       playSfx(this, 'sfx.superchat', 0.5);
-      const from = { x: L.live.chat.x + L.pad, y: L.live.chat.y + L.live.chat.h - 120 };
-      const to = { x: L.live.stats.x + L.pad, y: L.live.stats.y + 216 };
+      this.superchatPopup(msg);
+      const from = { x: L.live.chat.x + L.pad, y: L.live.chat.y + L.live.chat.h - 60 };
+      // 초상 아래 한 줄(체력바·멘탈)로 빨려 든다. 예전엔 +216 이었는데 그건 정보 칸이
+      // 200 높이였을 때의 값이라, 칸이 24 로 줄면서 화면 밖 엉뚱한 자리를 가리키고 있었다
+      const to = { x: L.live.stats.x, y: L.live.stats.y };
       const label = this.text(from.x, from.y, `+${msg.amount} G`, 'wax');
       // 날아가는 동안 화면이 다시 그려지면 파괴된다. 도착할 때까지 살려 둔다
       this.keepAlive(label);
@@ -865,6 +868,69 @@ export class LivePhase extends PhaseScene {
         },
       });
     }
+  }
+
+  /**
+   * 슈퍼챗이 터진 순간 채팅창 오른쪽에 판이 **잠깐 떴다 사라진다** (사용자 확정).
+   *
+   * 페이드는 짧게 — 들어오는 데 140ms, 머무는 700ms, 나가는 260ms. 길게 끌면
+   * 슈퍼챗이 연달아 터질 때 판이 겹쳐 쌓인다.
+   * 판과 글자는 `keepAlive` 로 살려 둔다. 채팅이 들어올 때마다(750ms) 화면을
+   * 다시 그리므로 그냥 두면 뜨자마자 파괴된다.
+   */
+  private superchatPopup(msg: ChatMessage): void {
+    const v = L.live.superchat;
+    const plate = this.spriteObject(v.x, v.y, 'ui.live.superchat', v.w, v.h);
+    const backing = plate === null ? this.rectObject(v.x, v.y, v.w, v.h, 'ink') : null;
+    const border = plate === null ? this.frameObject(v.x, v.y, v.w, v.h, 'bone') : null;
+    const line = this.label(
+      v.x + 16, v.y + Math.round(v.h / 2) - 10,
+      this.clip(`${msg.nick}  +${msg.amount} G`, v.w - 32, 'label'),
+      'wax',
+    );
+
+    const parts: (Phaser.GameObjects.Graphics | Phaser.GameObjects.Text | Phaser.GameObjects.Image)[] = [];
+    if (plate !== null) parts.push(plate);
+    if (backing !== null) parts.push(backing);
+    if (border !== null) parts.push(border);
+    parts.push(line);
+    for (const o of parts) o.setAlpha(0);
+    this.keepAlive(...parts);
+
+    this.tweens.add({
+      targets: parts,
+      alpha: 1,
+      duration: 140,
+      ease: 'Quad.easeOut',
+      hold: 700,
+      yoyo: true,
+      onComplete: () => {
+        for (const o of parts) {
+          this.dropAlive(o);
+          o.destroy();
+        }
+      },
+    });
+  }
+
+  /** `rect` 와 같지만 알파를 만질 수 있게 오브젝트를 돌려준다 */
+  private rectObject(x: number, y: number, w: number, h: number, color: 'ink' | 'bone'): Phaser.GameObjects.Graphics {
+    const g = this.add.graphics();
+    g.fillStyle(PALETTE[color], 1);
+    g.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
+    return g;
+  }
+
+  /** `frame` 과 같지만 오브젝트를 돌려준다 */
+  private frameObject(x: number, y: number, w: number, h: number, color: 'ink' | 'bone'): Phaser.GameObjects.Graphics {
+    const g = this.add.graphics();
+    g.fillStyle(PALETTE[color], 1);
+    const t = L.line;
+    g.fillRect(x, y, w, t);
+    g.fillRect(x, y + h - t, w, t);
+    g.fillRect(x, y, t, h);
+    g.fillRect(x + w - t, y, t, h);
+    return g;
   }
 
   /**

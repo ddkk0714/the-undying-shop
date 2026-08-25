@@ -392,8 +392,8 @@
           "type": "image",
           "file": "bg/shop_bench_crop.png",
           "size": [
-            1645,
-            1123
+            1755,
+            1198
           ],
           "desc": "② 편성실 우측 — 작업대"
         },
@@ -410,8 +410,8 @@
           "type": "image",
           "file": "bg/revive_bench_crop.png",
           "size": [
-            1644,
-            1122
+            1745,
+            1191
           ],
           "desc": "① 소생실 우측 (없으면 bg.shop.bench 를 쓴다)"
         },
@@ -614,10 +614,10 @@
           "type": "image",
           "file": "ui/live_superchat.png",
           "size": [
-            528,
-            86
+            383,
+            62
           ],
-          "desc": "③ 슈퍼챗 한 줄 (고정 크기)"
+          "desc": "③ 슈퍼챗 팝업 판 — 받은 원본이 383x62 라 1:1 로 놓는다"
         },
         "bg.death": {
           "type": "image",
@@ -959,6 +959,411 @@
             792
           ],
           "desc": "모르 표정 전신"
+        },
+        "star.expression.karin.neutral": {
+          "type": "image",
+          "file": "star/expressions/karin_neutral.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "karin neutral 대사 표정 전신"
+        },
+        "star.expression.karin.smile": {
+          "type": "image",
+          "file": "star/expressions/karin_smile.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "karin smile 대사 표정 전신"
+        },
+        "star.expression.karin.sad": {
+          "type": "image",
+          "file": "star/expressions/karin_sad.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "karin sad 대사 표정 전신"
+        },
+        "star.expression.karin.angry": {
+          "type": "image",
+          "file": "star/expressions/karin_angry.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "karin angry 대사 표정 전신"
+        },
+        "star.expression.karin.surprise": {
+          "type": "image",
+          "file": "star/expressions/karin_surprise.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "karin surprise 대사 표정 전신"
+        },
+        "star.expression.karin.blank": {
+          "type": "image",
+          "file": "star/expressions/karin_blank.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "karin blank 대사 표정 전신"
+        },
+        "star.expression.karin.blush": {
+          "type": "image",
+          "file": "star/expressions/karin_blush.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "karin blush 대사 표정 전신"
+        },
+        "star.expression.karin.pain": {
+          "type": "image",
+          "file": "star/expressions/karin_pain.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "karin pain 대사 표정 전신"
+        },
+        "star.expression.karin.empty": {
+          "type": "image",
+          "file": "star/expressions/karin_empty.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "karin empty 대사 표정 전신"
+        },
+        "star.expression.juno.neutral": {
+          "type": "image",
+          "file": "star/expressions/juno_neutral.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "juno neutral 대사 표정 전신"
+        },
+        "star.expression.juno.smile": {
+          "type": "image",
+          "file": "star/expressions/juno_smile.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "juno smile 대사 표정 전신"
+        },
+        "star.expression.juno.sad": {
+          "type": "image",
+          "file": "star/expressions/juno_sad.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "juno sad 대사 표정 전신"
+        },
+        "star.expression.juno.angry": {
+          "type": "image",
+          "file": "star/expressions/juno_angry.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "juno angry 대사 표정 전신"
+        },
+        "star.expression.juno.surprise": {
+          "type": "image",
+          "file": "star/expressions/juno_surprise.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "juno surprise 대사 표정 전신"
+        },
+        "star.expression.juno.blank": {
+          "type": "image",
+          "file": "star/expressions/juno_blank.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "juno blank 대사 표정 전신"
+        },
+        "star.expression.juno.blush": {
+          "type": "image",
+          "file": "star/expressions/juno_blush.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "juno blush 대사 표정 전신"
+        },
+        "star.expression.juno.pain": {
+          "type": "image",
+          "file": "star/expressions/juno_pain.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "juno pain 대사 표정 전신"
+        },
+        "star.expression.juno.empty": {
+          "type": "image",
+          "file": "star/expressions/juno_empty.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "juno empty 대사 표정 전신"
+        },
+        "star.expression.sela.neutral": {
+          "type": "image",
+          "file": "star/expressions/sela_neutral.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "sela neutral 대사 표정 전신"
+        },
+        "star.expression.sela.smile": {
+          "type": "image",
+          "file": "star/expressions/sela_smile.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "sela smile 대사 표정 전신"
+        },
+        "star.expression.sela.sad": {
+          "type": "image",
+          "file": "star/expressions/sela_sad.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "sela sad 대사 표정 전신"
+        },
+        "star.expression.sela.angry": {
+          "type": "image",
+          "file": "star/expressions/sela_angry.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "sela angry 대사 표정 전신"
+        },
+        "star.expression.sela.surprise": {
+          "type": "image",
+          "file": "star/expressions/sela_surprise.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "sela surprise 대사 표정 전신"
+        },
+        "star.expression.sela.blank": {
+          "type": "image",
+          "file": "star/expressions/sela_blank.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "sela blank 대사 표정 전신"
+        },
+        "star.expression.sela.blush": {
+          "type": "image",
+          "file": "star/expressions/sela_blush.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "sela blush 대사 표정 전신"
+        },
+        "star.expression.sela.pain": {
+          "type": "image",
+          "file": "star/expressions/sela_pain.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "sela pain 대사 표정 전신"
+        },
+        "star.expression.sela.empty": {
+          "type": "image",
+          "file": "star/expressions/sela_empty.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "sela empty 대사 표정 전신"
+        },
+        "star.expression.ilan.neutral": {
+          "type": "image",
+          "file": "star/expressions/ilan_neutral.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "ilan neutral 대사 표정 전신"
+        },
+        "star.expression.ilan.smile": {
+          "type": "image",
+          "file": "star/expressions/ilan_smile.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "ilan smile 대사 표정 전신"
+        },
+        "star.expression.ilan.sad": {
+          "type": "image",
+          "file": "star/expressions/ilan_sad.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "ilan sad 대사 표정 전신"
+        },
+        "star.expression.ilan.angry": {
+          "type": "image",
+          "file": "star/expressions/ilan_angry.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "ilan angry 대사 표정 전신"
+        },
+        "star.expression.ilan.surprise": {
+          "type": "image",
+          "file": "star/expressions/ilan_surprise.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "ilan surprise 대사 표정 전신"
+        },
+        "star.expression.ilan.blank": {
+          "type": "image",
+          "file": "star/expressions/ilan_blank.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "ilan blank 대사 표정 전신"
+        },
+        "star.expression.ilan.blush": {
+          "type": "image",
+          "file": "star/expressions/ilan_blush.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "ilan blush 대사 표정 전신"
+        },
+        "star.expression.ilan.pain": {
+          "type": "image",
+          "file": "star/expressions/ilan_pain.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "ilan pain 대사 표정 전신"
+        },
+        "star.expression.ilan.empty": {
+          "type": "image",
+          "file": "star/expressions/ilan_empty.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "ilan empty 대사 표정 전신"
+        },
+        "star.expression.mor.neutral": {
+          "type": "image",
+          "file": "star/expressions/mor_neutral.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "mor neutral 대사 표정 전신"
+        },
+        "star.expression.mor.smile": {
+          "type": "image",
+          "file": "star/expressions/mor_smile.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "mor smile 대사 표정 전신"
+        },
+        "star.expression.mor.sad": {
+          "type": "image",
+          "file": "star/expressions/mor_sad.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "mor sad 대사 표정 전신"
+        },
+        "star.expression.mor.angry": {
+          "type": "image",
+          "file": "star/expressions/mor_angry.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "mor angry 대사 표정 전신"
+        },
+        "star.expression.mor.surprise": {
+          "type": "image",
+          "file": "star/expressions/mor_surprise.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "mor surprise 대사 표정 전신"
+        },
+        "star.expression.mor.blank": {
+          "type": "image",
+          "file": "star/expressions/mor_blank.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "mor blank 대사 표정 전신"
+        },
+        "star.expression.mor.blush": {
+          "type": "image",
+          "file": "star/expressions/mor_blush.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "mor blush 대사 표정 전신"
+        },
+        "star.expression.mor.pain": {
+          "type": "image",
+          "file": "star/expressions/mor_pain.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "mor pain 대사 표정 전신"
+        },
+        "star.expression.mor.empty": {
+          "type": "image",
+          "file": "star/expressions/mor_empty.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "mor empty 대사 표정 전신"
         },
         "star.portrait.karin": {
           "type": "image",
@@ -1725,10 +2130,10 @@
           "type": "image",
           "file": "ui/live_superchat.png",
           "size": [
-            528,
-            86
+            383,
+            62
           ],
-          "desc": "③ 슈퍼챗 한 줄 (고정 크기)"
+          "desc": "③ 슈퍼챗 팝업 판 — 받은 원본이 383x62 라 1:1 로 놓는다"
         },
         "bg.death": {
           "type": "image",
@@ -2062,6 +2467,276 @@
             792
           ],
           "desc": "모르 표정 전신"
+        },
+        "star.expression.karin.sad": {
+          "type": "image",
+          "file": "star/expressions/karin_sad.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "karin sad 대사 표정 전신"
+        },
+        "star.expression.karin.blush": {
+          "type": "image",
+          "file": "star/expressions/karin_blush.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "karin blush 대사 표정 전신"
+        },
+        "star.expression.karin.pain": {
+          "type": "image",
+          "file": "star/expressions/karin_pain.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "karin pain 대사 표정 전신"
+        },
+        "star.expression.karin.empty": {
+          "type": "image",
+          "file": "star/expressions/karin_empty.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "karin empty 대사 표정 전신"
+        },
+        "star.expression.juno.neutral": {
+          "type": "image",
+          "file": "star/expressions/juno_neutral.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "juno neutral 대사 표정 전신"
+        },
+        "star.expression.juno.sad": {
+          "type": "image",
+          "file": "star/expressions/juno_sad.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "juno sad 대사 표정 전신"
+        },
+        "star.expression.juno.angry": {
+          "type": "image",
+          "file": "star/expressions/juno_angry.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "juno angry 대사 표정 전신"
+        },
+        "star.expression.juno.surprise": {
+          "type": "image",
+          "file": "star/expressions/juno_surprise.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "juno surprise 대사 표정 전신"
+        },
+        "star.expression.juno.blank": {
+          "type": "image",
+          "file": "star/expressions/juno_blank.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "juno blank 대사 표정 전신"
+        },
+        "star.expression.juno.blush": {
+          "type": "image",
+          "file": "star/expressions/juno_blush.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "juno blush 대사 표정 전신"
+        },
+        "star.expression.sela.neutral": {
+          "type": "image",
+          "file": "star/expressions/sela_neutral.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "sela neutral 대사 표정 전신"
+        },
+        "star.expression.sela.smile": {
+          "type": "image",
+          "file": "star/expressions/sela_smile.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "sela smile 대사 표정 전신"
+        },
+        "star.expression.sela.sad": {
+          "type": "image",
+          "file": "star/expressions/sela_sad.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "sela sad 대사 표정 전신"
+        },
+        "star.expression.sela.surprise": {
+          "type": "image",
+          "file": "star/expressions/sela_surprise.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "sela surprise 대사 표정 전신"
+        },
+        "star.expression.sela.blush": {
+          "type": "image",
+          "file": "star/expressions/sela_blush.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "sela blush 대사 표정 전신"
+        },
+        "star.expression.sela.pain": {
+          "type": "image",
+          "file": "star/expressions/sela_pain.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "sela pain 대사 표정 전신"
+        },
+        "star.expression.sela.empty": {
+          "type": "image",
+          "file": "star/expressions/sela_empty.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "sela empty 대사 표정 전신"
+        },
+        "star.expression.ilan.neutral": {
+          "type": "image",
+          "file": "star/expressions/ilan_neutral.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "ilan neutral 대사 표정 전신"
+        },
+        "star.expression.ilan.smile": {
+          "type": "image",
+          "file": "star/expressions/ilan_smile.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "ilan smile 대사 표정 전신"
+        },
+        "star.expression.ilan.sad": {
+          "type": "image",
+          "file": "star/expressions/ilan_sad.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "ilan sad 대사 표정 전신"
+        },
+        "star.expression.ilan.angry": {
+          "type": "image",
+          "file": "star/expressions/ilan_angry.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "ilan angry 대사 표정 전신"
+        },
+        "star.expression.ilan.blank": {
+          "type": "image",
+          "file": "star/expressions/ilan_blank.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "ilan blank 대사 표정 전신"
+        },
+        "star.expression.ilan.blush": {
+          "type": "image",
+          "file": "star/expressions/ilan_blush.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "ilan blush 대사 표정 전신"
+        },
+        "star.expression.ilan.pain": {
+          "type": "image",
+          "file": "star/expressions/ilan_pain.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "ilan pain 대사 표정 전신"
+        },
+        "star.expression.mor.neutral": {
+          "type": "image",
+          "file": "star/expressions/mor_neutral.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "mor neutral 대사 표정 전신"
+        },
+        "star.expression.mor.smile": {
+          "type": "image",
+          "file": "star/expressions/mor_smile.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "mor smile 대사 표정 전신"
+        },
+        "star.expression.mor.angry": {
+          "type": "image",
+          "file": "star/expressions/mor_angry.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "mor angry 대사 표정 전신"
+        },
+        "star.expression.mor.surprise": {
+          "type": "image",
+          "file": "star/expressions/mor_surprise.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "mor surprise 대사 표정 전신"
+        },
+        "star.expression.mor.blank": {
+          "type": "image",
+          "file": "star/expressions/mor_blank.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "mor blank 대사 표정 전신"
+        },
+        "star.expression.mor.empty": {
+          "type": "image",
+          "file": "star/expressions/mor_empty.png",
+          "size": [
+            752,
+            792
+          ],
+          "desc": "mor empty 대사 표정 전신"
         },
         "star.portrait.karin": {
           "type": "image",
