@@ -402,8 +402,8 @@ export class OfficePhase extends PhaseScene {
   /** 마우스 오른쪽 위에 원본 정보창 비율을 유지한 상세 카드를 연다. */
   private showItemDetail(item: ItemDef, pointer: Phaser.Input.Pointer): void {
     this.hideItemDetail();
-    const w = 256;
-    const h = 539;
+    const w = 336;
+    const h = 708;
     const x = Math.max(8, Math.min(L.W - w - 8, pointer.x + 24 <= L.W - w - 8 ? pointer.x + 24 : pointer.x - w - 24));
     const y = Math.max(L.hud.h + 8, Math.min(L.H - h - 8, pointer.y - h - 16));
     const depth = 5000;
@@ -414,12 +414,12 @@ export class OfficePhase extends PhaseScene {
       this.itemDetail.push(this.add.rectangle(x, y, w, h, 0x07110b, 0.96).setOrigin(0, 0).setDepth(depth));
     }
 
-    const addBody = (dx: number, dy: number, text: string, color: 'bone' | 'dust' | 'wax' = 'bone', scale = 0.625): void => {
+    const addBody = (dx: number, dy: number, text: string, color: 'bone' | 'dust' | 'wax' = 'bone', scale = 0.75): void => {
       const label = this.text(x + dx, y + dy, text, color).setScale(scale).setDepth(depth + 1);
       this.itemDetail.push(label);
     };
-    const addLabel = (dx: number, dy: number, text: string, color: 'bone' | 'dust' | 'wax' = 'dust'): void => {
-      const label = this.label(x + dx, y + dy, text, color).setDepth(depth + 1);
+    const addLabel = (dx: number, dy: number, text: string, color: 'bone' | 'dust' | 'wax' = 'dust', scale = 1.15): void => {
+      const label = this.label(x + dx, y + dy, text, color).setScale(scale).setDepth(depth + 1);
       this.itemDetail.push(label);
     };
     const slot = content.balance.equipment.slotByItem[item.id];
@@ -429,22 +429,22 @@ export class OfficePhase extends PhaseScene {
       ? `방송 중 체력을\n${item.healing} 회복합니다.`
       : `출연자에게 장착하면\n전투 능력치가 오릅니다.`;
 
-    addBody(16, 14, this.clip(item.name, 224, 'body'), item.isRelic ? 'wax' : 'bone', 0.75);
-    addLabel(18, 46, `${category} · ${slotName} 칸`);
-    const icon = this.itemArt(item, { x: x + 22, y: y + 74, w: 82, h: 82 });
+    addBody(22, 18, this.clip(item.name, 292, 'body'), item.isRelic ? 'wax' : 'bone', 0.85);
+    addLabel(24, 60, `${category} · ${slotName} 칸`);
+    const icon = this.itemArt(item, { x: x + 29, y: y + 97, w: 108, h: 108 });
     if (icon !== null) {
       icon.setDepth(depth + 2);
       this.itemDetail.push(icon);
     }
-    addLabel(122, 76, `등급 ${item.tier}`, item.isRelic ? 'wax' : 'bone');
-    addLabel(122, 102, `판매가 ${item.price.toLocaleString('en-US')} G`);
-    addBody(122, 126, this.itemStats(item), 'bone', 0.58);
-    addLabel(18, 166, '효과');
-    addBody(18, 188, description, 'bone', 0.625);
-    addLabel(18, 258, '능력치');
-    addBody(18, 282, item.kind === 'POTION' ? `회복  +${item.healing}` : `체력  +${item.hp}\n공격  +${item.atk}\n방어  +${item.def}`, 'bone', 0.625);
-    addLabel(18, 372, '진열대 사용법');
-    addBody(18, 396, `${slotName} 칸으로 끌어 놓으세요.\n다시 인벤토리로 끌면 회수합니다.`, 'dust', 0.56);
+    addLabel(160, 100, `등급 ${item.tier}`, item.isRelic ? 'wax' : 'bone');
+    addLabel(160, 134, `판매가 ${item.price.toLocaleString('en-US')} G`);
+    addBody(160, 166, this.itemStats(item), 'bone', 0.68);
+    addLabel(24, 218, '효과');
+    addBody(24, 246, description, 'bone', 0.75);
+    addLabel(24, 339, '능력치');
+    addBody(24, 370, item.kind === 'POTION' ? `회복  +${item.healing}` : `체력  +${item.hp}\n공격  +${item.atk}\n방어  +${item.def}`, 'bone', 0.75);
+    addLabel(24, 488, '진열대 사용법');
+    addBody(24, 520, `${slotName} 칸으로 끌어 놓으세요.\n다시 인벤토리로 끌면 회수합니다.`, 'dust', 0.68);
   }
 
   private hideItemDetail(): void {
