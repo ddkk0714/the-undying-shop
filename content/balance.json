@@ -35,6 +35,22 @@
     "appeal": { "fanBase": 300, "charismaMul": 0.08, "floorMul": 0.0333, "hitChance": 0.55, "damageMul": 1.4, "leakRiskMul": 1.5, "leakFromFloor": 18 },
     "hazardAtkMul": { "NONE": 1.0, "FLAME": 1.25, "COLLAPSE": 1.2, "BEAST": 1.3, "GATEKEEPER": 1.6 }
   },
+  "mental": {
+    "max": 100,
+    "panicThreshold": 30,
+    "damageThreshold": 6,
+    "damagePerHp": 1.5,
+    "gritResistancePerPoint": 0.035,
+    "minimumDamageMultiplier": 0.65,
+    "enemyFear": {
+      "enemy.rat": 0,
+      "enemy.husk": 2,
+      "enemy.beast": 10,
+      "enemy.flame": 12,
+      "enemy.gatekeeper": 22
+    },
+    "witnessFear": { "18": 12, "23": 15, "28": 24 }
+  },
   "fans": {
     "base": 800,
     "depthPivot": 18,

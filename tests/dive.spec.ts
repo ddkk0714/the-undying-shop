@@ -46,6 +46,32 @@ describe('live dive', () => {
     expect(content.radio.degrade4).toContain(entered.today?.encounter?.line);
   });
 
+  it('reduces mental for deep enemies, witness events, and heavy damage according to grit', () => {
+    const deepEnemy = reducer(liveState(146, 23), { type: 'LIVE/TICK', dt: content.balance.dive.floorSeconds });
+    expect(['enemy.beast', 'enemy.flame']).toContain(deepEnemy.today?.encounter?.enemyKey);
+    expect(deepEnemy.today?.mental).toBeLessThan(content.balance.mental.max);
+
+    const witness = reducer(liveState(147, 17), { type: 'LIVE/TICK', dt: content.balance.dive.floorSeconds });
+    expect(witness.today?.mental).toBeLessThan(content.balance.mental.max);
+
+    const heavyHit = (starId: string, seed: number, mental = content.balance.mental.max): GameState => {
+      const state = liveState(seed, 36);
+      return {
+        ...state,
+        today: { ...state.today!, starId, mental, encounter: createEncounter(36, 'GATEKEEPER', 0) },
+      };
+    };
+    const karin = reducer(heavyHit('body_karin', 148), { type: 'COMBAT/CHOOSE', choice: 'DEFEND' });
+    const juno = reducer(heavyHit('body_juno', 149), { type: 'COMBAT/CHOOSE', choice: 'DEFEND' });
+    expect(karin.today?.mental).toBeLessThan(content.balance.mental.max);
+    expect(karin.today?.mental).toBeGreaterThan(juno.today?.mental ?? 0);
+
+    const panicked = reducer(heavyHit('body_karin', 150, 0), { type: 'COMBAT/CHOOSE', choice: 'DEFEND' });
+    expect(panicked.phase).toBe('LIVE');
+    expect(panicked.today?.mental).toBe(0);
+    expect(content.radio.combatMentalBreak).toContain(panicked.today?.encounter?.line);
+  });
+
   it('applies the wait penalty without progressing an unresolved encounter', () => {
     let state = createInitialState(13);
     state = { ...state, phase: 'OFFICE' };

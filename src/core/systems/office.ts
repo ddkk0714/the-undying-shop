@@ -115,7 +115,7 @@ export function pickStar(state: GameState, starId: string): GameState {
     hero: officeHero(state, star), encounter: null, appealCount: 0,
     claimedCeiling: claimedCeiling(state, star.id), forks: [], superchat: 0,
     income: { superchat: 0, shelf: 0, goods: 0 }, fansDelta: 0,
-    chatQueue: [], deletedCount: 0, mental: 100, diedFloor: null, deathCause: null,
+    chatQueue: [], deletedCount: 0, mental: content.balance.mental.max, diedFloor: null, deathCause: null,
   };
   return { ...state, today };
 }

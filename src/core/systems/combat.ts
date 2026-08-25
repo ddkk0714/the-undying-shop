@@ -12,12 +12,13 @@ export interface CombatResolution {
   enemyDefeated: boolean;
 }
 
-export type CombatLineTone = 'HEALTHY' | 'HALF' | 'DANGER' | 'APPEAL' | 'DEGRADE4';
+export type CombatLineTone = 'HEALTHY' | 'HALF' | 'DANGER' | 'MENTAL_BREAK' | 'APPEAL' | 'DEGRADE4';
 
 const combatLineKey: Record<CombatLineTone, string> = {
   HEALTHY: 'combatHealthy',
   HALF: 'combatHalf',
   DANGER: 'combatDanger',
+  MENTAL_BREAK: 'combatMentalBreak',
   APPEAL: 'combatAppeal',
   DEGRADE4: 'degrade4',
 };

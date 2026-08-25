@@ -34,7 +34,20 @@ function actualCeiling(state: GameState): number {
   return today === null ? 1 : Math.max(1, Math.floor(today.claimedCeiling * (star?.honesty ?? 1)));
 }
 
-function combatLineTone(star: Star, hero: Combatant, choice?: CombatChoice): CombatLineTone {
+function reduceMental(mental: number, star: Star, rawLoss: number): number {
+  if (rawLoss <= 0) return mental;
+  const rules = content.balance.mental;
+  const multiplier = Math.max(rules.minimumDamageMultiplier, 1 - star.stats.grit * rules.gritResistancePerPoint);
+  return Math.max(0, Math.round(mental - rawLoss * multiplier));
+}
+
+function mentalAfterDamage(mental: number, star: Star, damage: number): number {
+  const rules = content.balance.mental;
+  return reduceMental(mental, star, Math.max(0, damage - rules.damageThreshold) * rules.damagePerHp);
+}
+
+function combatLineTone(star: Star, hero: Combatant, mental: number, choice?: CombatChoice): CombatLineTone {
+  if (mental <= content.balance.mental.panicThreshold) return 'MENTAL_BREAK';
   if (star.reviveCount >= 4) return 'DEGRADE4';
   if (choice === 'APPEAL') return 'APPEAL';
   const healthRatio = hero.hp / hero.maxHp;
@@ -60,7 +73,7 @@ export function startLive(state: GameState): GameState {
       ...state,
       phase: 'LIVE',
       waitingSince: null,
-      today: { ...state.today, hero: createHero(star, equippedItems(state), degradationMultiplier(star)), encounter: null },
+      today: { ...state.today, hero: createHero(star, equippedItems(state), degradationMultiplier(star)), encounter: null, mental: content.balance.mental.max },
     };
   }
   const [roll, nextState] = draw(state);
@@ -73,7 +86,7 @@ export function startLive(state: GameState): GameState {
     phase: 'LIVE',
     waitingSince: null,
     flags,
-    today: { ...state.today, hero: createHero(star, equippedItems(state), degradationMultiplier(star)), encounter: null },
+    today: { ...state.today, hero: createHero(star, equippedItems(state), degradationMultiplier(star)), encounter: null, mental: content.balance.mental.max },
     pendingFx: [...nextState.pendingFx, { kind: 'TRUTH_WHISPER', payload: { starId: star.id, line } }],
   };
 }
@@ -94,7 +107,9 @@ export function tickLive(state: GameState, dt: number): GameState {
     }
     const witnessFloor = Object.keys(content.balance.opinion.leakPerWitnessRevive).map(Number).find((value) => value === floor && !nextState.seenWitnessFloors.includes(value));
     if (witnessFloor !== undefined) {
-      const witnessed = { ...nextState, seenWitnessFloors: [...nextState.seenWitnessFloors, witnessFloor], stars: nextState.stars.map((candidate) => candidate.id === today.starId ? { ...candidate, witnessed: [...candidate.witnessed, witnessFloor] } : candidate), witnessLog: [...nextState.witnessLog, { floor: witnessFloor, starId: today.starId, line: '', day: nextState.day, suppressed: false }], viewerFatigue: witnessFloor === Math.max(...Object.keys(content.balance.opinion.leakPerWitnessRevive).map(Number)) ? nextState.viewerFatigue + content.balance.opinion.viewerFatigueOn28F : nextState.viewerFatigue, today: { ...today, currentFloor: floor } };
+      const star = nextState.stars.find((candidate) => candidate.id === today.starId);
+      const mental = star === undefined ? today.mental : reduceMental(today.mental, star, content.balance.mental.witnessFear[String(witnessFloor)] ?? 0);
+      const witnessed = { ...nextState, seenWitnessFloors: [...nextState.seenWitnessFloors, witnessFloor], stars: nextState.stars.map((candidate) => candidate.id === today.starId ? { ...candidate, witnessed: [...candidate.witnessed, witnessFloor] } : candidate), witnessLog: [...nextState.witnessLog, { floor: witnessFloor, starId: today.starId, line: '', day: nextState.day, suppressed: false }], viewerFatigue: witnessFloor === Math.max(...Object.keys(content.balance.opinion.leakPerWitnessRevive).map(Number)) ? nextState.viewerFatigue + content.balance.opinion.viewerFatigueOn28F : nextState.viewerFatigue, today: { ...today, currentFloor: floor, mental } };
       return awardSuperchat(witnessed, 'witness');
     }
     const fork = content.floors.forks.find((candidate) => candidate.atFloor === floor);
@@ -108,11 +123,13 @@ export function tickLive(state: GameState, dt: number): GameState {
       const [enemyRoll, afterEnemy] = draw(nextState);
       const [lineRoll, withRng] = draw(afterEnemy);
       const star = withRng.stars.find((candidate) => candidate.id === today.starId);
-      const line = star === undefined ? combatLine('HEALTHY', lineRoll) : combatLine(combatLineTone(star, today.hero), lineRoll);
+      const encounter = createEncounter(floor, 'NONE', enemyRoll);
+      const mental = star === undefined ? today.mental : reduceMental(today.mental, star, content.balance.mental.enemyFear[encounter.enemyKey] ?? 0);
+      const line = star === undefined ? combatLine('HEALTHY', lineRoll) : combatLine(combatLineTone(star, today.hero, mental), lineRoll);
       return {
         ...withRng,
         waitingSince: now,
-        today: { ...today, currentFloor: floor, encounter: createEncounter(floor, 'NONE', enemyRoll, line) },
+        today: { ...today, currentFloor: floor, mental, encounter: { ...encounter, line } },
       };
     }
     nextState = { ...nextState, today: { ...today, currentFloor: floor } };
@@ -155,13 +172,16 @@ export function chooseCombat(state: GameState, choice: CombatChoice): GameState 
   if (!result.heroDied && encounter !== null) {
     const [lineRoll, next] = draw(afterDialogue);
     afterDialogue = next;
-    encounter = { ...encounter, line: combatLine(combatLineTone(star, result.hero, choice), lineRoll) };
+    const damage = Math.max(0, activeRun.hero.hp - result.hero.hp);
+    const mental = mentalAfterDamage(activeRun.mental, star, damage);
+    encounter = { ...encounter, line: combatLine(combatLineTone(star, result.hero, mental, choice), lineRoll) };
   }
   const fans = Math.max(0, Math.floor(afterDialogue.fans * result.fanMultiplier) + result.fansDelta);
   const today = {
     ...activeRun,
     hero: result.hero,
     encounter,
+    mental: mentalAfterDamage(activeRun.mental, star, Math.max(0, activeRun.hero.hp - result.hero.hp)),
     appealCount: activeRun.appealCount + (choice === 'APPEAL' ? 1 : 0),
     fansDelta: activeRun.fansDelta + result.fansDelta,
   };

@@ -13,6 +13,16 @@ export interface Balance {
   revive: { base: number; floorExp: number; gradeMul: Record<'INTACT' | 'DAMAGED', number>; degradeExp: number; decayPerDay: number; roundTo: number; discardLoot: number };
   dive: { floorSeconds: number; encounterEvery: number; delayGraceSeconds: number; delayFanLossPerSec: number; delayFanLossCap: number };
   combat: CombatBalance;
+  mental: {
+    max: number;
+    panicThreshold: number;
+    damageThreshold: number;
+    damagePerHp: number;
+    gritResistancePerPoint: number;
+    minimumDamageMultiplier: number;
+    enemyFear: Record<string, number>;
+    witnessFear: Record<string, number>;
+  };
   degrade: { statMul: number[] };
   income: {
     goodsPerFan: number;
@@ -229,7 +239,7 @@ function makeFloors(raw: unknown): FloorContent {
 }
 
 export function loadContent(): Content {
-  assertShape(isRecord(balanceJson) && isRecord(balanceJson.start) && isRecord(balanceJson.revive) && isRecord(balanceJson.dive) && isRecord(balanceJson.combat) && isRecord(balanceJson.degrade) && isRecord(balanceJson.income), 'balance sections missing');
+  assertShape(isRecord(balanceJson) && isRecord(balanceJson.start) && isRecord(balanceJson.revive) && isRecord(balanceJson.dive) && isRecord(balanceJson.combat) && isRecord(balanceJson.mental) && isRecord(balanceJson.degrade) && isRecord(balanceJson.income), 'balance sections missing');
   const items = makeItems(itemsJson);
   for (const key of ['gold', 'fans', 'reputation', 'maxFloor', 'days', 'targetFloor'] as const) assertNumber(balanceJson.start[key], `balance.start.${key}`);
   assertShape(Array.isArray(balanceJson.start.inventory) && balanceJson.start.inventory.every((itemId) => typeof itemId === 'string' && items.some((item) => item.id === itemId)), 'balance.start.inventory invalid');
@@ -239,6 +249,15 @@ export function loadContent(): Content {
   assertNumber(balanceJson.revive.gradeMul.INTACT, 'balance.revive.gradeMul.INTACT');
   assertNumber(balanceJson.revive.gradeMul.DAMAGED, 'balance.revive.gradeMul.DAMAGED');
   for (const key of ['floorSeconds', 'encounterEvery', 'delayGraceSeconds', 'delayFanLossPerSec', 'delayFanLossCap'] as const) assertNumber(balanceJson.dive[key], `balance.dive.${key}`);
+  for (const key of ['max', 'panicThreshold', 'damageThreshold', 'damagePerHp', 'gritResistancePerPoint', 'minimumDamageMultiplier'] as const) assertNumber(balanceJson.mental[key], `balance.mental.${key}`);
+  assertShape(isRecord(balanceJson.mental.enemyFear) && isRecord(balanceJson.mental.witnessFear), 'balance.mental fear tables missing');
+  for (const [enemyKey, fear] of Object.entries(balanceJson.mental.enemyFear)) assertNumber(fear, `balance.mental.enemyFear.${enemyKey}`);
+  for (const [floor, fear] of Object.entries(balanceJson.mental.witnessFear)) {
+    assertNumber(Number(floor), `balance.mental.witnessFear.${floor} floor`);
+    assertNumber(fear, `balance.mental.witnessFear.${floor}`);
+  }
+  assertShape(balanceJson.mental.max > 0 && balanceJson.mental.panicThreshold >= 0 && balanceJson.mental.panicThreshold <= balanceJson.mental.max, 'balance.mental range invalid');
+  assertShape(balanceJson.mental.minimumDamageMultiplier > 0 && balanceJson.mental.minimumDamageMultiplier <= 1, 'balance.mental minimumDamageMultiplier invalid');
   assertShape(Array.isArray(balanceJson.degrade.statMul) && balanceJson.degrade.statMul.length > 0, 'balance.degrade.statMul missing');
   assertShape(isRecord(balanceJson.income.superchat), 'balance.income.superchat missing');
   assertNumber(balanceJson.income.goodsPerFan, 'balance.income.goodsPerFan');
@@ -276,7 +295,7 @@ export function loadContent(): Content {
   assertShape(Array.isArray(balanceJson.autopsy.truthRelicIds) && balanceJson.autopsy.truthRelicIds.length === 2 && balanceJson.autopsy.truthRelicIds.every((id) => typeof id === 'string'), 'balance.autopsy truth relic ids invalid');
   assertShape(balanceJson.autopsy.truthRelicIds.every((id) => items.some((item) => item.id === id && item.isRelic)), 'balance.autopsy truth relic ids must be relic items');
   assertShape(isRecord(radioJson) && isRecord(chatJson) && isRecord(narrativeJson), 'localized content must be objects');
-  for (const key of ['combatHealthy', 'combatHalf', 'combatDanger', 'combatAppeal', 'degrade4'] as const) {
+  for (const key of ['combatHealthy', 'combatHalf', 'combatDanger', 'combatMentalBreak', 'combatAppeal', 'degrade4'] as const) {
     const lines = radioJson[key];
     assertShape(Array.isArray(lines) && lines.length > 0 && lines.every((line) => typeof line === 'string' && line.length > 0), `radio.${key} lines missing`);
   }
