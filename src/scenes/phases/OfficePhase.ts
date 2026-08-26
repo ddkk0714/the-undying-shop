@@ -41,6 +41,16 @@ const SHELF_SLOTS = [
 ] as const;
 
 /**
+ * 배경 원화(`bg.shop.room`, 650×792)의 오른쪽 문간에 세우는 문짝 자리 — `L.guest` 상대 좌표다.
+ *
+ * 원화에는 문이 **열린 검은 구멍**으로만 그려져 있다. 그 구멍의 안쪽 경계를 실측해서
+ * (x 527..636 · y 225..438) 그 안에 문짝을 끼운다. 세로는 구멍에 꽉 맞추고 가로는
+ * 원본 비율(170:356)을 지켜 가운데에 놓았다 — 그래서 좌우로 4px 씩 그늘이 남는다.
+ * 문짝 아랫변이 구멍의 바닥선(=방바닥)에 닿아야 떠 보이지 않는다.
+ */
+const OFFICE_DOOR = { x: 531, y: 225, w: 102, h: 214 } as const;
+
+/**
  * 원래 장비는 캐릭터 스탯 원장에서 이름으로만 관리한다. 서류에서는 슬롯 성격을
  * 바로 읽을 수 있도록 인벤토리의 공용 장비 도트를 사용하고, 실제 진열 장비가
  * 들어오면 그 아이템 도트로 교체한다.
@@ -257,9 +267,12 @@ export class OfficePhase extends PhaseScene {
     this.frame(g.x, g.y, g.w, g.h, 'dust');
     this.buildBenchBackdrop();
 
-    // 원화의 문(약 x=500~640, y=180~510)에 맞춘 클릭 영역이다.
-    const door = { x: g.x + 520, y: g.y + 326, w: 170, h: 326 };
-    const handle = this.add.zone(door.x, door.y, door.w, door.h).setOrigin(0, 0).setInteractive({ cursor: 'pointer' });
+    // 문짝 그림 자체가 클릭 대상이다. 그림이 없을 때만 예전처럼 투명 zone 으로 내려간다.
+    // (예전 zone 은 원화의 문간과 어긋나 있었다 — 아래쪽 절반이 방바닥을 덮고 있었다.)
+    const doorImage = this.buildOfficeDoor(g);
+    const handle: Phaser.GameObjects.GameObject = doorImage
+      ?? this.add.zone(g.x + OFFICE_DOOR.x, g.y + OFFICE_DOOR.y, OFFICE_DOOR.w, OFFICE_DOOR.h).setOrigin(0, 0);
+    handle.setInteractive({ cursor: 'pointer' });
     handle.on('pointerup', () => {
       this.shopOpened = true;
       this.guestEntryPending = true;
@@ -281,6 +294,21 @@ export class OfficePhase extends PhaseScene {
     const coverY = g.y + g.h - coverH;
     this.sprite(g.x, coverY, 'ui.guest.cover', coverW, coverH);
     this.rect(L.dialogue.x, L.dialogue.y, L.dialogue.w, L.dialogue.h, 'ink');
+  }
+
+  /**
+   * 문짝을 방 안 소품으로 세운다. **TV 와 같은 층**이다 — 방 배경 다음, 용사 전신 앞.
+   * 용사가 문 앞을 지나 서면 용사가 앞에 와야 하므로 이 순서를 지켜야 한다.
+   *
+   * 그림이 아직 없으면 `null` 이다. 그때는 부르는 쪽이 예전처럼 투명 zone 을 놓는다 —
+   * 문은 첫 영업을 시작하는 **유일한 입구**라, 아트 하나 빠졌다고 막히면 안 된다.
+   */
+  private buildOfficeDoor(g: { x: number; y: number }): Phaser.GameObjects.Image | null {
+    const door = this.spriteObject(
+      g.x + OFFICE_DOOR.x, g.y + OFFICE_DOOR.y, 'prop.office.door', OFFICE_DOOR.w, OFFICE_DOOR.h,
+    );
+    door?.setDepth(0);
+    return door;
   }
 
   /** 진입 2초 뒤 한 번, 이후 문을 열 때까지 3초마다 노크한다. */
@@ -333,6 +361,9 @@ export class OfficePhase extends PhaseScene {
       // TV는 그 상자 '안'에 그려지는 소품이라 겹침 자체는 남는다).
       tv.setInteractive({ cursor: 'default' }).setDepth(0);
     }
+    // 손님이 와 있는 동안에도 문은 방에 그대로 있다. 이때는 여는 기능이 없지만
+    // TV 와 같은 이유로 클릭은 삼킨다 — 안 그러면 문을 눌렀는데 용사 대사가 넘어간다.
+    this.buildOfficeDoor(g)?.setInteractive({ cursor: 'default' });
     this.frame(g.x, g.y, g.w, g.h, 'dust');
 
     // 계약 모드에서 좌측에 서 있는 사람은 **방문자**다. 아직 계약 전이라 recruitPool 에 있다.

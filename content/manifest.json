@@ -1183,6 +1183,15 @@
           ],
           "desc": "작업대의 실제 석유 램프"
         },
+        "prop.office.door": {
+          "type": "image",
+          "file": "prop/office_door.png",
+          "size": [
+            102,
+            214
+          ],
+          "desc": "편성실 배경 오른쪽 문간에 세우는 문짝 — 눌러서 장사를 시작한다"
+        },
         "prop.tv": {
           "type": "image",
           "file": "prop/tv.png",
@@ -3533,6 +3542,15 @@
             352
           ],
           "desc": "작업대의 실제 석유 램프"
+        },
+        "prop.office.door": {
+          "type": "image",
+          "file": "prop/office_door.png",
+          "size": [
+            102,
+            214
+          ],
+          "desc": "편성실 배경 오른쪽 문간에 세우는 문짝 — 눌러서 장사를 시작한다"
         },
         "prop.tv": {
           "type": "image",
