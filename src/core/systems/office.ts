@@ -247,6 +247,9 @@ export function rejectContract(state: GameState, starId: string): GameState {
   if (state.phase !== 'OFFICE' || !state.visitors.some((visitor) => visitor.starId === starId)) return state;
   return {
     ...state,
+    // 돌려보낸 손님에게 보여 준 장비는 판매하거나 소모하지 않는다.
+    // 다음 손님은 항상 비어 있는 진열대에서 시작한다.
+    shelf: state.shelf.map(() => null),
     visitors: state.visitors.filter((visitor) => visitor.starId !== starId),
     recruitPool: state.recruitPool.filter((star) => star.id !== starId),
     rejectedStarIds: state.rejectedStarIds.includes(starId) ? state.rejectedStarIds : [...state.rejectedStarIds, starId],

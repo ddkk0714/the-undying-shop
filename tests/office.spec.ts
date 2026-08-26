@@ -106,11 +106,20 @@ describe('office', () => {
     const initial = officeState(37);
     const first = initial.recruitPool[0]!;
     const second = initial.recruitPool[1]!;
-    const offered = { ...initial, recruitPool: [first, second], visitors: [contractFor(first)] };
+    const inventory = [{ id: 'dagger_crack', qty: 1 }, { id: 'rope_hemp', qty: 1 }, { id: 'potion_crimson', qty: 1 }];
+    const offered = {
+      ...initial,
+      inventory,
+      shelf: ['dagger_crack', 'rope_hemp', 'potion_crimson'],
+      recruitPool: [first, second],
+      visitors: [contractFor(first)],
+    };
     const rejected = reducer(offered, { type: 'OFFICE/CONTRACT_REJECT', starId: first.id });
     expect(rejected.visitors).toHaveLength(1);
     expect(rejected.visitors[0]?.starId).toBe(second.id);
     expect(rejected.rejectedStarIds).toEqual([first.id]);
+    expect(rejected.shelf).toEqual([null, null, null]);
+    expect(rejected.inventory).toEqual(inventory);
   });
 
   it('discounts an offered contract once, then charges the discounted fee', () => {
