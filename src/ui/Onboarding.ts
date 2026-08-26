@@ -19,9 +19,7 @@ export type OnboardTag =
   | 'OFFICE_CONTRACT'
   | 'OFFICE_SHELF'
   | 'LIVE_COMBAT'
-  | 'LIVE_RADIO'
-  | 'AUTOPSY'
-  | 'ANNOUNCE';
+  | 'LIVE_RADIO';
 
 const LINES: Record<OnboardTag, string> = {
   REVIVE: '사망한 출연자를 되살릴지 결정하세요.',
@@ -29,8 +27,6 @@ const LINES: Record<OnboardTag, string> = {
   OFFICE_SHELF: '장비를 진열해 출연자를 강화하세요.',
   LIVE_COMBAT: '어필하면 수입이 늘지만 더 다칩니다.',
   LIVE_RADIO: '지도를 보고 갈림길을 선택하세요.',
-  AUTOPSY: '시체를 보관하거나 훼손하세요.',
-  ANNOUNCE: '발표할 내용을 선택하세요.',
 };
 
 /** 화면마다 빈 자리가 다르다. 부르는 쪽이 자리를 정한다 */

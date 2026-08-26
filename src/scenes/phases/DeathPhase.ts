@@ -141,7 +141,8 @@ export class DeathPhase extends PhaseScene {
 
     new Button(this, {
       x: L.W / 2 - 264, y: L.actionsFull.y + L.pad, w: 528, h: 96,
-      label: '검시실로', hotkey: '1',
+      // 검시실·발표 창은 뺐다 (사용자 확정) — 이 버튼 하나로 다음 날로 넘어간다
+      label: '다음으로', hotkey: '1',
       onClick: () => this.store.dispatch({ type: 'PHASE/ADVANCE' }),
     });
   }

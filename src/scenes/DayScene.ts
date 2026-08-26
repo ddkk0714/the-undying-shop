@@ -29,14 +29,18 @@ const PHASE_LABEL: Record<PhaseId, string> = {
   ANNOUNCE: '발표',
 };
 
-/** 단계 → 담당 씬 키 (v3 6단계). 골격은 `scenes/phases/` 에 있다. */
+/**
+ * 단계 → 담당 씬 키 (v3 6단계). 골격은 `scenes/phases/` 에 있다.
+ *
+ * AUTOPSY·ANNOUNCE 는 없다 — 검시실·발표 창을 뺐다 (사용자 확정, 시체 회수 결정·
+ * 발표 결정 제거). 그 단계는 `render()` 가 화면 없이 기본값으로 자동 통과시킨다.
+ * `syncPhaseScene` 이 DEATH 다음 자리에 `PHASE_DAYEND` 를 대신 끼워 넣는다.
+ */
 const PHASE_SCENE: Partial<Record<PhaseId, string>> = {
   REVIVE: SCENES.PHASE_REVIVE,
   OFFICE: SCENES.PHASE_OFFICE,
   LIVE: SCENES.PHASE_LIVE,
   DEATH: SCENES.PHASE_DEATH,
-  AUTOPSY: SCENES.PHASE_AUTOPSY,
-  ANNOUNCE: SCENES.PHASE_ANNOUNCE,
 };
 
 /** HUD 자원 칸 — 레퍼런스의 세로 구분선 3분할 */
@@ -71,6 +75,12 @@ export class DayScene extends Phaser.Scene {
   private clockReady = false;
   /** 엔딩 씬에 한 번만 넘긴다 */
   private handedOver = false;
+  /**
+   * DEATH 를 떠나 AUTOPSY/ANNOUNCE 를 자동 통과한 뒤 — 실제 state 는 이미
+   * 다음 날(REVIVE)이지만, 화면은 `PHASE_DAYEND` 로 붙잡아 둔다.
+   * `advanceFromDayEnd()` 가 풀어 줄 때까지 유지한다.
+   */
+  private dayEndHold = false;
   /** 기록 갱신 연출용 — 정산이 끝나면 이전 최고층은 state 에서 사라진다 (M08) */
   /** 도달 게이지 — 목표까지 차오른다. 신기록이면 눈에 보이게 밀려 올라간다 (M08 §연출) */
 
@@ -84,6 +94,7 @@ export class DayScene extends Phaser.Scene {
      * 어제 판의 상태가 그대로 남아 두 번째 판이 어긋난다 (엔딩으로 안 넘어가는 등).
      */
     this.handedOver = false;
+    this.dayEndHold = false;
     this.launched = null;
     this.swapAt = 0;
     this.skipCurtain = false;
@@ -293,6 +304,24 @@ export class DayScene extends Phaser.Scene {
   }
 
   private render(s: Readonly<GameState>): void {
+    /**
+     * 검시실·발표 창은 뺐다 (사용자 확정) — 시체 회수 결정·발표 결정 없이
+     * 화면 한 번 없이 기본값으로 통과시킨다. 화면이 없으니 값도 가장 무난한
+     * 쪽으로 고정한다: 시체는 훼손하지 않고(`INTACT`), 있는 그대로 공표한다
+     * (`SUCCESS` — 거짓 공표로 인한 평판/유출 페널티가 붙지 않는 쪽).
+     *
+     * `dispatch` 는 동기라 아래 두 줄이 끝나면 `state.phase` 는 이미 다음 날
+     * (REVIVE)이거나 8일째면 엔딩이다. 그 값을 이 함수가 다시 부르며 이어받는다.
+     */
+    if (s.phase === 'AUTOPSY') {
+      this.store.dispatch({ type: 'AUTOPSY/DECIDE', grade: 'INTACT' });
+      return;
+    }
+    if (s.phase === 'ANNOUNCE') {
+      this.store.dispatch({ type: 'ANNOUNCE/DECLARE', as: 'SUCCESS' });
+      return;
+    }
+
     // 최고층이 갱신되는 순간 직전 값을 넘겨 준다. DeathPhase 의 「이전 기록」 표시용
     this.statusFloor.setText(`${s.maxFloor}F`);
     this.statusViewers.setText(String(s.fans));
@@ -341,7 +370,18 @@ export class DayScene extends Phaser.Scene {
 
   /** 단계 씬이 등록돼 있으면 갈아끼운다. 없으면 아무것도 하지 않는다. */
   private syncPhaseScene(s: Readonly<GameState>): void {
-    const want = s.isOver ? undefined : PHASE_SCENE[s.phase];
+    let want = s.isOver ? undefined : PHASE_SCENE[s.phase];
+
+    /**
+     * DEATH 다음(검시·발표) 자리가 비었다 — `render()` 가 이미 화면 없이 지나쳤으므로
+     * 여기 도착했을 때 state 는 이미 다음 날(REVIVE)이거나, 8일째면 게임 오버다.
+     * 전자만 하루 종료 화면으로 붙잡는다 — 후자는 그냥 엔딩으로 보낸다.
+     */
+    if (this.launched === SCENES.PHASE_DEATH && want !== SCENES.PHASE_DEATH) {
+      this.dayEndHold = want === SCENES.PHASE_REVIVE;
+    }
+    if (this.dayEndHold) want = SCENES.PHASE_DAYEND;
+
     if (want === this.launched) return;
 
     // M06 §8 — 용사가 죽어도 생방송 화면을 1.8초 더 붙잡는다. 그 위에서 LivePhase 가
@@ -351,6 +391,12 @@ export class DayScene extends Phaser.Scene {
       return;
     }
     this.swap(want);
+  }
+
+  /** `DayEndPhase` 의 「다음 날 시작」이 부른다. state 는 이미 다음 날이다 — 화면만 넘긴다 */
+  advanceFromDayEnd(): void {
+    this.dayEndHold = false;
+    this.render(this.store.getState());
   }
 
   private armCurtain(): void {

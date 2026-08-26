@@ -14,8 +14,8 @@ import { RevivePhase } from './scenes/phases/RevivePhase';
 import { OfficePhase } from './scenes/phases/OfficePhase';
 import { LivePhase } from './scenes/phases/LivePhase';
 import { DeathPhase } from './scenes/phases/DeathPhase';
-import { AutopsyPhase } from './scenes/phases/AutopsyPhase';
-import { AnnouncePhase } from './scenes/phases/AnnouncePhase';
+// AutopsyPhase · AnnouncePhase — 검시실·발표 창은 뺐다 (사용자 확정)
+import { DayEndPhase } from './scenes/phases/DayEndPhase';
 
 const game = new Phaser.Game({
   type: Phaser.AUTO,
@@ -36,7 +36,7 @@ const game = new Phaser.Game({
   // 첫 씬만 자동 시작한다. 단계 씬은 DayScene 이 launch 할 때까지 잠들어 있다.
   scene: [
     BootScene, PreloadScene, TitleScene, DayScene, EndingScene, HelpScene, OptionsScene,
-    RevivePhase, OfficePhase, LivePhase, DeathPhase, AutopsyPhase, AnnouncePhase,
+    RevivePhase, OfficePhase, LivePhase, DeathPhase, DayEndPhase,
     WipeScene, // 항상 맨 위 — 디더 와이프
   ],
 });

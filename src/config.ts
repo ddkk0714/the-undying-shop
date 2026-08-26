@@ -21,8 +21,10 @@ export const SCENES = {
   PHASE_OFFICE: 'PhaseOffice',
   PHASE_LIVE: 'PhaseLive',
   PHASE_DEATH: 'PhaseDeath',
-  PHASE_AUTOPSY: 'PhaseAutopsy',
-  PHASE_ANNOUNCE: 'PhaseAnnounce',
+  // PHASE_AUTOPSY · PHASE_ANNOUNCE — 검시실·발표 창은 뺐다 (사용자 확정).
+  // core 의 AUTOPSY/ANNOUNCE 단계 자체는 그대로 있고(계약 파일), DayScene 이
+  // 화면 없이 기본값으로 자동 통과시킨다. 대신 그 자리에 하루 종료 화면을 하나 끼운다.
+  PHASE_DAYEND: 'PhaseDayEnd',
 } as const;
 
 export type SceneKey = (typeof SCENES)[keyof typeof SCENES];
