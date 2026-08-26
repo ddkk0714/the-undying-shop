@@ -29,11 +29,12 @@ export class DayEndPhase extends PhaseScene {
     this.addNewspaper(prevDay);
 
     const nextDay = new Button(this, {
-      x: L.W / 2 - 264, y: L.actionsFull.y + L.pad, w: 528, h: 96,
+      // 펼친 신문(가운데 900px 폭)과 겹치지 않는 우측 하단 고정 자리.
+      x: L.W - 24 - 320, y: L.H - 24 - 72, w: 320, h: 72,
       label: '다음 날 시작', hotkey: '1',
       onClick: () => (this.scene.get(SCENES.DAY) as DayScene).advanceFromDayEnd(),
     });
-    nextDay.setDepth(30);
+    nextDay.setDepth(6000);
   }
 
   private addNewspaper(day: number): void {
@@ -57,6 +58,7 @@ export class DayEndPhase extends PhaseScene {
     let pulledOut = false;
     paper.on('dragstart', () => {
       if (paper.input) paper.input.cursor = 'grabbing';
+      paper.setDepth(100);
       this.startPaperRustle();
     });
     paper.on('drag', (_pointer: Phaser.Input.Pointer, _dragX: number, dragY: number) => {

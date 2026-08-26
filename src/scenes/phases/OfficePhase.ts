@@ -132,6 +132,7 @@ export class OfficePhase extends PhaseScene {
   private officeDialogueItemId: string | null = null;
   /** 계약 확정 뒤에는 계약 대사와 작별 대사를 순서대로 끝낸 뒤 자동 퇴장한다. */
   private contractDepartureStep: 'CONTRACT' | 'LEAVE' | null = null;
+  private broadcastTransitioning = false;
 
   constructor() {
     super(SCENES.PHASE_OFFICE);
@@ -189,6 +190,7 @@ export class OfficePhase extends PhaseScene {
     this.officeDialogueSituation = null;
     this.officeDialogueItemId = null;
     this.contractDepartureStep = null;
+    this.broadcastTransitioning = false;
     // 방송 화면과 같은 버튼 툴팁. redraw 때 버튼만 다시 만들어져도 툴팁 판은 유지한다.
     this.keepAlive(...createTooltip(this).objects());
     super.create();
@@ -323,7 +325,7 @@ export class OfficePhase extends PhaseScene {
       tv.setInteractive({ cursor: 'pointer' }).setDepth(0);
       tv.on('pointerover', () => showLiveTv(true));
       tv.on('pointerout', () => showLiveTv(false));
-      tv.on('pointerup', () => this.store.dispatch({ type: 'OFFICE/CONFIRM' }));
+      tv.on('pointerup', () => this.startBroadcastTransition());
     } else if (tv !== null) {
       // 아직 아무 기능이 없어도 이 자리는 눌러 잡아 둔다. 안 그러면 뒤에 깔리는
       // 용사 클릭 판정 상자(guestDialogueTarget)로 클릭이 새어 들어가, TV를 눌렀는데
@@ -673,6 +675,36 @@ export class OfficePhase extends PhaseScene {
 
   /* ── 우 · 작업대 배경 ─────────────────────────────────── */
 
+  /** TV를 누른 뒤 짧은 수신 잡음 화면을 보이고 방송으로 넘긴다. */
+  private startBroadcastTransition(): void {
+    if (this.broadcastTransitioning) return;
+    this.broadcastTransitioning = true;
+
+    const enterBroadcast = (): void => {
+      this.store.dispatch({ type: 'OFFICE/CONFIRM' });
+    };
+    if (reducedMotion(this.registry)) {
+      enterBroadcast();
+      return;
+    }
+
+    const noise = this.spriteObject(0, 0, 'ui.live.noise', L.W, L.H);
+    const overlay = noise ?? this.add.rectangle(0, 0, L.W, L.H, PALETTE.ink, 0.92).setOrigin(0, 0);
+    overlay.setDepth(5000).setAlpha(0);
+    this.tweens.add({
+      targets: overlay,
+      alpha: 0.94,
+      duration: 90,
+      ease: 'Steps(3)',
+      onComplete: () => {
+        this.time.delayedCall(210, () => {
+          overlay.destroy();
+          enterBroadcast();
+        });
+      },
+    });
+  }
+
   private buildBenchBackdrop(): void {
     const b = L.bench;
     this.rect(b.x, b.y, b.w, b.h, 'ink');
@@ -807,6 +839,7 @@ export class OfficePhase extends PhaseScene {
     const documentObjects = this.children.list.slice(documentStart);
     this.wirePaperDrag(page, documentObjects, this.contractSheetOffset, () => {
       draggedPaper = true;
+      this.raiseDocumentAboveActions(documentObjects);
     });
     this.label(paper.x + 72, paper.y + paper.h - 62, this.contractConfirmationOpen ? '좌측 하단 도장을 눌러 계약 확정' : '종이를 누르면 접기', 'ink').setScale(0.62 * textScale).setDepth(paperDepth + 2);
   }
@@ -934,8 +967,10 @@ export class OfficePhase extends PhaseScene {
       this.redraw();
     });
     this.label(paper.x + 70, paper.y + paper.h - 54, '종이를 누르면 접기', 'ink').setScale(0.56).setDepth(depth + 2);
-    this.wirePaperDrag(page, this.children.list.slice(documentStart), this.statsSheetOffset, () => {
+    const statsDocumentObjects = this.children.list.slice(documentStart);
+    this.wirePaperDrag(page, statsDocumentObjects, this.statsSheetOffset, () => {
       draggedPaper = true;
+      this.raiseDocumentAboveActions(statsDocumentObjects);
     });
   }
 
@@ -1159,6 +1194,18 @@ export class OfficePhase extends PhaseScene {
       offset.y += Math.round(page.y - startY);
       this.redraw();
     });
+  }
+
+  /** 드래그 중인 서류는 하단 행동 버튼의 판·글자보다 앞에 놓인다. */
+  private raiseDocumentAboveActions(objects: Phaser.GameObjects.GameObject[]): void {
+    for (const object of objects) {
+      const depthable = object as Phaser.GameObjects.GameObject & {
+        depth?: number;
+        setDepth?: (depth: number) => Phaser.GameObjects.GameObject;
+      };
+      if (depthable.depth === undefined || depthable.setDepth === undefined) continue;
+      depthable.setDepth(1500 + depthable.depth);
+    }
   }
 
   private contractSheetAsset(): string | null {

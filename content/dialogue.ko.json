@@ -91,7 +91,7 @@
                       "effects":  [
                                       "slow"
                                   ],
-                      "text":  "그런데 하나도 안 떠났네. 다들 아직 여기 있어. ……못 간 모양이야.",
+                      "text":  "하나도 안 떠났네. 다들 아직 여기 있어. ……못 간 모양이야.",
                       "note":  null
                   },
                   {
@@ -3175,6 +3175,159 @@
                                   ],
                       "text":  "……또 깼네.",
                       "note":  null
-                  }
+                  },
+                  {
+                      "id":  "BERN_SHOP_SELL_ALL_SUCCESS_01",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "SHOP_SELL_ALL_SUCCESS",
+                      "condition":  "",
+                      "expression":  "angry",
+                      "effects":  [
+                                      "bold"
+                                  ],
+                      "text":  "역시 이 몸의 물건을 알아보는 눈은 있구나.",
+                      "note":  "진열품 일괄 판매 성공"
+                  },
+                  {
+                      "id":  "BERN_SHOP_SELL_ALL_FAIL_02",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "SHOP_SELL_ALL_FAIL",
+                      "condition":  "",
+                      "expression":  "angry",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "……눈이 없는 건 그쪽이겠지.",
+                      "note":  "진열품 일괄 판매 실패"
+                  },
+                  {
+                      "id":  "BERN_SHOP_BARGAIN_03",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "SHOP_BARGAIN",
+                      "condition":  "",
+                      "expression":  "neutral",
+                      "effects":  [
+                                      "pause"
+                                  ],
+                      "text":  "그 가격을 제시하느냐. ……좋다. 이번만 받아주도록 하지.",
+                      "note":  "흥정 가격 제안 반응"
+                  },
+                  {
+                      "id":  "BERN_DUN_BROADCAST_ATTACK_SUCCESS_05",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "DUN_BROADCAST_ATTACK_SUCCESS",
+                      "condition":  "",
+                      "expression":  "angry",
+                      "effects":  [
+                                      "bold"
+                                  ],
+                      "text":  "보았느냐! 이 몸의 공격을! 채팅창에 똑똑히 적어두거라.",
+                      "note":  "공격 성공 방송 반응"
+                  },
+                  {
+                      "id":  "BERN_DUN_BROADCAST_ATTACK_FAIL_06",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "DUN_BROADCAST_ATTACK_FAIL",
+                      "condition":  "",
+                      "expression":  "angry",
+                      "effects":  [
+                                      "shake"
+                                  ],
+                      "text":  "……방금 것은 실수다. 한 번의 실수로 판단하지 마라.",
+                      "note":  "공격 실패 방송 반응"
+                  },
+                  {
+                      "id":  "BERN_DUN_BROADCAST_DEFEND_SUCCESS_07",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "DUN_BROADCAST_DEFEND_SUCCESS",
+                      "condition":  "",
+                      "expression":  "neutral",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "이 몸을 막아낼 수 있는 것은 이 몸뿐이다. ……잘했군.",
+                      "note":  "방어 성공 방송 반응"
+                  },
+                  {
+                      "id":  "BERN_DUN_BROADCAST_DEFEND_FAIL_08",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "DUN_BROADCAST_DEFEND_FAIL",
+                      "condition":  "",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "tremble"
+                                  ],
+                      "text":  "막지 못했군. ……괜찮다. 아직 끝난 것은 아니니까.",
+                      "note":  "방어 실패 방송 반응"
+                  },
+                  {
+                      "id":  "BERN_DUN_BROADCAST_PLEAD_SUCCESS_09",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "DUN_BROADCAST_PLEAD_SUCCESS",
+                      "condition":  "",
+                      "expression":  "surprise",
+                      "effects":  [
+                                      "fast"
+                                  ],
+                      "text":  "…뭐? 애교를 하면 후원해주겠다고? 흥. 잘 보거라. …쓰담쓰담… 해주거라……♡",
+                      "note":  "호소 성공 방송 반응"
+                  },
+                  {
+                      "id":  "BERN_DUN_BROADCAST_PLEAD_FAIL_10",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "DUN_BROADCAST_PLEAD_FAIL",
+                      "condition":  "",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "흥. 도네가 들어오면 기분이 좋아질 뿐이다. 다른 의미는 없다.",
+                      "note":  "호소 실패 방송 반응"
+                  },
+                  {"id":"MARE_SHOP_SELL_ALL_SUCCESS_01","starId":"body_ilan","speaker":"바인","situation":"SHOP_SELL_ALL_SUCCESS","condition":"","expression":"neutral","effects":["slow"],"text":"……전부 팔렸네.","note":"진열품 일괄 판매 성공"},
+                  {"id":"MARE_SHOP_SELL_ALL_FAIL_02","starId":"body_ilan","speaker":"바인","situation":"SHOP_SELL_ALL_FAIL","condition":"","expression":"blank","effects":["slow","silent"],"text":"……물건이 문제였나.","note":"진열품 일괄 판매 실패"},
+                  {"id":"MARE_SHOP_BARGAIN_03","starId":"body_ilan","speaker":"바인","situation":"SHOP_BARGAIN","condition":"","expression":"neutral","effects":["pause"],"text":"그 가격으로? ……흠. 한 번 정도는 맞춰줄게.","note":"흥정 가격 제안 반응"},
+                  {"id":"MARE_DUN_BROADCAST_ATTACK_SUCCESS_05","starId":"body_ilan","speaker":"바인","situation":"DUN_BROADCAST_ATTACK_SUCCESS","condition":"","expression":"neutral","effects":["bold"],"text":"……잘했어. 계속 그렇게 해.","note":"공격 성공 방송 반응"},
+                  {"id":"MARE_DUN_BROADCAST_ATTACK_FAIL_06","starId":"body_ilan","speaker":"바인","situation":"DUN_BROADCAST_ATTACK_FAIL","condition":"","expression":"pain","effects":["tremble"],"text":"지금 건……조금 무모했어.","note":"공격 실패 방송 반응"},
+                  {"id":"MARE_DUN_BROADCAST_DEFEND_SUCCESS_07","starId":"body_ilan","speaker":"바인","situation":"DUN_BROADCAST_DEFEND_SUCCESS","condition":"","expression":"neutral","effects":["slow"],"text":"막았네. 좋아. 그걸로 충분해.","note":"방어 성공 방송 반응"},
+                  {"id":"MARE_DUN_BROADCAST_DEFEND_FAIL_08","starId":"body_ilan","speaker":"바인","situation":"DUN_BROADCAST_DEFEND_FAIL","condition":"","expression":"sad","effects":["slow"],"text":"……막지 못했네. 다음엔 늦지 않게 해.","note":"방어 실패 방송 반응"},
+                  {"id":"MARE_DUN_BROADCAST_PLEAD_SUCCESS_09","starId":"body_ilan","speaker":"바인","situation":"DUN_BROADCAST_PLEAD_SUCCESS","condition":"","expression":"surprise","effects":["slow"],"text":"후원해주면…… 오늘 밤 너의 꿈에 나올게.","note":"호소 성공 방송 반응"},
+                  {"id":"MARE_DUN_BROADCAST_PLEAD_FAIL_10","starId":"body_ilan","speaker":"바인","situation":"DUN_BROADCAST_PLEAD_FAIL","condition":"","expression":"blank","effects":["slow","silent"],"text":"……안 통했어. 그럼 다른 방법을 쓸 수 밖에..","note":"호소 실패 방송 반응"},
+                  {"id":"RIJE_SHOP_SELL_ALL_SUCCESS_01","starId":"body_mor","speaker":"메르네","situation":"SHOP_SELL_ALL_SUCCESS","condition":"","expression":"smile","effects":["fast"],"text":"와, 생각보다 돈을 잘 썼네.","note":"진열품 일괄 판매 성공"},
+                  {"id":"RIJE_SHOP_SELL_ALL_FAIL_02","starId":"body_mor","speaker":"메르네","situation":"SHOP_SELL_ALL_FAIL","condition":"","expression":"blank","effects":["slow"],"text":"……오늘은 죽을 생각이 없나 봐요.","note":"진열품 일괄 판매 실패"},
+                  {"id":"RIJE_SHOP_BARGAIN_03","starId":"body_mor","speaker":"메르네","situation":"SHOP_BARGAIN","condition":"","expression":"smile","effects":["pause"],"text":"그 가격이면 괜찮아요. 용서해드릴게요. ……저도 손해 보는 건 익숙해서.","note":"흥정 가격 제안 반응"},
+                  {"id":"RIJE_DUN_BROADCAST_ATTACK_SUCCESS_05","starId":"body_mor","speaker":"메르네","situation":"DUN_BROADCAST_ATTACK_SUCCESS","condition":"","expression":"smile","effects":["fast"],"text":"오, 맞았어요. 시청자분들 좋아하시겠죠?","note":"공격 성공 방송 반응"},
+                  {"id":"RIJE_DUN_BROADCAST_ATTACK_FAIL_06","starId":"body_mor","speaker":"메르네","situation":"DUN_BROADCAST_ATTACK_FAIL","condition":"","expression":"pain","effects":["shake"],"text":"아, 빗나갔네. 괜찮아요. 죽으면 되니까.","note":"공격 실패 방송 반응"},
+                  {"id":"RIJE_DUN_BROADCAST_DEFEND_SUCCESS_07","starId":"body_mor","speaker":"메르네","situation":"DUN_BROADCAST_DEFEND_SUCCESS","condition":"","expression":"smile","effects":["slow"],"text":"잘 막았어요. ……죽는 사람 수가 하나 줄었네요.","note":"방어 성공 방송 반응"},
+                  {"id":"RIJE_DUN_BROADCAST_DEFEND_FAIL_08","starId":"body_mor","speaker":"메르네","situation":"DUN_BROADCAST_DEFEND_FAIL","condition":"","expression":"pain","effects":["tremble"],"text":"방어 실패네요. ……괜찮아요. 아직 몸은 붙어 있어요.","note":"방어 실패 방송 반응"},
+                  {"id":"RIJE_DUN_BROADCAST_PLEAD_SUCCESS_09","starId":"body_mor","speaker":"메르네","situation":"DUN_BROADCAST_PLEAD_SUCCESS","condition":"","expression":"smile","effects":["fast"],"text":"도네 보내주시면…… 특별히 사랑한다고 말해드릴게요.","note":"호소 성공 방송 반응"},
+                  {"id":"RIJE_DUN_BROADCAST_PLEAD_FAIL_10","starId":"body_mor","speaker":"메르네","situation":"DUN_BROADCAST_PLEAD_FAIL","condition":"","expression":"blank","effects":["slow"],"text":"어라? 아직 아무도 안 보내줬네? 메르네 죽어버릴지도?","note":"호소 실패 방송 반응"},
+                  {"id":"LUAN_SHOP_SELL_ALL_SUCCESS_01","starId":"body_juno","speaker":"루엔","situation":"SHOP_SELL_ALL_SUCCESS","condition":"","expression":"smile","effects":["fast"],"text":"오늘 방송 소재는 충분하겠는데요?","note":"진열품 일괄 판매 성공"},
+                  {"id":"LUAN_SHOP_SELL_ALL_FAIL_02","starId":"body_juno","speaker":"루엔","situation":"SHOP_SELL_ALL_FAIL","condition":"","expression":"neutral","effects":["pause"],"text":"……이건 제 눈이 없어도 알겠습니다.","note":"진열품 일괄 판매 실패"},
+                  {"id":"LUAN_SHOP_BARGAIN_03","starId":"body_juno","speaker":"루엔","situation":"SHOP_BARGAIN","condition":"","expression":"smile","effects":["pause"],"text":"그 가격으로 흥정하시겠다? ……좋습니다. 대신 다음엔 제가 한 번 깎아보죠.","note":"흥정 가격 제안 반응"},
+                  {"id":"LUAN_DUN_BROADCAST_ATTACK_SUCCESS_05","starId":"body_juno","speaker":"루엔","situation":"DUN_BROADCAST_ATTACK_SUCCESS","condition":"","expression":"smile","effects":["fast"],"text":"좋아요! 제대로 들어갔습니다. 이건 클립각인데요?","note":"공격 성공 방송 반응"},
+                  {"id":"LUAN_DUN_BROADCAST_ATTACK_FAIL_06","starId":"body_juno","speaker":"루엔","situation":"DUN_BROADCAST_ATTACK_FAIL","condition":"","expression":"pain","effects":["shake"],"text":"아, 이건 좀 창피한데요. ……다시 보여드리죠.","note":"공격 실패 방송 반응"},
+                  {"id":"LUAN_DUN_BROADCAST_DEFEND_SUCCESS_07","starId":"body_juno","speaker":"루엔","situation":"DUN_BROADCAST_DEFEND_SUCCESS","condition":"","expression":"smile","effects":["slow"],"text":"깔끔하게 막았습니다. 시청자 여러분, 방금 보셨죠?","note":"방어 성공 방송 반응"},
+                  {"id":"LUAN_DUN_BROADCAST_DEFEND_FAIL_08","starId":"body_juno","speaker":"루엔","situation":"DUN_BROADCAST_DEFEND_FAIL","condition":"","expression":"pain","effects":["tremble"],"text":"……방금 건 못 본 걸로 합시다. 다시 하면 되니까.","note":"방어 실패 방송 반응"},
+                  {"id":"LUAN_DUN_BROADCAST_PLEAD_SUCCESS_09","starId":"body_juno","speaker":"루엔","situation":"DUN_BROADCAST_PLEAD_SUCCESS","condition":"","expression":"smile","effects":["fast"],"text":"도네 보내주시면 오늘 하루 제일 좋아하는 사람으로 쳐드리죠.","note":"호소 성공 방송 반응"},
+                  {"id":"LUAN_DUN_BROADCAST_PLEAD_FAIL_10","starId":"body_juno","speaker":"루엔","situation":"DUN_BROADCAST_PLEAD_FAIL","condition":"","expression":"neutral","effects":["pause"],"text":"어라? 아직도 안 쏘셨어요? 저 삐질 건데?","note":"호소 실패 방송 반응"},
+                  {"id":"GARD_SHOP_SELL_ALL_SUCCESS_01","starId":"body_karin","speaker":"세이로","situation":"SHOP_SELL_ALL_SUCCESS","condition":"","expression":"blush","effects":["slow"],"text":"……제가 얼마든지 구매해드릴게요. {PLAYER}, ","note":"진열품 일괄 판매 성공"},
+                  {"id":"GARD_SHOP_SELL_ALL_FAIL_02","starId":"body_karin","speaker":"세이로","situation":"SHOP_SELL_ALL_FAIL","condition":"","expression":"sad","effects":["slow"],"text":" ……제가 돈이 부족해서. 죄송해요.","note":"진열품 일괄 판매 실패"},
+                  {"id":"GARD_SHOP_BARGAIN_03","starId":"body_karin","speaker":"세이로","situation":"SHOP_BARGAIN","condition":"","expression":"blush","effects":["tremble","slow"],"text":"저, 그 가격이면 괜찮아요. ……저 때문에 손해 보시는 건 아니죠?","note":"흥정 가격 제안 반응"},
+                  {"id":"GARD_DUN_BROADCAST_ATTACK_SUCCESS_05","starId":"body_karin","speaker":"세이로","situation":"DUN_BROADCAST_ATTACK_SUCCESS","condition":"","expression":"neutral","effects":["bold"],"text":"……맞았습니다. {PLAYER}, 보셨죠? 이번엔 제대로 했어요.","note":"공격 성공 방송 반응"},
+                  {"id":"GARD_DUN_BROADCAST_ATTACK_FAIL_06","starId":"body_karin","speaker":"세이로","situation":"DUN_BROADCAST_ATTACK_FAIL","condition":"","expression":"sad","effects":["tremble"],"text":"죄, 죄송합니다. 공격이 빗나갔어요. ……다시 할게요.","note":"공격 실패 방송 반응"},
+                  {"id":"GARD_DUN_BROADCAST_DEFEND_SUCCESS_07","starId":"body_karin","speaker":"세이로","situation":"DUN_BROADCAST_DEFEND_SUCCESS","condition":"","expression":"blush","effects":["slow"],"text":"막았어요. ……저도 조금은 도움이 되죠?","note":"방어 성공 방송 반응"},
+                  {"id":"GARD_DUN_BROADCAST_DEFEND_FAIL_08","starId":"body_karin","speaker":"세이로","situation":"DUN_BROADCAST_DEFEND_FAIL","condition":"","expression":"sad","effects":["tremble","slow"],"text":"못 막았어요. 죄송합니다. ……다음엔 더 빨리 움직일게요.","note":"방어 실패 방송 반응"},
+                  {"id":"GARD_DUN_BROADCAST_PLEAD_SUCCESS_09","starId":"body_karin","speaker":"세이로","situation":"DUN_BROADCAST_PLEAD_SUCCESS","condition":"","expression":"blush","effects":["slow"],"text":"저,저기…여러분…사랑… 해요……! 그러니까 슈퍼챗…… 으아아, 죄송합니다!","note":"호소 성공 방송 반응"},
+                  {"id":"GARD_DUN_BROADCAST_PLEAD_FAIL_10","starId":"body_karin","speaker":"세이로","situation":"DUN_BROADCAST_PLEAD_FAIL","condition":"","expression":"sad","effects":["slow","silent"],"text":"우우..안 통했어요. ……제가 말을 못해서 그런가 봐요.","note":"호소 실패 방송 반응"}
               ]
 }

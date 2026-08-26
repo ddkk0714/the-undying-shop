@@ -54,6 +54,19 @@ export class Button extends Phaser.GameObjects.Container {
   private readonly opts: Required<Pick<ButtonOpts, 'w' | 'h' | 'variant'>> & ButtonOpts;
   private visual: 'idle' | 'hover' | 'press' | 'disabled' = 'idle';
 
+  /**
+   * Container의 depth만 바꾸면 내부의 9-slice/Graphics/Text가 이미 다른
+   * display list depth를 가진 화면 효과 뒤에 남을 수 있다. 버튼은 한 덩어리이므로
+   * 모든 시각 요소를 함께 올린다.
+   */
+  override setDepth(value: number): this {
+    super.setDepth(value);
+    this.skin?.setDepth(value);
+    this.bg.setDepth(value + 1);
+    this.txt.setDepth(value + 2);
+    return this;
+  }
+
   constructor(scene: Phaser.Scene, opts: ButtonOpts) {
     super(scene, Math.round(opts.x), Math.round(opts.y));
     this.opts = { variant: 'default', ...opts, w: opts.w, h: opts.h };

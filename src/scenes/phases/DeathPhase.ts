@@ -144,7 +144,8 @@ export class DeathPhase extends PhaseScene {
       // 검시실·발표 창은 뺐다 (사용자 확정) — 이 버튼 하나로 다음 날로 넘어간다
       label: '다음으로', hotkey: '1',
       onClick: () => this.store.dispatch({ type: 'PHASE/ADVANCE' }),
-    });
+    // 노이즈보다 프레임과 글자까지 모두 앞에 와야 끝까지 읽고 누를 수 있다.
+    }).setDepth(6000);
   }
 
   /**
