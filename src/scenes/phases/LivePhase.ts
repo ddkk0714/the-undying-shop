@@ -124,11 +124,13 @@ function bounceAmount(t: number): number {
 /**
  * 공격 명중 연출 — 적 체력이 줄어드는 순간(=명중, 반격과 대칭) 재생한다.
  *
- * `ui.live.fx.sword`(아트-발주서/아트_V3/전투화면/공격모션/칼.gif, 10프레임 · 70ms 간격)를
- * 한 번만 재생하고 끈다 (사용자 확정). GIF 원본 그대로의 박자를 쓴다.
+ * `ui.live.fx.sword`(아트-발주서/아트_V3/전투화면/공격모션/칼.gif, 10프레임)를 한 번만
+ * 재생하고 끈다 (사용자 확정). **GIF 원본 박자(70ms/프레임 · 700ms)는 안 쓴다** —
+ * `sfx.combat.attack` 이 192ms 짜리라 그대로 쓰면 소리는 끝났는데 칼질이 계속 도는
+ * 꼴이 됐다(사용자 확인 — 싱크 안 맞음). 소리 길이에 맞춰 20ms/프레임(=200ms)으로 당겼다.
  */
 const SWORD_FX_FRAMES = 10;
-const SWORD_FX_FRAME_MS = 70;
+const SWORD_FX_FRAME_MS = 20;
 /** 적 머리 위로 뜨는 피해 숫자 — 떠오르며 옅어진다 */
 const DAMAGE_TOAST_MS = 700;
 const DAMAGE_TOAST_RISE = 40;
@@ -737,13 +739,16 @@ export class LivePhase extends PhaseScene {
       // 반격 때 여기서 잡아 둔 원래 자리·크기를 기준으로 튕긴다
       else this.enemyBounce = { img, x: img.x, y: img.y, w: img.displayWidth, h: img.displayHeight };
 
-      // 체력바는 적 스프라이트 **바로 아래**. 바 하나만 둔다 (사용자 확정) —
-      // 이름·숫자·판까지 얹었더니 몬스터 발밑이 정보창이 됐다.
-      // 배경이 밝든 어둡든 읽히도록 바 뒤에 ink 한 줄만 깔아 준다.
-      const hy = e.y + e.h + 6;
-      this.rect(e.x - L.line, hy - L.line, e.w + L.line * 2, 20, 'ink');
-      this.bar(e.x, hy, e.w, enc.enemy.hp, enc.enemy.maxHp, 'wax');
-      if (enc.guarding) this.textRight(e.x + e.w, hy + 26, '방어', 'wax');
+      // 체력바는 적 스프라이트 **머리 위**, 폭을 줄여 작게 (사용자 확정 — 발밑에
+      // 있던 걸 위로 옮기고 크기도 줄였다). 바 하나만 둔다 — 이름·숫자·판까지
+      // 얹었더니 정보창이 됐다. 배경이 밝든 어둡든 읽히도록 바 뒤에 ink 한 줄만 깐다.
+      const barW = Math.round(e.w * 0.7);
+      const barH = 14;
+      const bx = e.x + Math.round((e.w - barW) / 2);
+      const hy = e.y - barH - 10;
+      this.rect(bx - L.line, hy - L.line, barW + L.line * 2, barH + L.line * 2, 'ink');
+      this.bar(bx, hy, barW, enc.enemy.hp, enc.enemy.maxHp, 'wax', barH);
+      if (enc.guarding) this.label(bx + barW + 8, hy - 1, '방어', 'wax');
     }
 
     // 용사의 이름·공·방·체력은 초상 바로 아래에 붙는다 (`buildPortrait`).
@@ -1138,7 +1143,7 @@ export class LivePhase extends PhaseScene {
     }
     const e = L.live.enemy;
     if (!this.reduced && this.hasArt('ui.live.fx.sword')) {
-      const size = Math.round(e.w * 1.7);
+      const size = Math.round(e.w * 1.3);
       const img = this.add.image(e.x + e.w / 2, e.y + e.h / 2, key('ui.live.fx.sword'), 0)
         .setOrigin(0.5)
         .setDisplaySize(size, size);
@@ -1192,7 +1197,9 @@ export class LivePhase extends PhaseScene {
       this.defendFxImg = null;
     }
     if (this.reduced || !this.hasArt('ui.live.fx.shield')) return;
-    const v = L.live.portrait;
+    // 초상이 아니라 **몬스터 앞** — 1인칭 시점이라 「내가 든 방패가 몬스터를 막는다」로
+    // 읽혀야 한다 (사용자 확정). sword fx 와 같은 자리를 쓴다
+    const v = L.live.enemy;
     const size = Math.round(v.w * 1.6);
     const img = this.add.image(v.x + v.w / 2, v.y + v.h / 2, key('ui.live.fx.shield'), 0)
       .setOrigin(0.5)
@@ -1549,11 +1556,11 @@ export class LivePhase extends PhaseScene {
   }
 
   /** 값 게이지 — 2px 테두리 안을 채운다 */
-  private bar(x: number, y: number, w: number, value: number, max: number, color: 'wax' | 'bone'): void {
-    this.rect(x, y, w, 24, 'ink');
-    this.frame(x, y, w, 24);
+  private bar(x: number, y: number, w: number, value: number, max: number, color: 'wax' | 'bone', h = 24): void {
+    this.rect(x, y, w, h, 'ink');
+    this.frame(x, y, w, h);
     const ratio = max <= 0 ? 0 : Math.max(0, Math.min(1, value / max));
-    this.rect(x + L.line, y + L.line, Math.round((w - L.line * 2) * ratio), 24 - L.line * 2, color);
+    this.rect(x + L.line, y + L.line, Math.round((w - L.line * 2) * ratio), h - L.line * 2, color);
   }
 }
 
