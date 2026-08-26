@@ -27,6 +27,9 @@ export interface DialogueOpts {
   size?: 'body' | 'title';
 }
 
+/** 말줄임 뒤에서 한 번 끊는 시간 */
+const ELLIPSIS_PAUSE_MS = 300;
+
 /** 한 줄 타이핑 → 완료 뒤 통통 뛰는 ▼까지 한 수명으로 관리한다. */
 export class Dialogue extends Phaser.GameObjects.Container {
   private readonly lineObject: Phaser.GameObjects.Text;
@@ -36,6 +39,8 @@ export class Dialogue extends Phaser.GameObjects.Container {
   private revealEvent: Phaser.Time.TimerEvent | null = null;
   private bounce: Phaser.Tweens.Tween | null = null;
   private index = 0;
+  /** 글자 하나 사이의 기본 간격 (ms) */
+  private charDelay = 42;
 
   constructor(scene: Phaser.Scene, opts: DialogueOpts) {
     super(scene, Math.round(opts.x), Math.round(opts.y));
@@ -70,14 +75,37 @@ export class Dialogue extends Phaser.GameObjects.Container {
     }
 
     const effectSpeed = effects.has('slow') ? 2 : effects.has('fast') ? 0.5 : 1;
-    const delay = Math.max(16, Math.round((opts.charMs ?? 42) * effectSpeed / speedMul(scene.registry)));
-    this.revealEvent = scene.time.addEvent({ delay, loop: true, callback: () => this.revealNext() });
+    this.charDelay = Math.max(16, Math.round((opts.charMs ?? 42) * effectSpeed / speedMul(scene.registry)));
+    // 고정 간격 루프가 아니라 **글자마다 다시 잡는다** — 말줄임 뒤에서 한 번 끊기 위해서다
+    this.scheduleNext();
 
     if (effects.has('tremble')) {
       scene.tweens.add({ targets: this.lineObject, x: 2, y: -1, duration: 45, yoyo: true, repeat: -1 });
     } else if (effects.has('shake')) {
       scene.tweens.add({ targets: this, x: this.x + 6, duration: 60, yoyo: true, repeat: 5 });
     }
+  }
+
+  /** 말줄임인가 — 대사집이 「…」과 「..」을 섞어 쓴다 */
+  private static isDot(ch: string | undefined): boolean {
+    return ch === '…' || ch === '.';
+  }
+
+  /**
+   * 다음 글자를 언제 낼지 잡는다.
+   * **말줄임이 끝나는 자리에서 한 번 쉰다** (사용자 확정) — 「……옵니다」가
+   * 「……」에서 한 박자 끊기고 「옵니다」가 나온다. 뜸 들이는 말투가 그렇게 읽힌다.
+   */
+  private scheduleNext(): void {
+    const justTyped = this.chars[this.index - 1];
+    const next = this.chars[this.index];
+    let run = 0;
+    for (let i = this.index - 1; i >= 0 && Dialogue.isDot(this.chars[i]); i -= 1) run += 1;
+    // **문장 끝 마침표 하나로는 쉬지 않는다** — 그러면 모든 문장이 뚝뚝 끊긴다.
+    // 「…」 한 글자이거나 점이 둘 이상 이어졌을 때만 말줄임으로 본다
+    const isEllipsis = run > 0 && !Dialogue.isDot(next) && (justTyped === '…' || run >= 2);
+    const wait = this.charDelay + (isEllipsis ? ELLIPSIS_PAUSE_MS : 0);
+    this.revealEvent = this.scene.time.delayedCall(wait, () => this.revealNext());
   }
 
   private revealNext(): void {
@@ -91,6 +119,7 @@ export class Dialogue extends Phaser.GameObjects.Container {
     // 공백에서는 소리를 내지 않는다 — 띄어쓰기마다 딸깍거리면 귀에 거슬린다
     if (this.chars[this.index - 1] !== ' ') this.opts.onChar?.();
     if (this.index >= this.chars.length) this.finish(true);
+    else this.scheduleNext();
   }
 
   private finish(animate: boolean): void {

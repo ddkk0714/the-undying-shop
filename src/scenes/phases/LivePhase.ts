@@ -148,6 +148,11 @@ const DIVE_ZOOM_MS = 200;
  * 타자가 두 글자 나오고 다음 줄로 갈아 끼워진다. 이만큼 지나야 다음 줄을 받는다.
  */
 const RADIO_GAP_MS = 4200;
+/**
+ * 무전 한 글자 사이 간격. `Dialogue` 기본값은 42ms 인데 생방송은 흐름이 빨라서
+ * 조금 당겼다 (사용자 확정). 말줄임 뒤 한 박자 쉬는 건 `Dialogue` 가 알아서 한다
+ */
+const RADIO_CHAR_MS = 30;
 /** 「pause」 연출 — 말하기 전에 뜸을 들이는 시간 */
 const RADIO_PAUSE_MS = 520;
 /** 「blackout」 연출 — 화면이 꺼져 있는 시간 */
@@ -760,10 +765,11 @@ export class LivePhase extends PhaseScene {
       const usable = v.w - Math.round(v.w * 0.38);
       const line = new Dialogue(this, {
         x: v.x + inset,
-        y: v.y + Math.round(v.h / 2) - 16,
+        y: v.y + Math.round(v.h / 2) - 6,                       // 사용자 확정 — 10px 내려 앉힌다
         w: usable,
         line: `"${spoken.text}"`,                               // 자르지 않는다 — 넘치면 접힌다
         size: 'body',
+        charMs: RADIO_CHAR_MS,
         effects: spoken.effects,
         onComplete: () => { this.radioDone = true; },
         // 「silent」 — 속으로 하는 말이다. 타자 소리를 내지 않는다
