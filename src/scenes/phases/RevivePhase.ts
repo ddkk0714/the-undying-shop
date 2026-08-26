@@ -4,13 +4,13 @@ import { content } from '../../core/content';
 import { pickDialogue, totalRevivals } from '../../core/systems/dialogue';
 import { reviveQuote } from '../../core/systems/economy';
 import { starVoice } from '../../audio/Voice';
-import { key, starArt, starExpression } from '../../render/assets';
+import { key, starArt } from '../../render/assets';
 import { L, actionX, ACTION_W } from '../../ui/layout';
 import { Button } from '../../ui/Button';
 import { Dialogue } from '../../ui/Dialogue';
 import { reducedMotion } from '../../ui/options';
 import { sealStamp } from '../../ui/SealStamp';
-import { degradeOverlay, portrait } from '../../ui/Portrait';
+import { portrait } from '../../ui/Portrait';
 import { createTooltip } from '../../ui/Tooltip';
 import { playBgm, playSfx } from '../../audio/Sfx';
 import { PhaseScene } from './PhaseScene';
@@ -144,28 +144,12 @@ export class RevivePhase extends PhaseScene {
       return;
     }
 
-    // 전신 CG 자리 — star.body.* 가 오면 칸을 그대로 채우고, 없으면 초상/실루엣으로 내려간다
-    const art = starArt(star.id);
-    const w = 384;
-    const h = 480;
-    const x = g.x + Math.round((g.w - w) / 2);
-    const y = g.y + g.h - h - 24;
-    // 전신은 좌측 칸과 1:1 이다 (752x792). 이름 글자는 그 위에 얹는다
-    const full = { x: g.x, y: g.y, w: g.w, h: g.h };
-    const reduced = reducedMotion(this.registry);
+    // 용사 전신 스프라이트는 소생실 좌측 화면에서 지웠다 (사용자 확정) — 배경 + 방 이름 + 대사만 남는다
     const reviveLine = pickDialogue(star.id, 'REVIVE', {
       revives: totalRevivals(star.id, star.reviveCount),
       deaths: s.stats.totalDiscarded,
     }, (s.day % 10) / 10);
-    // 열화는 숫자가 아니라 몸으로 보여준다 (M03 §열화)
-    const bodyKeys = reviveLine === null ? [art.body] : [starExpression(star.id, reviveLine.expression), art.body];
-    if (this.spriteFit(full, bodyKeys)) {
-      degradeOverlay(this, full, star.reviveCount, reduced);
-    } else {
-      portrait(this, { x, y, w, h }, star, { reduced });
-    }
 
-    // 방 이름은 전신 CG 위에 얹는다 — 먼저 그리면 몸에 가려진다
     this.buildRoomLabel(count);
 
     const persona = s.personas.find((p) => p.id === star.personaId);
@@ -216,36 +200,31 @@ export class RevivePhase extends PhaseScene {
     const when = s.day - corpse.diedDay === 1 ? '어제' : `${corpse.diedDay}일차`;
 
     // 작업대 배경이 고주파 디더라 그 위의 본문이 읽히지 않는다. 기록이 놓이는 만큼만 덮는다.
-    // 「어제 ~에서 죽었습니다」 제목(48px)이 여기 있었는데, 시체 그림을 크게 가려서
-    // 소생 비용 바로 아래 한 줄로 내려보냈다 (사용자 확정). 그만큼 가리개도 96 줄었다
-    const rows = 132 + (quote.witnessWarning ? 160 : 0);
+    // 죽은 자리를 시체 상태·부활 횟수와 한 덩어리로 묶었다 (사용자 확정) — 첫 줄이 "언제·어디서"다
+    const rows = 176 + (quote.witnessWarning ? 160 : 0);
     this.scrimBlock(b.x + L.pad, oy - L.pad, b.w - L.pad * 2, rows + L.pad * 2);
 
-    this.text(ox, oy, `시체 상태 : ${corpse.grade === 'INTACT' ? '온전' : '훼손'}`, 'dust');
-    this.text(ox, oy + 44, `부활 횟수 : ${star.reviveCount}회`, 'dust');
+    this.text(ox, oy, `${when}, ${corpse.diedFloor}F에서 죽었습니다.`);
+    this.text(ox, oy + 44, `시체 상태 : ${corpse.grade === 'INTACT' ? '온전' : '훼손'}`, 'dust');
+    this.text(ox, oy + 88, `부활 횟수 : ${star.reviveCount}회`, 'dust');
     if (star.witnessed.length > 0) {
-      this.text(ox, oy + 88, `그가 본 것 : ${star.witnessed.map((f) => `${f}F`).join(' ')}`, 'dust');
+      this.text(ox, oy + 132, `그가 본 것 : ${star.witnessed.map((f) => `${f}F`).join(' ')}`, 'dust');
     }
 
     if (quote.witnessWarning) {
-      oy += 168;
+      oy += 212;
       this.text(ox, oy, '이 사람은 아래에서 무언가를 봤다.', 'wax');
       this.text(ox, oy + 44, '되살리면 방송에서 말할 것이다.', 'wax');
     }
 
     // 비용 — 작업대 아래쪽 가격표 자리
     const py = b.y + b.h - 160;
-    // 176 이면 가리개의 **단단한 심**이 851 에서 끝나(scrimRow 는 위아래 48 이 꼬리다),
-    // 그 아래로 내려간 사망 한 줄이 꼬리 위에 얹혀 흐릿했다. 작업대 아래 변(939)까지 늘린다
-    this.scrimRow(b.x + L.pad, py - 56, b.w - L.pad * 2, 216);
+    this.scrimRow(b.x + L.pad, py - 56, b.w - L.pad * 2, 150);
     this.label(ox, py, '소생 비용', 'dust');
     this.title(ox, py + 28, `${fmtGold(quote.cost)} G`);
     this.label(b.x + b.w - L.pad * 3 - 200, py, '보유', 'dust');
     this.textRight(b.x + b.w - L.pad * 3, py + 32, `${fmtGold(s.gold)} G`, 'dust');
     if (!quote.affordable) this.text(ox + 320, py + 32, '자금이 부족합니다', 'wax');
-    // 죽은 자리 — 비용 바로 아래 한 줄. 「보유 …G」 와 같은 본문 크기(32px)로 맞췄다.
-    // 857..889 는 가리개의 단단한 심(771..891) 안이다
-    this.text(ox, py + 78, `${when}, ${corpse.diedFloor}F에서 죽었습니다.`);
   }
 
   /* ── 우 · 시체가 지니고 있던 것 (CCR-006) ─────────────── */
