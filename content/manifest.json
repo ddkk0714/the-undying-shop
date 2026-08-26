@@ -141,8 +141,8 @@
           "type": "image",
           "file": "ui/contract_sheet.png",
           "size": [
-            700,
-            914
+            795,
+            1036
           ],
           "desc": "Submitted hero contract; click its desk copy to inspect"
         },
@@ -692,6 +692,15 @@
           ],
           "desc": "방송 시작 TV의 마우스 오버 상태"
         },
+        "prop.contract.stamp": {
+          "type": "image",
+          "file": "prop/contract_stamp.png",
+          "size": [
+            179,
+            178
+          ],
+          "desc": "계약서 우측 하단에 찍는 확정 도장"
+        },
         "prop.ledger": {
           "type": "image",
           "file": "prop/ledger.png",
@@ -915,6 +924,56 @@
             792
           ],
           "desc": "카린 대사 전신"
+        },
+        "star.corpse.karin": {
+          "type": "image",
+          "file": "star/corpse_karin.png",
+          "size": [
+            1780,
+            1215
+          ],
+          "desc": "노일(검사) 시체 연출 — ① 소생실 작업대. 시체가 있을 때만 배경 대신 깔린다",
+          "display": "작업대 칸(1160x792)을 채운다"
+        },
+        "star.corpse.juno": {
+          "type": "image",
+          "file": "star/corpse_juno.png",
+          "size": [
+            1780,
+            1215
+          ],
+          "desc": "펜로(궁수) 시체 연출 — ① 소생실 작업대. 시체가 있을 때만 배경 대신 깔린다",
+          "display": "작업대 칸(1160x792)을 채운다"
+        },
+        "star.corpse.sela": {
+          "type": "image",
+          "file": "star/corpse_sela.png",
+          "size": [
+            1780,
+            1215
+          ],
+          "desc": "녹스(도적) 시체 연출 — ① 소생실 작업대. 시체가 있을 때만 배경 대신 깔린다",
+          "display": "작업대 칸(1160x792)을 채운다"
+        },
+        "star.corpse.ilan": {
+          "type": "image",
+          "file": "star/corpse_ilan.png",
+          "size": [
+            1780,
+            1215
+          ],
+          "desc": "미레(마법사) 시체 연출 — ① 소생실 작업대. 시체가 있을 때만 배경 대신 깔린다",
+          "display": "작업대 칸(1160x792)을 채운다"
+        },
+        "star.corpse.mor": {
+          "type": "image",
+          "file": "star/corpse_mor.png",
+          "size": [
+            1779,
+            1215
+          ],
+          "desc": "헤일(힐러) 시체 연출 — ① 소생실 작업대. 시체가 있을 때만 배경 대신 깔린다",
+          "display": "작업대 칸(1160x792)을 채운다"
         },
         "star.expression.karin": {
           "type": "image",
@@ -1602,6 +1661,11 @@
           "file": "sfx/stamp.mp3",
           "desc": "봉랍 도장 — 검시 판정·폐기 확정"
         },
+        "sfx.contract.stamp": {
+          "type": "audio",
+          "file": "sfx/contract_stamp.mp3",
+          "desc": "계약서 확정 도장을 찍는 쾅 소리"
+        },
         "sfx.superchat": {
           "type": "audio",
           "file": "sfx/superchat.mp3",
@@ -1827,8 +1891,8 @@
           "type": "image",
           "file": "ui/contract_sheet.png",
           "size": [
-            700,
-            914
+            795,
+            1036
           ],
           "desc": "Submitted hero contract; click its desk copy to inspect"
         },
@@ -2352,6 +2416,15 @@
           ],
           "desc": "방송 시작 TV의 마우스 오버 상태"
         },
+        "prop.contract.stamp": {
+          "type": "image",
+          "file": "prop/contract_stamp.png",
+          "size": [
+            179,
+            178
+          ],
+          "desc": "계약서 우측 하단에 찍는 확정 도장"
+        },
         "prop.ledger": {
           "type": "image",
           "file": "prop/ledger.png",
@@ -2567,6 +2640,56 @@
             792
           ],
           "desc": "카린 대사 전신"
+        },
+        "star.corpse.karin": {
+          "type": "image",
+          "file": "star/corpse_karin.png",
+          "size": [
+            1780,
+            1215
+          ],
+          "desc": "노일(검사) 시체 연출 — ① 소생실 작업대. 시체가 있을 때만 배경 대신 깔린다",
+          "display": "작업대 칸(1160x792)을 채운다"
+        },
+        "star.corpse.juno": {
+          "type": "image",
+          "file": "star/corpse_juno.png",
+          "size": [
+            1780,
+            1215
+          ],
+          "desc": "펜로(궁수) 시체 연출 — ① 소생실 작업대. 시체가 있을 때만 배경 대신 깔린다",
+          "display": "작업대 칸(1160x792)을 채운다"
+        },
+        "star.corpse.sela": {
+          "type": "image",
+          "file": "star/corpse_sela.png",
+          "size": [
+            1780,
+            1215
+          ],
+          "desc": "녹스(도적) 시체 연출 — ① 소생실 작업대. 시체가 있을 때만 배경 대신 깔린다",
+          "display": "작업대 칸(1160x792)을 채운다"
+        },
+        "star.corpse.ilan": {
+          "type": "image",
+          "file": "star/corpse_ilan.png",
+          "size": [
+            1780,
+            1215
+          ],
+          "desc": "미레(마법사) 시체 연출 — ① 소생실 작업대. 시체가 있을 때만 배경 대신 깔린다",
+          "display": "작업대 칸(1160x792)을 채운다"
+        },
+        "star.corpse.mor": {
+          "type": "image",
+          "file": "star/corpse_mor.png",
+          "size": [
+            1779,
+            1215
+          ],
+          "desc": "헤일(힐러) 시체 연출 — ① 소생실 작업대. 시체가 있을 때만 배경 대신 깔린다",
+          "display": "작업대 칸(1160x792)을 채운다"
         },
         "star.expression.karin": {
           "type": "image",
@@ -3253,6 +3376,11 @@
           "type": "audio",
           "file": "sfx/stamp.mp3",
           "desc": "봉랍 도장 — 검시 판정·폐기 확정"
+        },
+        "sfx.contract.stamp": {
+          "type": "audio",
+          "file": "sfx/contract_stamp.mp3",
+          "desc": "계약서 확정 도장을 찍는 쾅 소리"
         },
         "sfx.superchat": {
           "type": "audio",

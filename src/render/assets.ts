@@ -87,6 +87,7 @@ export function starArt(starId: string): {
   appeal: string;
   dialogue: string;
   expression: string;
+  corpse: string;
 } {
   const name = starId.replace(/^body_/, '');
   return {
@@ -95,6 +96,7 @@ export function starArt(starId: string): {
     appeal: `star.appeal.${name}`,
     dialogue: `star.dialogue.${name}`,
     expression: `star.expression.${name}`,
+    corpse: `star.corpse.${name}`,
   };
 }
 

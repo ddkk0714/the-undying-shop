@@ -196,7 +196,15 @@ export class RevivePhase extends PhaseScene {
   private buildBench(s: Readonly<GameState>, corpse: Corpse | undefined, star: Star | undefined): void {
     const b = L.bench;
     this.rect(b.x, b.y, b.w, b.h, 'ink');
-    this.spriteCover(b, ['bg.revive.bench', 'bg.shop.bench']);
+    /**
+     * 한 사이클을 돌고 **시체가 생기면** 작업대에 그 사람의 시체 연출이 깔린다.
+     * 다섯 명이 저마다 다른 그림을 쓴다 (`star.corpse.*` — 검사·궁수·도적·마법사·힐러).
+     *
+     * 그림이 아직 없는 몸이면 조용히 예전 배경으로 내려간다. 순서가 곧 우선순위다:
+     *   그 사람의 시체 -> 소생실 작업대 -> 편성실 작업대
+     */
+    const corpseArt = star === undefined || corpse === undefined ? null : starArt(star.id).corpse;
+    this.spriteCover(b, [...(corpseArt === null ? [] : [corpseArt]), 'bg.revive.bench', 'bg.shop.bench']);
     // 소생실에서는 작업대에 장부와 도장만 올려 둔다 (진열은 편성실 몫)
     this.frame(b.x, b.y, b.w, b.h, 'dust');
 

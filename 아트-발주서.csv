@@ -66,6 +66,7 @@
 4,기타,item/tooth_gate.png,129×174,1:1,문지기의 이빨 장비 도트,도착,item.tooth_gate
 4,소리,sfx/attack.mp3,,1:1,전투 — 용사가 때린다 (사운드V4 · 공격_확),도착,sfx.combat.attack
 4,소리,sfx/click.mp3,,1:1,버튼 누름,도착,sfx.click
+4,소리,sfx/contract_stamp.mp3,,1:1,계약서 확정 도장을 찍는 쾅 소리,도착,sfx.contract.stamp
 4,소리,sfx/death.mp3,,1:1,신호 두절 — 방송 끊김음 + 저역 험 (M06 §8 「소리가 절반이다」),도착,sfx.death
 4,소리,sfx/fork.mp3,,1:1,무전 — 갈림길에서 문을 열었다 (사운드V4),도착,sfx.radio.fork
 4,소리,sfx/guard.mp3,,1:1,전투 — 막았다 (사운드V4),도착,sfx.combat.guard
@@ -84,6 +85,7 @@
 4,소리,sfx/text.mp3,,1:1,생방송 채팅이 들어올 때의 낮은 텍스트 틱,도착,sfx.text
 4,소리,sfx/title_chime.mp3,,1:1,타이틀의 새 게임: 띠링,도착,sfx.title.chime
 4,소리,sfx/title_door.mp3,,1:1,타이틀의 새 게임: 가게 문이 열리는 소리 (앞 2초),도착,sfx.title.door
+4,소품,prop/contract_stamp.png,179×178,1:1,계약서 우측 하단에 찍는 확정 도장,도착,prop.contract.stamp
 4,소품,prop/lamp.png,224×352,1:1,작업대의 실제 석유 램프,도착,prop.lamp
 4,소품,prop/ledger.png,336×264,1:1,작업대의 출연자 서류철,도착,prop.ledger
 4,소품,prop/scroll.png,176×64,1:1,계약서 서류 조각,도착,prop.scroll
@@ -92,6 +94,11 @@
 4,소품,prop/tv_live_hover.png,228×216,1:1,방송 시작 TV의 마우스 오버 상태,도착,prop.tv.live.hover
 4,소품,prop/tv_live.png,219×202,1:1,계약 확정 뒤 방송을 시작할 수 있는 TV,도착,prop.tv.live
 4,소품,prop/tv.png,219×202,1:1,편성실 용사 배경의 왼쪽 상자 위 브라운관 TV,도착,prop.tv
+4,캐릭터 · 기타,star/corpse_ilan.png,1780×1215,작업대 칸(1160x792)을 채운다,미레(마법사) 시체 연출 — ① 소생실 작업대. 시체가 있을 때만 배경 대신 깔린다,도착,star.corpse.ilan
+4,캐릭터 · 기타,star/corpse_juno.png,1780×1215,작업대 칸(1160x792)을 채운다,펜로(궁수) 시체 연출 — ① 소생실 작업대. 시체가 있을 때만 배경 대신 깔린다,도착,star.corpse.juno
+4,캐릭터 · 기타,star/corpse_karin.png,1780×1215,작업대 칸(1160x792)을 채운다,노일(검사) 시체 연출 — ① 소생실 작업대. 시체가 있을 때만 배경 대신 깔린다,도착,star.corpse.karin
+4,캐릭터 · 기타,star/corpse_mor.png,1779×1215,작업대 칸(1160x792)을 채운다,헤일(힐러) 시체 연출 — ① 소생실 작업대. 시체가 있을 때만 배경 대신 깔린다,도착,star.corpse.mor
+4,캐릭터 · 기타,star/corpse_sela.png,1780×1215,작업대 칸(1160x792)을 채운다,녹스(도적) 시체 연출 — ① 소생실 작업대. 시체가 있을 때만 배경 대신 깔린다,도착,star.corpse.sela
 4,캐릭터 · 기타,star/expressions/ilan_angry.png,752×792,1:1,ilan angry 대사 표정 전신,도착,star.expression.ilan.angry
 4,캐릭터 · 기타,star/expressions/ilan_blank.png,752×792,1:1,ilan blank 대사 표정 전신,도착,star.expression.ilan.blank
 4,캐릭터 · 기타,star/expressions/ilan_blush.png,752×792,1:1,ilan blush 대사 표정 전신,도착,star.expression.ilan.blush
@@ -156,7 +163,7 @@
 4,UI · 기타,ui/character_cover.png,1087×258,1:1,편성실 좌측 캐릭터 전경 가리개 — 대사 배치용,도착,ui.guest.cover
 4,UI · 기타,ui/clock_hour.png,29×42,1:1,HUD game-clock hour hand,도착,ui.clock.hour
 4,UI · 기타,ui/clock_minute.png,8×56,1:1,HUD game-clock minute hand,도착,ui.clock.minute
-4,UI · 기타,ui/contract_sheet.png,700×914,1:1,Submitted hero contract; click its desk copy to inspect,도착,ui.contract.sheet
+4,UI · 기타,ui/contract_sheet.png,795×1036,1:1,Submitted hero contract; click its desk copy to inspect,도착,ui.contract.sheet
 4,UI · 기타,ui/cursor.png,32×32,1:1,"마우스 커서 — 봉랍 도장. 뾰족한 끝이 좌상단(0,0)에 오게 그려라",대기,ui.cursor
 4,UI · 기타,ui/hud_status.png,700×144,1:1,상단바 좌 — DAY·골드·팬·평판 4칸,도착,ui.hud.status
 4,UI · 기타,ui/hud_tools.png,740×144,1:1,상단바 우 — 시계·도달층 게이지,도착,ui.hud.tools
