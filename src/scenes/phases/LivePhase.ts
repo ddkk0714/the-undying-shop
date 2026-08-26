@@ -11,6 +11,7 @@ import { Ticker } from '../../ui/Ticker';
 import { createTooltip } from '../../ui/Tooltip';
 import { playBgm, playSfx } from '../../audio/Sfx';
 import { starVoice } from '../../audio/Voice';
+import { mouthKey, mouthSpot } from '../../render/mouth';
 import { reducedMotion, speedMul } from '../../ui/options';
 import { PhaseScene } from './PhaseScene';
 import type { WipeScene } from '../WipeScene';
@@ -205,6 +206,8 @@ export class LivePhase extends PhaseScene {
   private radioDone = true;
   /** 이 줄에 붙은 표정. 줄이 떠 있는 동안 초상이 이걸 쓴다 */
   private radioFace: string | null = null;
+  /** 흉상이 스프라이트를 어디에 놓았는지 — 입을 같은 좌표계로 얹기 위해 기억한다 */
+  private bustOrigin: { x: number; y: number; cx: number; cy: number; cw: number; ch: number } | null = null;
 
   /** 프레임마다 손보는 오브젝트 — build() 가 매번 다시 채운다 */
   private blinkers: (Phaser.GameObjects.Rectangle | Phaser.GameObjects.Image)[] = [];
@@ -779,10 +782,18 @@ export class LivePhase extends PhaseScene {
         charMs: RADIO_CHAR_MS,
         effects: spoken.effects,
         voice: starVoice(this.store.getState().today?.starId),
-        onComplete: () => { this.radioDone = true; },
+        // 입은 `build()` 에서만 붙였다 떼므로, 줄이 끝나는 순간 한 번 다시 그린다.
+        // 안 그러면 채팅이 들어올 때까지(최대 750ms) 입이 남아 있다.
+        // 같은 이유로 줄이 **시작할 때도** 한 번 다시 그린다 — 초상은 대사보다 먼저 그려져서
+        // 시작 프레임에는 아직 `radioDone` 이 true 다. delayedCall(0) 이라 재귀하지 않는다
+        onComplete: () => {
+          this.radioDone = true;
+          this.time.delayedCall(0, () => this.redraw());
+        },
       });
       this.radioObj = line;
       this.keepAlive(line);
+      this.time.delayedCall(0, () => this.redraw());
     };
 
     // `pause`·`blackout`·`silent` 는 이제 `Dialogue` 안에 있다 — 세 화면이 같이 쓴다
@@ -936,7 +947,10 @@ export class LivePhase extends PhaseScene {
       ...(appealing ? [art.appeal] : []),
       art.portrait,
     ];
+    this.bustOrigin = null;
     if (!this.bust(v, keys)) this.dither(v.x, v.y, v.w, v.h, 'mid', ratio < 0.15 ? 12 : 8);
+    // 대사가 나오는 **동안에만** 입을 얹는다. 다 나오면 표정 스프라이트만 남는다
+    if (!this.radioDone) this.buildMouth(v, star.id);
     this.frame(v.x, v.y, v.w, v.h, appealing ? 'wax' : 'bone');
 
     // 열화 3+ — 균열 오버레이. 위 모든 상태에 겹친다
@@ -1080,7 +1094,37 @@ export class LivePhase extends PhaseScene {
     const cx = Math.round((src.width - cw) / 2);
     const cy = Math.min(24, Math.max(0, src.height - ch));
     img.setPosition(v.x - cx, v.y - cy).setCrop(cx, cy, cw, ch);
+    // 입을 얹을 때 쓸 변환 — 스프라이트 좌표 (sx, sy) 는 화면 (v.x - cx + sx, v.y - cy + sy)
+    this.bustOrigin = { x: v.x - cx, y: v.y - cy, cx, cy, cw, ch };
     return true;
+  }
+
+  /**
+   * 말하는 동안 얼굴에 얹는 입 (사용자 확정).
+   *
+   * 흉상은 표정 스프라이트를 **1:1 로 놓고 잘라** 쓰므로, 입도 같은 1:1 좌표에
+   * 그대로 얹으면 맞는다 (`render/mouth.ts` 의 표가 그 좌표계다).
+   * 흉상 창 밖으로 나가는 부분은 잘라 낸다 — 안 그러면 초상 틀 밖에 입이 떠 있다.
+   */
+  private buildMouth(v: { x: number; y: number; w: number; h: number }, starId: string): void {
+    const o = this.bustOrigin;
+    const spot = mouthSpot(starId);
+    if (o === null || spot === null) return;
+    const img = this.spriteObject(o.x + spot.x, o.y + spot.y, mouthKey(starId));
+    if (img === null) return;
+
+    // 흉상이 보이는 창(= v 상자)과 겹치는 부분만 남긴다
+    const left = Math.max(0, v.x - (o.x + spot.x));
+    const top = Math.max(0, v.y - (o.y + spot.y));
+    const right = Math.max(0, (o.x + spot.x + spot.w) - (v.x + v.w));
+    const bottom = Math.max(0, (o.y + spot.y + spot.h) - (v.y + v.h));
+    const cw = spot.w - left - right;
+    const chh = spot.h - top - bottom;
+    if (cw <= 0 || chh <= 0) {
+      img.destroy();
+      return;
+    }
+    img.setPosition(o.x + spot.x, o.y + spot.y).setCrop(left, top, cw, chh);
   }
 
   /* ── ⑧ 채팅 ────────────────────────────────────────── */

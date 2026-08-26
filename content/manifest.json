@@ -970,6 +970,51 @@
           ],
           "desc": "모르 표정 전신"
         },
+        "star.mouth.karin": {
+          "type": "image",
+          "file": "star/mouth/karin.png",
+          "size": [
+            84,
+            57
+          ],
+          "desc": "karin 말하는 입 — 표정 스프라이트(752x792) 위에 얹는다 (tools/key-white.mjs 로 흰 배경 제거)"
+        },
+        "star.mouth.juno": {
+          "type": "image",
+          "file": "star/mouth/juno.png",
+          "size": [
+            64,
+            55
+          ],
+          "desc": "juno 말하는 입 — 표정 스프라이트(752x792) 위에 얹는다 (tools/key-white.mjs 로 흰 배경 제거)"
+        },
+        "star.mouth.sela": {
+          "type": "image",
+          "file": "star/mouth/sela.png",
+          "size": [
+            40,
+            16
+          ],
+          "desc": "sela 말하는 입 — 표정 스프라이트(752x792) 위에 얹는다 (tools/key-white.mjs 로 흰 배경 제거)"
+        },
+        "star.mouth.ilan": {
+          "type": "image",
+          "file": "star/mouth/ilan.png",
+          "size": [
+            50,
+            60
+          ],
+          "desc": "ilan 말하는 입 — 표정 스프라이트(752x792) 위에 얹는다 (tools/key-white.mjs 로 흰 배경 제거)"
+        },
+        "star.mouth.mor": {
+          "type": "image",
+          "file": "star/mouth/mor.png",
+          "size": [
+            56,
+            40
+          ],
+          "desc": "mor 말하는 입 — 표정 스프라이트(752x792) 위에 얹는다 (tools/key-white.mjs 로 흰 배경 제거)"
+        },
         "star.expression.karin.neutral": {
           "type": "image",
           "file": "star/expressions/karin_neutral.png",
@@ -2497,6 +2542,51 @@
             792
           ],
           "desc": "모르 표정 전신"
+        },
+        "star.mouth.karin": {
+          "type": "image",
+          "file": "star/mouth/karin.png",
+          "size": [
+            84,
+            57
+          ],
+          "desc": "karin 말하는 입 — 표정 스프라이트(752x792) 위에 얹는다 (tools/key-white.mjs 로 흰 배경 제거)"
+        },
+        "star.mouth.juno": {
+          "type": "image",
+          "file": "star/mouth/juno.png",
+          "size": [
+            64,
+            55
+          ],
+          "desc": "juno 말하는 입 — 표정 스프라이트(752x792) 위에 얹는다 (tools/key-white.mjs 로 흰 배경 제거)"
+        },
+        "star.mouth.sela": {
+          "type": "image",
+          "file": "star/mouth/sela.png",
+          "size": [
+            40,
+            16
+          ],
+          "desc": "sela 말하는 입 — 표정 스프라이트(752x792) 위에 얹는다 (tools/key-white.mjs 로 흰 배경 제거)"
+        },
+        "star.mouth.ilan": {
+          "type": "image",
+          "file": "star/mouth/ilan.png",
+          "size": [
+            50,
+            60
+          ],
+          "desc": "ilan 말하는 입 — 표정 스프라이트(752x792) 위에 얹는다 (tools/key-white.mjs 로 흰 배경 제거)"
+        },
+        "star.mouth.mor": {
+          "type": "image",
+          "file": "star/mouth/mor.png",
+          "size": [
+            56,
+            40
+          ],
+          "desc": "mor 말하는 입 — 표정 스프라이트(752x792) 위에 얹는다 (tools/key-white.mjs 로 흰 배경 제거)"
         },
         "star.expression.karin.neutral": {
           "type": "image",
