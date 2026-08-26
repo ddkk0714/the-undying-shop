@@ -27,5 +27,8 @@ export const SCENES = {
 
 export type SceneKey = (typeof SCENES)[keyof typeof SCENES];
 
-/** 캔버스 밖 여백("액자") 색. soot 보다 한 단계 어둡다. */
-export const LETTERBOX = '#0A0908';
+/**
+ * 캔버스 밖 여백("액자") 색. **순수 검정** — 팔레트의 `ink` 와 같은 값이다 (사용자 확정).
+ * 예전 #0A0908 은 따뜻한 기가 도는 검정이라 화면 가장자리만 색이 달랐다.
+ */
+export const LETTERBOX = '#000000';
