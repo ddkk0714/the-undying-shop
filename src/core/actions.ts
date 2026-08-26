@@ -32,6 +32,7 @@ export type Action =
   | { type: 'REVIVE/SKIP'; starId: StarId }
   | { type: 'REVIVE/DISCARD'; starId: StarId }
   | { type: 'REVIVE/LOOT'; starId: StarId; itemId: ItemId }            // 시체가 지닌 장비 한 점 회수 (CCR-006)
+  | { type: 'REVIVE/RECORD_STAMP'; starId: StarId; diedDay: number; diedFloor: number }
   | { type: 'REVIVE/INHERIT'; personaId: PersonaId; toStarId: StarId }
   | { type: 'OFFICE/CONTRACT_ACCEPT'; starId: StarId }
   | { type: 'OFFICE/CONTRACT_REJECT'; starId: StarId }

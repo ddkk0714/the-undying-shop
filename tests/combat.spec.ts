@@ -5,10 +5,10 @@ import { content } from '../src/core/content';
 const karin = content.stars.find((star) => star.id === 'body_karin')!;
 
 describe('combat', () => {
-  it('creates encounters every three floors and applies the hero equipment stats', () => {
+  it('creates encounters on every floor and applies the hero equipment stats', () => {
     const hero = createHero(karin, [content.items.find((item) => item.id === 'cloak_ash')!], 1);
-    expect(isEncounterFloor(3)).toBe(true);
-    expect(isEncounterFloor(4)).toBe(false);
+    expect(isEncounterFloor(1)).toBe(true);
+    expect(isEncounterFloor(4)).toBe(true);
     expect(hero.maxHp).toBe(96);
     expect(hero.def).toBe(9);
     expect(content.radio.combatHealthy).toContain(createEncounter(3, 'NONE', 0).line);

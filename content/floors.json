@@ -1,5 +1,5 @@
 {
-  "encounterEvery": 3,
+  "encounterEvery": 1,
   "enemy": { "hpBase": 18, "hpPerFloor": 1.6, "atkBase": 5, "atkPerFloor": 0.55 },
   "enemiesByZone": [
     { "upTo": 22, "keys": ["enemy.rat", "enemy.husk"] },
@@ -7,9 +7,16 @@
     { "upTo": 40, "keys": ["enemy.gatekeeper"] }
   ],
   "forks": [
-    { "atFloor": 14, "a": { "label": "안전 · 17F에서 막힘", "reachDelta": 3, "hazard": "NONE" }, "b": { "label": "화염 구역 · 22F까지", "reachDelta": 8, "hazard": "FLAME" } },
-    { "atFloor": 22, "a": { "label": "붕괴 위험 · 26F", "reachDelta": 4, "hazard": "COLLAPSE" }, "b": { "label": "짐승 소굴 · 31F까지", "reachDelta": 9, "hazard": "BEAST" } },
-    { "atFloor": 28, "a": { "label": "물소리가 난다 · 34F", "reachDelta": 6, "hazard": "NONE" }, "b": { "label": "막다른 길 · 29F", "reachDelta": 1, "hazard": "NONE" } },
-    { "atFloor": 34, "a": { "label": "문지기 · 40F까지", "reachDelta": 6, "hazard": "GATEKEEPER" }, "b": { "label": "우회로 · 36F", "reachDelta": 2, "hazard": "NONE" } }
+    { "atFloor": 5, "a": { "label": "왼쪽 등불", "reachDelta": 1, "hazard": "NONE" }, "b": { "label": "오른쪽 습기", "reachDelta": 2, "hazard": "COLLAPSE" } },
+    { "atFloor": 8, "a": { "label": "낮은 천장", "reachDelta": 1, "hazard": "NONE" }, "b": { "label": "금 간 계단", "reachDelta": 2, "hazard": "COLLAPSE" } },
+    { "atFloor": 11, "a": { "label": "조용한 통로", "reachDelta": 1, "hazard": "NONE" }, "b": { "label": "짐승 발자국", "reachDelta": 2, "hazard": "BEAST" } },
+    { "atFloor": 14, "a": { "label": "안전한 난간", "reachDelta": 1, "hazard": "NONE" }, "b": { "label": "화염 구역", "reachDelta": 2, "hazard": "FLAME" } },
+    { "atFloor": 17, "a": { "label": "돌계단", "reachDelta": 1, "hazard": "NONE" }, "b": { "label": "새는 틈", "reachDelta": 2, "hazard": "COLLAPSE" } },
+    { "atFloor": 20, "a": { "label": "희미한 횃불", "reachDelta": 1, "hazard": "NONE" }, "b": { "label": "울음소리", "reachDelta": 2, "hazard": "BEAST" } },
+    { "atFloor": 23, "a": { "label": "마른 복도", "reachDelta": 1, "hazard": "NONE" }, "b": { "label": "불탄 문", "reachDelta": 2, "hazard": "FLAME" } },
+    { "atFloor": 26, "a": { "label": "난간길", "reachDelta": 1, "hazard": "NONE" }, "b": { "label": "무너진 발판", "reachDelta": 2, "hazard": "COLLAPSE" } },
+    { "atFloor": 29, "a": { "label": "물소리", "reachDelta": 1, "hazard": "NONE" }, "b": { "label": "짐승 소굴", "reachDelta": 2, "hazard": "BEAST" } },
+    { "atFloor": 32, "a": { "label": "잠긴 철문", "reachDelta": 1, "hazard": "NONE" }, "b": { "label": "타는 바람", "reachDelta": 2, "hazard": "FLAME" } },
+    { "atFloor": 35, "a": { "label": "문지기", "reachDelta": 2, "hazard": "GATEKEEPER" }, "b": { "label": "좁은 우회로", "reachDelta": 1, "hazard": "NONE" } }
   ]
 }

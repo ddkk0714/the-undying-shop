@@ -134,6 +134,14 @@ export function reducer(state: GameState, action: Action): GameState {
     }
     case 'REVIVE/SKIP': return state;
     case 'REVIVE/LOOT': return state.phase === 'REVIVE' ? takeCorpseCarried(state, action.starId, action.itemId) : state;
+    case 'REVIVE/RECORD_STAMP': {
+      if (state.phase !== 'REVIVE') return state;
+      const corpse = state.corpses.find((candidate) => candidate.starId === action.starId
+        && candidate.diedDay === action.diedDay && candidate.diedFloor === action.diedFloor);
+      if (corpse === undefined) return state;
+      const key = `reviveRecordStamped:${action.starId}:${action.diedDay}:${action.diedFloor}`;
+      return state.flags[key] === true ? state : { ...state, flags: { ...state.flags, [key]: true } };
+    }
     case 'REVIVE/DISCARD': return state.phase === 'REVIVE' ? discardReviveCorpse(state, action.starId) : state;
     case 'REVIVE/INHERIT': return inherit(state, action.personaId, action.toStarId);
     case 'OFFICE/CONTRACT_ACCEPT': {

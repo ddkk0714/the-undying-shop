@@ -38,4 +38,18 @@ describe('reducer', () => {
     expect(JSON.parse(JSON.stringify(state))).toEqual(state);
   });
 
+  it('persists a revive record stamp for the same corpse without consuming RNG', () => {
+    const initial = createInitialState(9);
+    const state = {
+      ...initial,
+      phase: 'REVIVE' as const,
+      corpses: [{ starId: 'body_karin', diedDay: 1, diedFloor: 26, grade: 'INTACT' as const, announced: null, loot: [] }],
+    };
+    const action: Action = { type: 'REVIVE/RECORD_STAMP', starId: 'body_karin', diedDay: 1, diedFloor: 26 };
+    const stamped = reducer(state, action);
+    expect(stamped.flags['reviveRecordStamped:body_karin:1:26']).toBe(true);
+    expect(stamped.rngCursor).toBe(state.rngCursor);
+    expect(reducer(stamped, action)).toBe(stamped);
+  });
+
 });
