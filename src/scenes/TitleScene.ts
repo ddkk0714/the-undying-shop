@@ -386,7 +386,8 @@ export class TitleScene extends Phaser.Scene {
           playSfx(this, 'sfx.title.door', 0.62);
           newRun(this.game, info.slot);   // 스토어를 새로 만든다 — DayScene 은 이걸 집어 든다
           this.closeSlotPopup();
-          this.scene.start(SCENES.DAY);
+          // 새로 시작할 때만 오프닝을 튼다 — 이어하기는 위 분기에서 바로 DAY 로 간다
+          this.scene.start(SCENES.OPENING);
         },
       }));
     }

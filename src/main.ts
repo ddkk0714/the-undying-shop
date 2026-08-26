@@ -5,6 +5,7 @@ import { applyFitScale } from './render/scaler';
 import { BootScene } from './scenes/BootScene';
 import { PreloadScene } from './scenes/PreloadScene';
 import { TitleScene } from './scenes/TitleScene';
+import { OpeningScene } from './scenes/OpeningScene';
 import { HelpScene } from './scenes/HelpScene';
 import { OptionsScene } from './scenes/OptionsScene';
 import { DayScene } from './scenes/DayScene';
@@ -35,7 +36,7 @@ const game = new Phaser.Game({
   },
   // 첫 씬만 자동 시작한다. 단계 씬은 DayScene 이 launch 할 때까지 잠들어 있다.
   scene: [
-    BootScene, PreloadScene, TitleScene, DayScene, EndingScene, HelpScene, OptionsScene,
+    BootScene, PreloadScene, TitleScene, OpeningScene, DayScene, EndingScene, HelpScene, OptionsScene,
     RevivePhase, OfficePhase, LivePhase, DeathPhase, DayEndPhase,
     WipeScene, // 항상 맨 위 — 디더 와이프
   ],

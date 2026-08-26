@@ -68,13 +68,21 @@
 4,소리,sfx/click.mp3,,1:1,버튼 누름,도착,sfx.click
 4,소리,sfx/contract_stamp.mp3,,1:1,계약서 확정 도장을 찍는 쾅 소리,도착,sfx.contract.stamp
 4,소리,sfx/death.mp3,,1:1,신호 두절 — 방송 끊김음 + 저역 험 (M06 §8 「소리가 절반이다」),도착,sfx.death
+4,소리,sfx/flame_cast.mp3,,1:1,전투 — 화염 적 공격 (사운드V4),도착,sfx.combat.flameCast
+4,소리,sfx/flame_hit.mp3,,1:1,전투 — 화염 적 피격 (사운드V4),도착,sfx.combat.flameHit
 4,소리,sfx/fork.mp3,,1:1,무전 — 갈림길에서 문을 열었다 (사운드V4),도착,sfx.radio.fork
+4,소리,sfx/guard_block.mp3,,1:1,전투 — 방패로 막았다 (사운드V4),도착,sfx.combat.guardBlock
 4,소리,sfx/guard.mp3,,1:1,전투 — 막았다 (사운드V4),도착,sfx.combat.guard
 4,소리,sfx/hit.mp3,,1:1,전투 — 적의 반격이 들어왔다 (사운드V4 · 공격_혹),도착,sfx.combat.hit
 4,소리,sfx/item_drop_heavy.mp3,,1:1,장비를 진열대에 놓는 무거운 금속음,도착,sfx.item.drop.heavy
 4,소리,sfx/item_drop_light.mp3,,1:1,물약·유물을 진열대에 놓는 가벼운 금속음,도착,sfx.item.drop.light
 4,소리,sfx/item_drop.mp3,,1:1,장비를 진열대에 놓는다 (사운드V4 · 물건드랍_중간 철),도착,sfx.item.drop
 4,소리,sfx/item_pick.mp3,,1:1,장비를 집어 든다 (사운드V4 · 버튼 뽑),도착,sfx.item.pick
+4,소리,sfx/monster_death.mp3,,1:1,전투 — 몬스터 사망 (사운드V4),도착,sfx.combat.monsterDeath
+4,소리,sfx/monster_hit.wav,,1:1,"전투 — 몬스터 피격 (사운드V4 · Wet_blood_splatter, 앞뒤 무음 제거)",도착,sfx.combat.monsterHit
+4,소리,sfx/monster_spawn.mp3,,1:1,전투 — 몬스터 등장 (사운드V4),도착,sfx.combat.monsterSpawn
+4,소리,sfx/newspaper_rustle.wav,,1:1,Newspaper friction while dragging,도착,sfx.newspaper.rustle
+4,소리,sfx/newspaper_turn.wav,,1:1,Newspaper page turn once fully opened,도착,sfx.newspaper.turn
 4,소리,sfx/office_walk.mp3,,1:1,편성실 용사의 입·퇴장 걸음,도착,sfx.office.walk
 4,소리,sfx/potion.mp3,,1:1,전투 — 물약을 마신다 (사운드V4 · 포션먹음이),도착,sfx.potion
 4,소리,sfx/record.mp3,,1:1,신기록 갱신,도착,sfx.record
@@ -102,6 +110,13 @@
 4,소품,prop/tv_live_hover.png,228×216,1:1,방송 시작 TV의 마우스 오버 상태,도착,prop.tv.live.hover
 4,소품,prop/tv_live.png,219×202,1:1,계약 확정 뒤 방송을 시작할 수 있는 TV,도착,prop.tv.live
 4,소품,prop/tv.png,219×202,1:1,편성실 용사 배경의 왼쪽 상자 위 브라운관 TV,도착,prop.tv
+4,오프닝 스토리,story/ch1.png,1686×948,1:1,오프닝 1장 · 세계,도착,story.ch1
+4,오프닝 스토리,story/ch2.png,1688×949,1:1,오프닝 2장 · 영생,도착,story.ch2
+4,오프닝 스토리,story/ch3.png,1689×950,1:1,오프닝 3장 · 지루해진 죽음,도착,story.ch3
+4,오프닝 스토리,story/ch4.png,1688×949,1:1,오프닝 4장 · 방송,도착,story.ch4
+4,오프닝 스토리,story/ch5.png,1689×949,1:1,오프닝 5장 · 회수,도착,story.ch5
+4,오프닝 스토리,story/ch6.png,1688×949,1:1,오프닝 6장 · 가게,도착,story.ch6
+4,오프닝 스토리,story/ch7.png,1689×949,1:1,오프닝 7장 · 주인,도착,story.ch7
 4,캐릭터 · 기타,star/corpse_ilan.png,1780×1215,작업대 칸(1160x792)을 채운다,미레(마법사) 시체 연출 — ① 소생실 작업대. 시체가 있을 때만 배경 대신 깔린다,도착,star.corpse.ilan
 4,캐릭터 · 기타,star/corpse_juno.png,1780×1215,작업대 칸(1160x792)을 채운다,펜로(궁수) 시체 연출 — ① 소생실 작업대. 시체가 있을 때만 배경 대신 깔린다,도착,star.corpse.juno
 4,캐릭터 · 기타,star/corpse_karin.png,1780×1215,작업대 칸(1160x792)을 채운다,노일(검사) 시체 연출 — ① 소생실 작업대. 시체가 있을 때만 배경 대신 깔린다,도착,star.corpse.karin
@@ -244,6 +259,10 @@
 4,UI · 기타,ui/live_radio.png,220×420,1:1,③ 무전기,도착,ui.live.radio
 4,UI · 기타,ui/live_superchat.png,383×62,1:1,③ 슈퍼챗 팝업 판 — 받은 원본이 383x62 라 1:1 로 놓는다,도착,ui.live.superchat
 4,UI · 기타,ui/logo.png,890×756,1:1,타이틀 로고,도착,ui.logo
+4,UI · 기타,ui/newspaper_day1.png,1072×1058,1:1,Day 1 end-of-day newspaper,도착,ui.newspaper.day1
+4,UI · 기타,ui/newspaper_day2.png,1072×1058,1:1,Day 2 end-of-day newspaper,도착,ui.newspaper.day2
+4,UI · 기타,ui/newspaper_day3.png,1072×1058,1:1,Day 3 end-of-day newspaper,도착,ui.newspaper.day3
+4,UI · 기타,ui/newspaper_day4.png,1072×1058,1:1,Day 4 end-of-day newspaper,도착,ui.newspaper.day4
 4,UI · 기타,ui/revive_record.png,740×1226,1:1,소생실 사망 기록 서류 — 책상 위 축소본과 확대 리더가 같은 그림을 쓴다,도착,ui.revive.record
 4,UI · 기타,ui/seal.png,768×192,192×192 프레임 1칸 (1:1),봉랍 도장 4프레임,대기,ui.seal
 4,UI · 기타,ui/shelf_arrow.png,154×161,정확히 1/2 (77x80),진열대 지시 화살표 — 고른 장비를 놓을 칸 위에 뜬다,도착,ui.shelf.arrow

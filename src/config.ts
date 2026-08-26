@@ -10,6 +10,7 @@ export const SCENES = {
   BOOT: 'Boot',
   PRELOAD: 'Preload',
   TITLE: 'Title',
+  OPENING: 'Opening',
   DAY: 'Day',
   ENDING: 'Ending',
   WIPE: 'Wipe',

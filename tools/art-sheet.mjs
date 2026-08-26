@@ -66,6 +66,7 @@ function priority(key) {
 
 const GROUP = [
   [/^bg\./, '배경'],
+  [/^story\./, '오프닝 스토리'],
   [/^star\.appeal\./, '캐릭터 · 어필 컷'],
   [/^star\.body\./, '캐릭터 · 전신'],
   [/^star\.portrait\./, '캐릭터 · 초상'],

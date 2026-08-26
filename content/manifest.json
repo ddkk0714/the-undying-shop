@@ -1093,6 +1093,69 @@
           ],
           "desc": "⑥ 발표 스튜디오"
         },
+        "story.ch1": {
+          "type": "image",
+          "file": "story/ch1.png",
+          "size": [
+            1686,
+            948
+          ],
+          "desc": "오프닝 1장 · 세계"
+        },
+        "story.ch2": {
+          "type": "image",
+          "file": "story/ch2.png",
+          "size": [
+            1688,
+            949
+          ],
+          "desc": "오프닝 2장 · 영생"
+        },
+        "story.ch3": {
+          "type": "image",
+          "file": "story/ch3.png",
+          "size": [
+            1689,
+            950
+          ],
+          "desc": "오프닝 3장 · 지루해진 죽음"
+        },
+        "story.ch4": {
+          "type": "image",
+          "file": "story/ch4.png",
+          "size": [
+            1688,
+            949
+          ],
+          "desc": "오프닝 4장 · 방송"
+        },
+        "story.ch5": {
+          "type": "image",
+          "file": "story/ch5.png",
+          "size": [
+            1689,
+            949
+          ],
+          "desc": "오프닝 5장 · 회수"
+        },
+        "story.ch6": {
+          "type": "image",
+          "file": "story/ch6.png",
+          "size": [
+            1688,
+            949
+          ],
+          "desc": "오프닝 6장 · 가게"
+        },
+        "story.ch7": {
+          "type": "image",
+          "file": "story/ch7.png",
+          "size": [
+            1689,
+            949
+          ],
+          "desc": "오프닝 7장 · 주인"
+        },
         "prop.lamp": {
           "type": "image",
           "file": "prop/lamp.png",
@@ -2182,6 +2245,11 @@
           "type": "audio",
           "file": "sfx/monster_death.mp3",
           "desc": "전투 — 몬스터 사망 (사운드V4)"
+        },
+        "sfx.combat.monsterHit": {
+          "type": "audio",
+          "file": "sfx/monster_hit.wav",
+          "desc": "전투 — 몬스터 피격 (사운드V4 · Wet_blood_splatter, 앞뒤 무음 제거)"
         },
         "sfx.combat.flameCast": {
           "type": "audio",
@@ -3358,6 +3426,69 @@
           ],
           "desc": "⑥ 발표 스튜디오"
         },
+        "story.ch1": {
+          "type": "image",
+          "file": "story/ch1.png",
+          "size": [
+            1686,
+            948
+          ],
+          "desc": "오프닝 1장 · 세계"
+        },
+        "story.ch2": {
+          "type": "image",
+          "file": "story/ch2.png",
+          "size": [
+            1688,
+            949
+          ],
+          "desc": "오프닝 2장 · 영생"
+        },
+        "story.ch3": {
+          "type": "image",
+          "file": "story/ch3.png",
+          "size": [
+            1689,
+            950
+          ],
+          "desc": "오프닝 3장 · 지루해진 죽음"
+        },
+        "story.ch4": {
+          "type": "image",
+          "file": "story/ch4.png",
+          "size": [
+            1688,
+            949
+          ],
+          "desc": "오프닝 4장 · 방송"
+        },
+        "story.ch5": {
+          "type": "image",
+          "file": "story/ch5.png",
+          "size": [
+            1689,
+            949
+          ],
+          "desc": "오프닝 5장 · 회수"
+        },
+        "story.ch6": {
+          "type": "image",
+          "file": "story/ch6.png",
+          "size": [
+            1688,
+            949
+          ],
+          "desc": "오프닝 6장 · 가게"
+        },
+        "story.ch7": {
+          "type": "image",
+          "file": "story/ch7.png",
+          "size": [
+            1689,
+            949
+          ],
+          "desc": "오프닝 7장 · 주인"
+        },
         "prop.lamp": {
           "type": "image",
           "file": "prop/lamp.png",
@@ -4439,6 +4570,11 @@
           "type": "audio",
           "file": "sfx/monster_death.mp3",
           "desc": "전투 — 몬스터 사망 (사운드V4)"
+        },
+        "sfx.combat.monsterHit": {
+          "type": "audio",
+          "file": "sfx/monster_hit.wav",
+          "desc": "전투 — 몬스터 피격 (사운드V4 · Wet_blood_splatter, 앞뒤 무음 제거)"
         },
         "sfx.combat.flameCast": {
           "type": "audio",
