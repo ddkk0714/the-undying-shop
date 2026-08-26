@@ -215,12 +215,12 @@ export class RevivePhase extends PhaseScene {
     const quote = reviveQuote(s, corpse, star);
     const when = s.day - corpse.diedDay === 1 ? '어제' : `${corpse.diedDay}일차`;
 
-    // 작업대 배경이 고주파 디더라 그 위의 본문이 읽히지 않는다. 기록이 놓이는 만큼만 덮는다
-    const rows = 96 + 132 + (quote.witnessWarning ? 160 : 0);
+    // 작업대 배경이 고주파 디더라 그 위의 본문이 읽히지 않는다. 기록이 놓이는 만큼만 덮는다.
+    // 「어제 ~에서 죽었습니다」 제목(48px)이 여기 있었는데, 시체 그림을 크게 가려서
+    // 소생 비용 바로 아래 한 줄로 내려보냈다 (사용자 확정). 그만큼 가리개도 96 줄었다
+    const rows = 132 + (quote.witnessWarning ? 160 : 0);
     this.scrimBlock(b.x + L.pad, oy - L.pad, b.w - L.pad * 2, rows + L.pad * 2);
 
-    this.title(ox, oy, `${when}, ${corpse.diedFloor}F에서 죽었습니다.`);
-    oy += 96;
     this.text(ox, oy, `시체 상태 : ${corpse.grade === 'INTACT' ? '온전' : '훼손'}`, 'dust');
     this.text(ox, oy + 44, `부활 횟수 : ${star.reviveCount}회`, 'dust');
     if (star.witnessed.length > 0) {
@@ -235,12 +235,17 @@ export class RevivePhase extends PhaseScene {
 
     // 비용 — 작업대 아래쪽 가격표 자리
     const py = b.y + b.h - 160;
-    this.scrimRow(b.x + L.pad, py - 56, b.w - L.pad * 2, 176);
+    // 176 이면 가리개의 **단단한 심**이 851 에서 끝나(scrimRow 는 위아래 48 이 꼬리다),
+    // 그 아래로 내려간 사망 한 줄이 꼬리 위에 얹혀 흐릿했다. 작업대 아래 변(939)까지 늘린다
+    this.scrimRow(b.x + L.pad, py - 56, b.w - L.pad * 2, 216);
     this.label(ox, py, '소생 비용', 'dust');
     this.title(ox, py + 28, `${fmtGold(quote.cost)} G`);
     this.label(b.x + b.w - L.pad * 3 - 200, py, '보유', 'dust');
     this.textRight(b.x + b.w - L.pad * 3, py + 32, `${fmtGold(s.gold)} G`, 'dust');
     if (!quote.affordable) this.text(ox + 320, py + 32, '자금이 부족합니다', 'wax');
+    // 죽은 자리 — 비용 바로 아래 한 줄. 「보유 …G」 와 같은 본문 크기(32px)로 맞췄다.
+    // 857..889 는 가리개의 단단한 심(771..891) 안이다
+    this.text(ox, py + 78, `${when}, ${corpse.diedFloor}F에서 죽었습니다.`);
   }
 
   /* ── 우 · 시체가 지니고 있던 것 (CCR-006) ─────────────── */
