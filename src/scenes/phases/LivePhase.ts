@@ -117,6 +117,11 @@ const COUNTER_SHAKE_MS = 180;
 const COUNTER_SHAKE = 0.004;
 const ENEMY_SPAWN_FADE_MS = 360;
 const ENEMY_DEFEAT_SCATTER_MS = 460;
+/** 처치 파편 개수 — 12는 허전하다는 요청으로 늘렸다 */
+const ENEMY_DEFEAT_FRAGMENTS = 26;
+/** 피격 순간 — `wax` 로 잠깐 물들고, 발밑을 고정한 채 잘게 튄다 (사용자 요청) */
+const ENEMY_HIT_FX_MS = 180;
+const ENEMY_HIT_SHAKE_PX = 5;
 
 function bounceAmount(t: number): number {
   const k = t < 0.25 ? t / 0.25 : (1 - (t - 0.25) / 0.75) ** 2;
@@ -230,6 +235,9 @@ export class LivePhase extends PhaseScene {
   /** 공격 슬래시 연출 재생 시작 시각. 끝나면 null — keepAlive 로 redraw 를 견딘다 */
   private attackFxAt: number | null = null;
   private attackFxImg: Phaser.GameObjects.Image | null = null;
+  /** 적이 맞은 순간(=명중 순간과 같다). 끝나면 null. `enemyBounce` 가 매번 갈아 끼워져도
+   * update() 가 프레임마다 다시 태우므로 750ms 간격 redraw 를 견딘다 (반격 부풀림과 같은 수법) */
+  private enemyHitAt: number | null = null;
   /** 떠 있는 피해 숫자들 */
   private damageToasts: { obj: Phaser.GameObjects.Text; startAt: number; baseY: number }[] = [];
 
@@ -301,6 +309,7 @@ export class LivePhase extends PhaseScene {
     this.lastEnemyHp = -1;
     this.attackFxAt = null;
     this.attackFxImg = null;
+    this.enemyHitAt = null;
     this.damageToasts = [];
     this.lastLogLength = -1;
     this.defendFxAt = null;
@@ -476,6 +485,7 @@ export class LivePhase extends PhaseScene {
         this.applyBounce(bounceAmount(t));
       }
     }
+    this.stepEnemyHitFx(now);
 
     if (this.noiseArt !== null) {
       // 잡음은 뒤집어도 잡음이다 — 1182x936 텍스처를 여러 장 물고 있을 이유가 없다
@@ -1216,6 +1226,9 @@ export class LivePhase extends PhaseScene {
       this.attackFxImg.destroy();
       this.attackFxImg = null;
     }
+    // 적이 맞은 순간 — 피격음 + 스프라이트 충격 반응 (사용자 요청)
+    this.enemyHitAt = this.time.now;
+    playSfx(this, 'sfx.combat.monsterHit', 0.6);
     const e = L.live.enemy;
     if (!this.reduced && this.hasArt('ui.live.fx.sword')) {
       const size = Math.round(e.w * 1.3);
@@ -1313,12 +1326,38 @@ export class LivePhase extends PhaseScene {
       .setPosition(Math.round(b.x - (w - b.w) / 2), Math.round(b.y - (h - b.h)));
   }
 
+  /**
+   * 피격 반응 — 매 프레임 `enemyBounce` (`buildCombat` 이 매번 다시 채운다)를 다시 물들이고
+   * 튕긴다. 트윈이 아니라 반격 부풀림(`applyBounce`)과 같은 이유 — 채팅이 들어와 750ms 마다
+   * 다시 그려도 스프라이트 참조만 갈아 끼워질 뿐 타이머는 살아 있어야 끊기지 않는다.
+   * 반격의 `applyBounce` 뒤에 불러 크기는 그쪽에, 색·미세한 흔들림은 이쪽에 맡긴다.
+   */
+  private stepEnemyHitFx(now: number): void {
+    const b = this.enemyBounce;
+    if (this.enemyHitAt === null) {
+      b?.img.clearTint();
+      return;
+    }
+    if (b === null) return;
+    const t = (now - this.enemyHitAt) / ENEMY_HIT_FX_MS;
+    if (t >= 1) {
+      this.enemyHitAt = null;
+      b.img.clearTint();
+      return;
+    }
+    // update() 는 `this.reduced` 면 이 지점까지 오지 않는다 (반격 부풀림과 같은 가드) —
+    // 여기서 다시 검사할 필요가 없다.
+    b.img.setTint(PALETTE.wax);
+    const decay = (1 - t) ** 2;
+    b.img.x += Math.round(Math.sin(t * 50) * ENEMY_HIT_SHAKE_PX * decay);
+  }
+
   /** 처치된 적이 그 자리에 남지 않도록, 실루엣 크기의 도트 파편으로 흩어진다. */
   private scatterEnemyDefeat(enemyKey: string): void {
     if (this.reduced) return;
     const e = L.live.enemy;
     const seed = strHash(enemyKey);
-    for (let i = 0; i < 12; i += 1) {
+    for (let i = 0; i < ENEMY_DEFEAT_FRAGMENTS; i += 1) {
       const angle = hash2(seed, i) * Math.PI * 2;
       const distance = 46 + Math.round(hash2(seed ^ 0x9e3779b9, i) * 110);
       const size = 8 + Math.floor(hash2(seed ^ 0x85ebca6b, i) * 13);
