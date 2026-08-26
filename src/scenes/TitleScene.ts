@@ -361,7 +361,7 @@ export class TitleScene extends Phaser.Scene {
       add(this.add.text(box.x + 66, y + 22, label, { ...FONT, color: css('bone'), fontSize: '32px' }));
       add(this.add.text(box.x + 66, y + 74, detail, { ...FONT, color: css(pendingConfirm ? 'wax' : 'dust'), fontSize: '21px' }));
 
-      const actionLabel = mode === 'continue' ? '불러오기' : pendingConfirm ? '덮어쓰기 확정' : empty ? '시작' : '선택';
+      const actionLabel = mode === 'continue' ? '불러오기' : empty ? '시작' : '선택';
       const finalStep = mode === 'new' && (empty || pendingConfirm);
       add(new Button(this, {
         x: box.x + box.w - 172, y: y + 22, w: 130, h: 76,

@@ -232,6 +232,10 @@ export class DayScene extends Phaser.Scene {
   /** HUD 저장 아이콘 — 저장과 불러오기를 한 곳에서 고르는 3슬롯 팝업. */
   private openSavePopup(): void {
     this.closeSavePopup();
+    // 단계 씬(OFFICE/LIVE/...)은 DayScene 뒤에 붙는 게 아니라 나중에 launch 돼 위에 얹힌다
+    // (04-UI-KIT 「설정」 오버레이와 같은 문제). 팝업은 DayScene 소속이라, Day 를 셸 안에서
+    // 맨 위로 올려야 진행 중인 단계 화면에 가리지 않는다 — openOverlay() 의 bringToTop 과 같은 처방.
+    this.scene.bringToTop(SCENES.DAY);
     const depth = 10_000;
     const objects = this.savePopup;
     const add = <T extends Phaser.GameObjects.GameObject & { setDepth(depth: number): T }>(object: T): T => {
@@ -279,6 +283,9 @@ export class DayScene extends Phaser.Scene {
   private closeSavePopup(): void {
     this.savePopup.forEach((object) => object.destroy());
     this.savePopup = [];
+    // Day 를 앞으로 올렸던 걸 되돌린다 — 안 그러면 팝업을 닫은 뒤에도 다음 단계 전환 전까지
+    // Day 가 계속 맨 위에 남아 있는다 (지금은 해가 없지만 원래 순서로 맞춰 둔다).
+    if (this.launched !== null) this.scene.bringToTop(this.launched);
   }
 
   /** 출격 전 08:00, 출격 뒤 20:00. 실제 경과 시간으로는 절대 움직이지 않는다. */
