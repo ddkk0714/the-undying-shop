@@ -60,7 +60,8 @@ export class RevivePhase extends PhaseScene {
     this.emptyKnockTimer = null;
     this.emptyKnockPlayed = false;
     super.create();
-    playBgm(this, 'bgm.shop');
+    // 소생실은 편성실과 다른 곡을 쓴다 (사운드V4 · 소생실메인브금)
+    playBgm(this, 'bgm.revive');
   }
 
   protected build(s: Readonly<GameState>): void {

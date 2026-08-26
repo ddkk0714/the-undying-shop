@@ -4,6 +4,7 @@ import { starArt } from '../../render/assets';
 import { L } from '../../ui/layout';
 import { Button } from '../../ui/Button';
 import { onboard } from '../../ui/Onboarding';
+import { playBgm } from '../../audio/Sfx';
 import { PhaseScene } from './PhaseScene';
 import type { GameState } from '../../core/types';
 
@@ -19,6 +20,11 @@ import type { GameState } from '../../core/types';
 export class AnnouncePhase extends PhaseScene {
   constructor() {
     super(SCENES.PHASE_ANNOUNCE);
+  }
+
+  override create(): void {
+    super.create();
+    playBgm(this, 'bgm.tension');
   }
 
   protected build(s: Readonly<GameState>): void {

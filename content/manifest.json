@@ -1642,17 +1642,29 @@
           "loop": true,
           "desc": "타이틀 화면 저음량 백색소음"
         },
+        "bgm.revive": {
+          "type": "audio",
+          "file": "bgm/revive.mp3",
+          "loop": true,
+          "desc": "① 소생실 BGM (사운드V4 · 소생실메인브금 122초)"
+        },
         "bgm.shop": {
           "type": "audio",
           "file": "bgm/shop.mp3",
           "loop": true,
-          "desc": "상점 BGM — 소생실·편성실 (낮고 느리게)"
+          "desc": "② 편성실 BGM (사운드V4 · 메인화면 브금 120초)"
+        },
+        "bgm.tension": {
+          "type": "audio",
+          "file": "bgm/tension.mp3",
+          "loop": true,
+          "desc": "④⑤⑥ 사망·검시·발표 BGM (사운드V4 · 완전 똥줄타는 긴장감 123초)"
         },
         "bgm.live": {
           "type": "audio",
           "file": "bgm/live.mp3",
           "loop": true,
-          "desc": "생방송 BGM — 하강 중 (긴장)"
+          "desc": "③ 생방송 BGM — 하강 중 (사운드V4 · 던전기본브금 122초)"
         }
       }
     },
@@ -3215,17 +3227,29 @@
           "loop": true,
           "desc": "타이틀 화면 저음량 백색소음"
         },
+        "bgm.revive": {
+          "type": "audio",
+          "file": "bgm/revive.mp3",
+          "loop": true,
+          "desc": "① 소생실 BGM (사운드V4 · 소생실메인브금 122초)"
+        },
         "bgm.shop": {
           "type": "audio",
           "file": "bgm/shop.mp3",
           "loop": true,
-          "desc": "상점 BGM — 소생실·편성실 (낮고 느리게)"
+          "desc": "② 편성실 BGM (사운드V4 · 메인화면 브금 120초)"
+        },
+        "bgm.tension": {
+          "type": "audio",
+          "file": "bgm/tension.mp3",
+          "loop": true,
+          "desc": "④⑤⑥ 사망·검시·발표 BGM (사운드V4 · 완전 똥줄타는 긴장감 123초)"
         },
         "bgm.live": {
           "type": "audio",
           "file": "bgm/live.mp3",
           "loop": true,
-          "desc": "생방송 BGM — 하강 중 (긴장)"
+          "desc": "③ 생방송 BGM — 하강 중 (사운드V4 · 던전기본브금 122초)"
         }
       }
     }

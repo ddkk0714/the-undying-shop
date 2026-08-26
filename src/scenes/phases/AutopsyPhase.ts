@@ -6,6 +6,7 @@ import { Button } from '../../ui/Button';
 import { reducedMotion } from '../../ui/options';
 import { sealStamp } from '../../ui/SealStamp';
 import { onboard } from '../../ui/Onboarding';
+import { playBgm } from '../../audio/Sfx';
 import { PhaseScene } from './PhaseScene';
 import type { CorpseGrade, GameState } from '../../core/types';
 
@@ -34,6 +35,7 @@ export class AutopsyPhase extends PhaseScene {
    */
     this.sealing = false;
     super.create();
+    playBgm(this, 'bgm.tension');
   }
 
   protected build(s: Readonly<GameState>): void {

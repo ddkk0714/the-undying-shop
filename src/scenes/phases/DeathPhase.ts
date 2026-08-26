@@ -7,7 +7,7 @@ import { PALETTE } from '../../render/palette';
 import { L } from '../../ui/layout';
 import { Button } from '../../ui/Button';
 import { reducedMotion } from '../../ui/options';
-import { playSfx } from '../../audio/Sfx';
+import { playBgm, playSfx } from '../../audio/Sfx';
 import { PhaseScene } from './PhaseScene';
 import type { GameState } from '../../core/types';
 
@@ -62,6 +62,8 @@ export class DeathPhase extends PhaseScene {
     this.reduced = reducedMotion(this.registry);
     this.prevRecord = (this.registry.get('record.prev') as number | undefined) ?? null;
     super.create();
+    // 사망부터 발표까지는 한 덩어리다 — 세 화면이 같은 곡을 이어 받는다 (사운드V4)
+    playBgm(this, 'bgm.tension');
 
     if (this.reduced) {
       this.stage = 2;
