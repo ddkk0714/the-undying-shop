@@ -38,7 +38,8 @@ export type Action =
   | { type: 'OFFICE/CONTRACT_HAGGLE'; starId: StarId }          // 방문 계약 1장당 하루 1회 (CCR-005)
   | { type: 'OFFICE/PICK_STAR'; starId: StarId }
   | { type: 'OFFICE/PLACE'; slot: number; itemId: ItemId | null }
-  | { type: 'OFFICE/SELL'; itemId: ItemId }
+  | { type: 'OFFICE/SALE_PRICE_SET'; multiplier: number }
+  | { type: 'OFFICE/SELL_BATCH' }
   | { type: 'OFFICE/CONFIRM' }
   | { type: 'LIVE/TICK'; dt: number }
   | { type: 'COMBAT/CHOOSE'; choice: CombatChoice }

@@ -1,13 +1,15 @@
 import { SCENES } from '../../config';
 import Phaser from 'phaser';
 import { content } from '../../core/content';
-import { isEarlyClosure } from '../../core/systems/narrative';
 import { pickDialogue, totalRevivals } from '../../core/systems/dialogue';
+import { saleHaggleCount, saleOfferTried, salePriceMultiplier, salePurchaseChance, saleSlotSold } from '../../core/systems/office';
 import { key, starArt, starExpression } from '../../render/assets';
+import { PALETTE } from '../../render/palette';
+import { starVoice } from '../../audio/Voice';
 import { L, actionX, ACTION_W } from '../../ui/layout';
 import { Button } from '../../ui/Button';
 import { Dialogue } from '../../ui/Dialogue';
-import { onboard } from '../../ui/Onboarding';
+import { createTooltip } from '../../ui/Tooltip';
 import { reducedMotion } from '../../ui/options';
 import { playBgm, playSfx } from '../../audio/Sfx';
 import { PhaseScene } from './PhaseScene';
@@ -31,7 +33,7 @@ const INVENTORY_VISIBLE_ROWS = 2;
 const SHELF_SLOTS = [
   { x: 1016, y: 249, w: 223, h: 266 },
   { x: 1248, y: 249, w: 214, h: 266 },
-  { x: 1473, y: 249, w: 214, h: 266 },
+  { x: 1488, y: 249, w: 214, h: 266 },
 ] as const;
 
 export class OfficePhase extends PhaseScene {
@@ -55,6 +57,10 @@ export class OfficePhase extends PhaseScene {
   private officeKnockTimer: Phaser.Time.TimerEvent | null = null;
   /** 전신을 누를 때 SHOP_TOUCH 대사를 순서대로 넘긴다. */
   private guestTouchCount = 0;
+  /** 진열 상품의 가격을 정하는 흥정 팝업. */
+  private saleDialogOpen = false;
+  private saleMultiplier = 1;
+  private saleReaction: string | null = null;
 
   constructor() {
     super(SCENES.PHASE_OFFICE);
@@ -75,6 +81,11 @@ export class OfficePhase extends PhaseScene {
     this.shopOpened = false;
     this.officeKnockTimer = null;
     this.guestTouchCount = 0;
+    this.saleDialogOpen = false;
+    this.saleMultiplier = 1;
+    this.saleReaction = null;
+    // 방송 화면과 같은 버튼 툴팁. redraw 때 버튼만 다시 만들어져도 툴팁 판은 유지한다.
+    this.keepAlive(...createTooltip(this).objects());
     super.create();
     playBgm(this, 'bgm.shop');
   }
@@ -98,8 +109,7 @@ export class OfficePhase extends PhaseScene {
     // 확대는 별도 장면이 아니라, 이미 그린 작업대 위에 원본 종이를 얹는다.
     if (this.contractReaderOpen) this.buildContract(s);
     this.buildActions(s);
-    onboard(this, s.day, 'OFFICE_SHELF',
-      { x: L.dialogue.x, y: L.dialogue.y + 44, w: L.dialogue.w });
+    if (this.saleDialogOpen) this.buildSaleDialog(s);
   }
 
   /* ── 좌 · 방문자 / 출연자 ─────────────────────────────── */
@@ -210,7 +220,7 @@ export class OfficePhase extends PhaseScene {
       generation: s.personas.find((persona) => persona.id === star.personaId)?.generation,
     }, ((s.day * 17 + this.contractIndex * 7 + this.guestTouchCount) % 100) / 100);
     const speech: { line: string; expressionAsset?: string; effects?: readonly string[] } = {
-      line: speechLine?.text ?? (contracting ? '...일할 자리 있나요?' : '...강한 무기 있나요?'),
+      line: this.saleReaction ?? speechLine?.text ?? (contracting ? '...일할 자리 있나요?' : '...강한 무기 있나요?'),
       expressionAsset: star === undefined || speechLine === null ? undefined : starExpression(star.id, speechLine.expression),
       effects: speechLine?.effects,
     };
@@ -243,6 +253,7 @@ export class OfficePhase extends PhaseScene {
       line: this.clip(speech.line, coverW - 96, 'title'),
       scale: 0.78,
       effects: speech.effects,
+      voice: starVoice(star?.id),
     });
   }
 
@@ -342,15 +353,20 @@ export class OfficePhase extends PhaseScene {
       const { x, y, w, h } = slot;
       const itemId = s.shelf[i] ?? null;
       const def = itemId === null ? undefined : content.items.find((item) => item.id === itemId);
+      const soldOut = saleSlotSold(s, i);
 
       // 원화에 그려진 사각 홈이 곧 놓는 자리다. 별도의 카드·배경은 덮지 않는다.
       const selected = this.selectedItemId === null ? undefined : content.items.find((item) => item.id === this.selectedItemId);
-      const acceptsSelected = selected !== undefined && content.balance.equipment.slotByItem[selected.id] === i;
+      const acceptsSelected = !soldOut && selected !== undefined && content.balance.equipment.slotByItem[selected.id] === i;
       const dropZone = this.add.zone(x, y, w, h).setOrigin(0, 0);
       dropZone.setInteractive({ cursor: acceptsSelected ? 'pointer' : 'default' });
       dropZone.on('pointerup', () => this.placeSelected(i));
       if (acceptsSelected) this.shelfArrow(slot);
       this.text(x + 12, y + 10, SLOT_NAMES[i]!, 'bone').setScale(0.75);
+      if (soldOut) {
+        this.label(x + Math.round(w / 2) - 92, y + Math.round(h / 2) - 18, '오늘 판매 완료', 'wax').setScale(1.18).setDepth(41);
+        continue;
+      }
       if (def === undefined) {
         this.text(x + 12, y + 72, '여기로 끌기', 'bone').setScale(0.75);
         this.text(x + 12, y + 98, i === 0 ? '무기' : i === 1 ? '방어구' : '물약·유물', 'bone').setScale(0.75);
@@ -361,6 +377,8 @@ export class OfficePhase extends PhaseScene {
       if (art !== null) this.wireShelfDrag(art, i, { x: art.x, y: art.y });
       this.text(x + 12, y + 142, this.clip(def.name, Math.floor((w - 24) / 0.75), 'body'), 'bone').setScale(0.75);
       this.text(x + 12, y + 168, this.clip(this.itemStats(def), Math.floor((w - 24) / 0.75), 'body'), 'bone').setScale(0.75);
+      const salePrice = Math.round(def.price * salePriceMultiplier(s));
+      this.text(x + 12, y + 202, `판매가 ${salePrice.toLocaleString('en-US')} G`, 'wax').setScale(0.72);
     }
 
   }
@@ -644,10 +662,13 @@ export class OfficePhase extends PhaseScene {
   private wireShelfDrag(image: Phaser.GameObjects.Image, slot: number, home: { x: number; y: number }): void {
     image.setInteractive({ cursor: 'grab' });
     this.input.setDraggable(image);
-    image.on('dragstart', () => image.setDepth(1000).setScale(1.15));
+    image.on('dragstart', () => {
+      image.setDepth(1000).setScale(1.15);
+    });
     image.on('drag', (_pointer: Phaser.Input.Pointer, dragX: number, dragY: number) => image.setPosition(Math.round(dragX), Math.round(dragY)));
     image.on('dragend', () => {
       if (this.inInventory(image.x, image.y)) {
+        this.selectedItemId = null;
         this.store.dispatch({ type: 'OFFICE/PLACE', slot, itemId: null });
         return;
       }
@@ -697,64 +718,229 @@ export class OfficePhase extends PhaseScene {
     const y = a.y + L.pad;
     const h = a.h - L.pad * 2;
 
-    // 蘇生 — 소생실로 되돌아간다 (CCR-002). 되살릴 시체가 없으면 잠근다.
+    const actionButton = (index: number, opts: Omit<ConstructorParameters<typeof Button>[1], 'x' | 'y' | 'w' | 'h'>): Button => {
+      const button = new Button(this, { x: actionX(index), y, w: ACTION_W, h, ...opts });
+      // 펼친 계약서는 작업대와 함께 행동 바 일부까지 덮는다. 행동 버튼은 항상 그 위에 둔다.
+      return button.setDepth(900);
+    };
+
+    // ① 소생실 — 두 버튼 구성 모두 같은 자리를 쓴다.
     const hasCorpse = s.corpses.some((c) =>
       s.stars.some((st) => st.id === c.starId && (st.status === 'DEAD' || st.status === 'HIDDEN')),
     );
-    new Button(this, {
-      x: actionX(0), y, w: ACTION_W, h,
-      label: '소생', hotkey: '1', variant: 'danger',
+    actionButton(0, {
+      label: '소생실', hotkey: '1', variant: 'danger',
       enabled: hasCorpse,
+      tip: hasCorpse ? '사망한 출연자를 되살리거나 소지품을 회수하러 갑니다.' : '되살릴 출연자가 없습니다.',
       onClick: () => this.store.dispatch({ type: 'PHASE/GOTO', phase: 'REVIVE' }),
     });
-    new Button(this, {
-      x: actionX(1), y, w: ACTION_W, h,
-      label: '진열', hotkey: '2',
-      variant: this.inventoryOpen ? 'default' : 'ghost',
-      onClick: () => this.openInventory(),
-    });
-    const expanded = this.contractReaderOpen ? s.visitors[this.contractIndex] : undefined;
-    new Button(this, {
-      x: actionX(2), y, w: ACTION_W, h,
-      label: '계약', hotkey: '3',
-      variant: expanded !== undefined && s.gold >= expanded.fee ? 'default' : 'ghost',
-      // 확대 중에는 종이 아래에 남긴다. 실제 수락은 좌측의 문서 전용 버튼으로만 한다.
-      enabled: false,
-      onClick: () => undefined,
-    });
-    const waiting = s.visitors[0];
-    if (waiting !== undefined) {
-      const canAccept = expanded !== undefined && s.gold >= expanded.fee;
-      new Button(this, {
-        x: L.dialogue.x + 24, y: L.dialogue.y + 14, w: 232, h: 50,
-        label: '수락 후 방송', hotkey: '3', variant: 'default', enabled: canAccept,
-        onClick: () => {
-          if (expanded === undefined) return;
-          this.contractReaderOpen = false;
-          this.store.dispatch({ type: 'OFFICE/CONTRACT_ACCEPT', starId: expanded.starId });
-        },
+
+    const waiting = s.visitors[this.contractIndex] ?? s.visitors[0];
+    if (!this.inventoryOpen) {
+      // 기본: ①소생실 ②인벤토리 ③돌려보내기 ④계약
+      actionButton(1, {
+        label: '인벤토리', hotkey: '2',
+        tip: '장비를 진열하거나 판매할 수 있는 인벤토리 창을 엽니다.',
+        onClick: () => this.openInventory(),
       });
-      const returnButton = new Button(this, {
-        // 대사/힌트 아래의 고정 위치: 계약서를 펼치지 않아도 언제든 돌려보낼 수 있다.
-        x: L.dialogue.x + 24, y: L.dialogue.y + 76, w: 232, h: 50,
-        label: '돌려보내기', hotkey: '6', variant: 'danger',
+      actionButton(2, {
+        label: '돌려보내기', hotkey: '3', variant: 'danger',
+        enabled: waiting !== undefined,
+        tip: waiting === undefined ? '돌려보낼 지원자가 없습니다.' : '현재 지원자의 계약을 거절하고 다음 지원자를 기다립니다.',
         onClick: () => {
+          if (waiting === undefined) return;
           this.contractReaderOpen = false;
           this.store.dispatch({ type: 'OFFICE/CONTRACT_REJECT', starId: waiting.starId });
         },
       });
-      returnButton.setDepth(100);
+      const canAccept = waiting !== undefined && s.gold >= waiting.fee;
+      actionButton(3, {
+        label: '계약', hotkey: '4',
+        enabled: canAccept,
+        tip: waiting === undefined
+          ? '계약할 지원자가 없습니다.'
+          : canAccept
+            ? `${waiting.fee.toLocaleString('en-US')} G를 지불하고 계약한 뒤 방송을 시작합니다.`
+            : `계약금 ${waiting.fee.toLocaleString('en-US')} G가 필요합니다.`,
+        onClick: () => {
+          if (waiting === undefined) return;
+          this.contractReaderOpen = false;
+          this.store.dispatch({ type: 'OFFICE/CONTRACT_ACCEPT', starId: waiting.starId });
+        },
+      });
+      return;
     }
-    // 수동 출연자 선택은 없다. 방송을 누르면 코어가 현재 생존 용사를 자동으로 고른다.
-    const closing = s.today === null && isEarlyClosure(s);
-    const hasAutomaticCaster = s.stars.some((star) => star.status === 'ALIVE');
-    new Button(this, {
-      x: actionX(3), y, w: ACTION_W, h,
-      label: closing ? '폐업' : '방송', hotkey: '4', variant: 'danger',
-      enabled: hasAutomaticCaster || closing,
-      onClick: () => this.store.dispatch({ type: 'OFFICE/CONFIRM' }),
+
+    // 인벤토리: ①소생실 ②진열 ③판매 ④흥정
+    const selected = this.selectedItemId === null
+      ? undefined
+      : content.items.find((item) => item.id === this.selectedItemId);
+    const selectedSlot = selected === undefined ? undefined : content.balance.equipment.slotByItem[selected.id];
+    const selectedSlotClosed = selectedSlot !== undefined && saleSlotSold(s, selectedSlot);
+    actionButton(1, {
+      label: '진열', hotkey: '2',
+      enabled: selected !== undefined && selectedSlot !== undefined && !selectedSlotClosed && !s.shelf.includes(selected.id),
+      tip: selected === undefined
+        ? '인벤토리에서 장비를 먼저 선택하세요.'
+        : selectedSlotClosed
+          ? `${SLOT_NAMES[selectedSlot!]} 진열대는 오늘 판매를 마쳐 비활성화됐습니다.`
+          : s.shelf.includes(selected.id)
+          ? '이미 진열된 장비입니다.'
+          : `${selected.name}을(를) 알맞은 진열대에 놓습니다.`,
+      onClick: () => {
+        if (selected === undefined || selectedSlot === undefined || selectedSlotClosed || s.shelf.includes(selected.id)) return;
+        this.store.dispatch({ type: 'OFFICE/PLACE', slot: selectedSlot, itemId: selected.id });
+        this.selectedItemId = null;
+      },
+    });
+    const saleItems = this.saleCandidates(s);
+    const canSell = saleItems.length > 0 && !saleOfferTried(s);
+    const haggles = saleHaggleCount(s);
+    const canHaggle = saleItems.length > 0 && haggles < content.balance.shopSale.maxHaggles;
+    const displayedCount = s.shelf.filter((itemId, slot) => itemId !== null && !saleSlotSold(s, slot)).length;
+    actionButton(2, {
+      label: '판매', hotkey: '3', variant: 'danger',
+      enabled: canSell,
+      tip: canSell
+        ? `현재 진열 가격으로 상품 ${saleItems.length}개를 한 번에 판매합니다. 결과는 전부 성공 또는 전부 실패입니다.`
+        : saleItems.length > 0 && saleOfferTried(s)
+          ? '이 가격으로는 이미 판매를 시도했습니다. 흥정에서 새 가격을 제안하세요.'
+        : displayedCount > 0
+          ? '오늘 판매할 수 있는 진열 상품이 없습니다.'
+          : '판매할 장비를 진열대에 먼저 배치하세요.',
+      onClick: () => {
+        if (!canSell) return;
+        this.attemptBatchSale();
+      },
+    });
+    actionButton(3, {
+      label: '흥정', hotkey: '4',
+      enabled: canHaggle,
+      tip: canHaggle
+        ? `진열대의 상품 ${saleItems.length}개에 적용할 가격을 제안합니다. 용사의 반응 뒤 진열 가격이 바뀝니다. (${haggles}/${content.balance.shopSale.maxHaggles})`
+        : displayedCount > 0
+          ? `오늘 가능한 가격 제안 ${content.balance.shopSale.maxHaggles}회를 모두 사용했습니다.`
+          : '흥정할 장비를 진열대에 먼저 배치하세요.',
+      onClick: () => {
+        if (!canHaggle) return;
+        this.saleMultiplier = salePriceMultiplier(s);
+        this.saleDialogOpen = true;
+        this.redraw();
+      },
     });
 
+  }
+
+  private saleCandidates(state: Readonly<GameState>): { item: ItemDef; slot: number }[] {
+    return state.shelf.flatMap((itemId, slot) => {
+      if (itemId === null || saleSlotSold(state, slot)) return [];
+      const item = content.items.find((candidate) => candidate.id === itemId);
+      return item === undefined ? [] : [{ item, slot }];
+    });
+  }
+
+  private attemptBatchSale(): void {
+    const before = this.store.getState();
+    const candidates = this.saleCandidates(before);
+    if (candidates.length === 0 || saleOfferTried(before)) return;
+    const beforeGold = before.gold;
+    this.store.dispatch({ type: 'OFFICE/SELL_BATCH' });
+    const after = this.store.getState();
+    const soldCount = candidates.filter(({ slot }) => !saleSlotSold(before, slot) && saleSlotSold(after, slot)).length;
+    const income = after.gold - beforeGold;
+    this.saleReaction = soldCount === candidates.length
+      ? `좋아요. 진열된 물건 전부 살게요. ${income.toLocaleString('en-US')} G 맞죠?`
+      : '그 가격에는 못 사겠어요. 가격을 다시 생각해 주세요.';
+    this.selectedItemId = null;
+    this.saleDialogOpen = false;
+    this.redraw();
+  }
+
+  private buildSaleDialog(s: Readonly<GameState>): void {
+    const candidates = this.saleCandidates(s);
+    if (candidates.length === 0) {
+      this.saleDialogOpen = false;
+      return;
+    }
+    const rules = content.balance.shopSale;
+    const baseTotal = candidates.reduce((sum, { item }) => sum + item.price, 0);
+    const haggles = saleHaggleCount(s);
+    const box = { x: 610, y: 282, w: 700, h: 500 };
+    const depth = 930;
+
+    this.add.rectangle(L.W / 2, L.H / 2, L.W, L.H, PALETTE.ink, 0.68).setDepth(depth);
+    this.add.rectangle(box.x, box.y, box.w, box.h, PALETTE.ink, 1).setOrigin(0, 0).setDepth(depth + 1);
+    const border = this.add.graphics().setDepth(depth + 2);
+    border.fillStyle(PALETTE.bone, 1);
+    border.fillRect(box.x, box.y, box.w, L.line);
+    border.fillRect(box.x, box.y + box.h - L.line, box.w, L.line);
+    border.fillRect(box.x, box.y, L.line, box.h);
+    border.fillRect(box.x + box.w - L.line, box.y, L.line, box.h);
+
+    this.title(box.x + 42, box.y + 30, '가격을 어떻게 할까?').setScale(0.92).setDepth(depth + 3);
+    this.text(box.x + 44, box.y + 104, `진열 상품 ${candidates.length}개 일괄 · 기준가 ${baseTotal.toLocaleString('en-US')} G`, 'dust').setScale(1.02).setDepth(depth + 3);
+    const priceText = this.label(box.x + 44, box.y + 164, '', 'bone').setScale(1.34).setDepth(depth + 3);
+    const chanceText = this.label(box.x + 44, box.y + 214, '', 'wax').setScale(1.1).setDepth(depth + 3);
+    this.text(box.x + 44, box.y + 256, `가격 제안 ${haggles} / ${rules.maxHaggles}`, 'dust').setScale(0.86).setDepth(depth + 3);
+
+    const trackX = box.x + 54;
+    const trackY = box.y + 286;
+    const trackW = box.w - 108;
+    const track = this.add.graphics().setDepth(depth + 3);
+    track.fillStyle(PALETTE.dust, 1);
+    track.fillRect(trackX, trackY - 3, trackW, 6);
+    const thumb = this.add.rectangle(trackX, trackY, 18, 42, PALETTE.wax, 1).setDepth(depth + 4);
+
+    const renderValue = (): void => {
+      const ratio = (this.saleMultiplier - rules.minMultiplier) / (rules.maxMultiplier - rules.minMultiplier);
+      thumb.setX(Math.round(trackX + trackW * ratio));
+      priceText.setText(`×${this.saleMultiplier.toFixed(1)}  ·  총 ${Math.round(baseTotal * this.saleMultiplier).toLocaleString('en-US')} G`);
+      chanceText.setText(`상품별 구매 확률 ${Math.round(salePurchaseChance(this.saleMultiplier) * 100)}%`);
+    };
+    const setFromPointer = (pointer: Phaser.Input.Pointer): void => {
+      const raw = rules.minMultiplier + Math.max(0, Math.min(1, (pointer.x - trackX) / trackW)) * (rules.maxMultiplier - rules.minMultiplier);
+      this.saleMultiplier = Math.max(rules.minMultiplier, Math.min(rules.maxMultiplier, Math.round(raw / rules.step) * rules.step));
+      renderValue();
+    };
+    const slider = this.add.zone(trackX, trackY - 32, trackW, 64).setOrigin(0, 0).setDepth(depth + 5).setInteractive({ cursor: 'pointer' });
+    slider.on('pointerdown', (pointer: Phaser.Input.Pointer) => setFromPointer(pointer));
+    slider.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+      if (pointer.isDown) setFromPointer(pointer);
+    });
+    this.text(trackX, trackY + 32, `×${rules.minMultiplier.toFixed(1)}`, 'dust').setScale(0.88).setDepth(depth + 3);
+    this.text(trackX + trackW - 52, trackY + 32, `×${rules.maxMultiplier.toFixed(1)}`, 'dust').setScale(0.88).setDepth(depth + 3);
+    renderValue();
+
+    new Button(this, {
+      x: box.x + 44, y: box.y + box.h - 78, w: 270, h: 52,
+      label: '취소', variant: 'ghost',
+      tip: '가격 흥정을 닫고 편성실로 돌아갑니다.',
+      onClick: () => {
+        this.saleDialogOpen = false;
+        this.redraw();
+      },
+    }).setDepth(depth + 10);
+    new Button(this, {
+      x: box.x + box.w - 314, y: box.y + box.h - 78, w: 270, h: 52,
+      label: '가격 제안',
+      enabled: candidates.length > 0 && haggles < rules.maxHaggles,
+      tip: `진열 상품 ${candidates.length}개에 같은 가격 배율을 제안합니다. 용사의 반응 후 진열 가격이 갱신됩니다.`,
+      onClick: () => {
+        const before = this.store.getState();
+        this.store.dispatch({ type: 'OFFICE/SALE_PRICE_SET', multiplier: this.saleMultiplier });
+        const after = this.store.getState();
+        if (saleHaggleCount(after) === saleHaggleCount(before)) return;
+        this.saleReaction = this.saleMultiplier <= 0.8
+          ? '이 정도 가격이면 괜찮네요. 진열 가격을 그렇게 바꿔 주세요.'
+          : this.saleMultiplier <= 1.1
+            ? '그 가격이라면 한번 생각해 볼게요.'
+            : this.saleMultiplier <= 1.5
+              ? '조금 비싼데요... 그래도 가격표는 확인해 볼게요.'
+              : '너무 비싸요. 정말 그 가격으로 파실 건가요?';
+        this.saleDialogOpen = false;
+        this.redraw();
+      },
+    }).setDepth(depth + 10);
   }
 
   private openInventory(): void {

@@ -4,6 +4,7 @@ import { createInitialState } from './state';
 import { content } from './content';
 import { mulberry32 } from './rng';
 import { reviveQuote } from './systems/economy';
+import { saleHaggleCount, saleOfferTried, saleSlotSold } from './systems/office';
 import type { Action } from './actions';
 import type { GameState, RunStats } from './types';
 
@@ -26,7 +27,8 @@ export const randomPolicy: Policy = (state) => {
     const waiting = state.visitors[0];
     if (waiting !== undefined) {
       const emergencyStock = mostValuableSellableItem(state);
-      return emergencyStock === undefined ? { type: 'OFFICE/CONTRACT_REJECT', starId: waiting.starId } : { type: 'OFFICE/SELL', itemId: emergencyStock };
+      const saleAction = emergencyStock === undefined ? undefined : prepareSale(state, emergencyStock);
+      return saleAction ?? { type: 'OFFICE/CONTRACT_REJECT', starId: waiting.starId };
     }
     return { type: 'OFFICE/CONFIRM' };
   }
@@ -83,15 +85,31 @@ function shouldDamageForRecovery(state: Readonly<GameState>): boolean {
 
 function newDamageLootForSale(state: Readonly<GameState>): string | undefined {
   const corpse = state.corpses.find((candidate) => candidate.grade === 'DAMAGED' && candidate.diedDay === state.day - 1);
-  return corpse?.loot.find((itemId) => !state.shelf.includes(itemId) && state.inventory.some((stack) => stack.id === itemId && stack.qty > 0));
+  return corpse?.loot.find((itemId) => state.inventory.some((stack) => stack.id === itemId && stack.qty > 0));
 }
 
 function mostValuableSellableItem(state: Readonly<GameState>): string | undefined {
   return state.inventory
-    .filter((stack) => stack.qty > 0 && !state.shelf.includes(stack.id))
+    .filter((stack) => {
+      if (stack.qty <= 0) return false;
+      const slot = content.balance.equipment.slotByItem[stack.id];
+      return slot !== undefined
+        && !saleSlotSold(state, slot);
+    })
     .map((stack) => content.items.find((item) => item.id === stack.id))
     .filter((item): item is NonNullable<typeof item> => item !== undefined)
     .sort((a, b) => b.price - a.price)[0]?.id;
+}
+
+function prepareSale(state: Readonly<GameState>, itemId: string): Action | undefined {
+  const slot = content.balance.equipment.slotByItem[itemId];
+  if (slot === undefined || saleSlotSold(state, slot)) return undefined;
+  const displayed = state.shelf[slot];
+  if (displayed === null) return { type: 'OFFICE/PLACE', slot, itemId };
+  if (!saleOfferTried(state)) return { type: 'OFFICE/SELL_BATCH' };
+  return saleHaggleCount(state) < content.balance.shopSale.maxHaggles
+    ? { type: 'OFFICE/SALE_PRICE_SET', multiplier: content.balance.shopSale.minMultiplier }
+    : undefined;
 }
 
 function equippedGearForSale(state: Readonly<GameState>): string | undefined {
@@ -108,7 +126,7 @@ function itemToEquip(state: Readonly<GameState>): { itemId: string; slot: number
   return state.inventory
     .filter((stack) => stack.qty > 0 && !state.shelf.includes(stack.id))
     .map((stack) => ({ itemId: stack.id, slot: content.balance.equipment.slotByItem[stack.id] }))
-    .find((candidate): candidate is { itemId: string; slot: number } => candidate.slot !== undefined && state.shelf[candidate.slot] === null);
+    .find((candidate): candidate is { itemId: string; slot: number } => candidate.slot !== undefined && state.shelf[candidate.slot] === null && !saleSlotSold(state, candidate.slot));
 }
 
 function potionToUse(state: Readonly<GameState>): string | undefined {
@@ -130,9 +148,15 @@ export const damageAwarePolicy: Policy = (state) => {
   if (potion !== undefined) return { type: 'COMBAT/USE_ITEM', itemId: potion };
   if (state.phase === 'OFFICE') {
     const recoveryLoot = newDamageLootForSale(state);
-    if (recoveryLoot !== undefined) return { type: 'OFFICE/SELL', itemId: recoveryLoot };
+    if (recoveryLoot !== undefined) {
+      const saleAction = prepareSale(state, recoveryLoot);
+      if (saleAction !== undefined) return saleAction;
+    }
     const emergencyItem = equippedGearForSale(state);
-    if (emergencyItem !== undefined) return { type: 'OFFICE/SELL', itemId: emergencyItem };
+    if (emergencyItem !== undefined) {
+      const saleAction = prepareSale(state, emergencyItem);
+      if (saleAction !== undefined) return saleAction;
+    }
     const equipment = itemToEquip(state);
     if (equipment !== undefined) return { type: 'OFFICE/PLACE', slot: equipment.slot, itemId: equipment.itemId };
   }

@@ -2,7 +2,7 @@ import { content } from './content';
 import { createInitialState } from './state';
 import { answerRadio, chooseCombat, startLive, tickLive, useCombatItem } from './systems/dive';
 import { damageAutopsyCorpse, detachCarried, discardReviveCorpse, reclaimCorpseCarried, reviveQuote, takeCorpseCarried } from './systems/economy';
-import { acceptContract, confirmOffice, haggleContract, pickStar, placeOfficeItem, populateVisitors, rejectContract, sellOfficeItem } from './systems/office';
+import { acceptContract, confirmOffice, haggleContract, pickStar, placeOfficeItem, populateVisitors, rejectContract, sellOfficeBatch, setShopSalePrice } from './systems/office';
 import { inherit } from './systems/roster';
 import { awardSuperchat, expireChats, moderateChat, spawnChat } from './systems/opinion';
 import { isEarlyClosure, judgeEnding } from './systems/narrative';
@@ -143,7 +143,8 @@ export function reducer(state: GameState, action: Action): GameState {
     case 'OFFICE/CONTRACT_HAGGLE': return haggleContract(state, action.starId);
     case 'OFFICE/PICK_STAR': return pickStar(state, action.starId);
     case 'OFFICE/PLACE': return placeOfficeItem(state, action.slot, action.itemId);
-    case 'OFFICE/SELL': return sellOfficeItem(state, action.itemId);
+    case 'OFFICE/SALE_PRICE_SET': return setShopSalePrice(state, action.multiplier);
+    case 'OFFICE/SELL_BATCH': return sellOfficeBatch(state);
     case 'OFFICE/CONFIRM': return state.phase === 'OFFICE' ? advance(state) : state;
     case 'LIVE/TICK': return expireChats(concludeRunIfDead(tickLive(state, action.dt)));
     case 'COMBAT/CHOOSE': return concludeRunIfDead(chooseCombat(state, action.choice));

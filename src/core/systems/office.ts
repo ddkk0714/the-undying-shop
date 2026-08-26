@@ -11,6 +11,73 @@ function haggledContractKey(starId: string): string {
   return `contractHaggled:${starId}`;
 }
 
+function saleHaggleKey(day: number, attempt: number): string {
+  return `shopSaleHaggle:${day}:${attempt}`;
+}
+
+function saleSoldKey(day: number, slot: number): string {
+  return `shopSaleSold:${day}:${slot}`;
+}
+
+function salePriceKey(day: number, multiplier: number): string {
+  return `shopSalePrice:${day}:${multiplier.toFixed(1)}`;
+}
+
+function saleTriedKey(day: number, revision: number): string {
+  return `shopSaleTried:${day}:${revision}`;
+}
+
+export function saleHaggleCount(state: Readonly<GameState>): number {
+  let count = 0;
+  for (let attempt = 1; attempt <= content.balance.shopSale.maxHaggles; attempt += 1) {
+    if (state.flags[saleHaggleKey(state.day, attempt)] === true) count += 1;
+  }
+  return count;
+}
+
+export function saleSlotSold(state: Readonly<GameState>, slot: number): boolean {
+  return state.flags[saleSoldKey(state.day, slot)] === true;
+}
+
+export function salePurchaseChance(multiplier: number): number {
+  const rules = content.balance.shopSale;
+  const clamped = Math.max(rules.minMultiplier, Math.min(rules.maxMultiplier, multiplier));
+  return Math.max(
+    rules.minPurchaseChance,
+    Math.min(rules.maxPurchaseChance, rules.basePurchaseChance - (clamped - 1) * rules.chancePerMultiplier),
+  );
+}
+
+export function salePriceMultiplier(state: Readonly<GameState>): number {
+  const rules = content.balance.shopSale;
+  for (let value = rules.minMultiplier; value <= rules.maxMultiplier + rules.step / 2; value += rules.step) {
+    const snapped = Math.round(value / rules.step) * rules.step;
+    if (state.flags[salePriceKey(state.day, snapped)] === true) return snapped;
+  }
+  return 1;
+}
+
+export function saleOfferTried(state: Readonly<GameState>): boolean {
+  return state.flags[saleTriedKey(state.day, saleHaggleCount(state))] === true;
+}
+
+export function setShopSalePrice(state: GameState, multiplier: number): GameState {
+  if (state.phase !== 'OFFICE' || !Number.isFinite(multiplier)) return state;
+  const rules = content.balance.shopSale;
+  const haggles = saleHaggleCount(state);
+  if (haggles >= rules.maxHaggles) return state;
+  const clamped = Math.max(rules.minMultiplier, Math.min(rules.maxMultiplier, multiplier));
+  const snapped = Math.round(clamped / rules.step) * rules.step;
+  const flags = { ...state.flags };
+  const prefix = `shopSalePrice:${state.day}:`;
+  for (const key of Object.keys(flags)) {
+    if (key.startsWith(prefix)) delete flags[key];
+  }
+  flags[salePriceKey(state.day, snapped)] = true;
+  flags[saleHaggleKey(state.day, haggles + 1)] = true;
+  return { ...state, flags };
+}
+
 function profileClaimedTiers(starId: string): { floor: number; rate: number }[] {
   const rules = content.balance.contract;
   const profile = content.starProfiles[starId];
@@ -68,6 +135,8 @@ function removeInventoryItem(inventory: GameState['inventory'], itemId: string):
 
 export function placeOfficeItem(state: GameState, slot: number, itemId: string | null): GameState {
   if (state.phase !== 'OFFICE' || slot < 0 || slot >= state.shelf.length) return state;
+  // 이 종류를 오늘 이미 팔았다면 진열대 자체가 영업 종료다. 새 상품을 다시 올릴 수 없다.
+  if (saleSlotSold(state, slot)) return state;
   if (itemId !== null) {
     const item = content.items.find((candidate) => candidate.id === itemId);
     const available = state.inventory.some((stack) => stack.id === itemId && stack.qty > 0);
@@ -79,19 +148,39 @@ export function placeOfficeItem(state: GameState, slot: number, itemId: string |
   return { ...state, shelf };
 }
 
-export function sellOfficeItem(state: GameState, itemId: string): GameState {
-  if (state.phase !== 'OFFICE' || state.shelf.includes(itemId)) return state;
-  const item = content.items.find((candidate) => candidate.id === itemId);
-  const available = state.inventory.some((stack) => stack.id === itemId && stack.qty > 0);
-  if (item === undefined || !available) return state;
-  const truthRelic = item.id === 'soil_deep' || item.id === 'page_torn';
+export function sellOfficeBatch(state: GameState): GameState {
+  if (state.phase !== 'OFFICE' || saleOfferTried(state)) return state;
+  const displayed = state.shelf.flatMap((itemId, slot) => {
+    if (itemId === null || saleSlotSold(state, slot)) return [];
+    const item = content.items.find((candidate) => candidate.id === itemId);
+    const available = state.inventory.some((stack) => stack.id === itemId && stack.qty > 0);
+    return item === undefined || !available ? [] : [{ item, slot }];
+  });
+  if (displayed.length === 0) return state;
+
+  const multiplier = salePriceMultiplier(state);
+  const [roll, afterRoll] = draw(state);
+  const flags = { ...afterRoll.flags, [saleTriedKey(state.day, saleHaggleCount(state))]: true };
+  if (roll >= salePurchaseChance(multiplier)) return { ...afterRoll, flags };
+
+  const price = displayed.reduce((sum, { item }) => sum + Math.max(0, Math.round(item.price * multiplier)), 0);
+  const truthRelics = displayed.filter(({ item }) => item.id === 'soil_deep' || item.id === 'page_torn').length;
+  const shelf = [...state.shelf];
+  let inventory = state.inventory;
+  for (const { item, slot } of displayed) {
+    shelf[slot] = null;
+    inventory = removeInventoryItem(inventory, item.id);
+    flags[saleSoldKey(state.day, slot)] = true;
+  }
   return {
-    ...state,
-    gold: state.gold + item.price,
-    inventory: removeInventoryItem(state.inventory, itemId),
-    leak: truthRelic ? Math.min(100, state.leak + content.balance.opinion.leakPerTruthRelicSale) : state.leak,
-    stats: { ...state.stats, goldEarned: state.stats.goldEarned + item.price },
-    today: state.today === null ? null : { ...state.today, income: { ...state.today.income, shelf: state.today.income.shelf + item.price } },
+    ...afterRoll,
+    flags,
+    shelf,
+    gold: state.gold + price,
+    inventory,
+    leak: Math.min(100, state.leak + truthRelics * content.balance.opinion.leakPerTruthRelicSale),
+    stats: { ...state.stats, goldEarned: state.stats.goldEarned + price },
+    today: state.today === null ? null : { ...state.today, income: { ...state.today.income, shelf: state.today.income.shelf + price } },
   };
 }
 

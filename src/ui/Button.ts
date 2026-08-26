@@ -79,22 +79,27 @@ export class Button extends Phaser.GameObjects.Container {
     this.visual = opts.enabled === false ? 'disabled' : 'idle';
     this.redraw();
 
-    if (this.visual !== 'disabled') {
+    // 비활성 버튼도 이유를 설명하는 tip이 있으면 hover 판정은 받는다.
+    // 클릭·핫키·눌림 상태는 계속 막아 두므로 게임 동작에는 영향을 주지 않는다.
+    if (this.visual !== 'disabled' || opts.tip !== undefined) {
       this.setSize(opts.w, opts.h);
       this.setInteractive(
         new Phaser.Geom.Rectangle(opts.w / 2, opts.h / 2, opts.w, opts.h),
         Phaser.Geom.Rectangle.Contains,
       );
       this.on('pointerover', (p: Phaser.Input.Pointer) => {
-        this.setVisualState('hover');
+        if (this.visual !== 'disabled') this.setVisualState('hover');
         if (opts.tip !== undefined) tooltipOf(scene)?.show(opts.tip, p.x, p.y);
       });
       this.on('pointerout', () => {
-        this.setVisualState('idle');
+        if (this.visual !== 'disabled') this.setVisualState('idle');
         if (opts.tip !== undefined) tooltipOf(scene)?.hide();
       });
-      this.on('pointerdown', () => this.setVisualState('press'));
+      this.on('pointerdown', () => {
+        if (this.visual !== 'disabled') this.setVisualState('press');
+      });
       this.on('pointerup', () => {
+        if (this.visual === 'disabled') return;
         this.setVisualState('hover');
         this.playClickSound();
         opts.onClick();
@@ -105,7 +110,7 @@ export class Button extends Phaser.GameObjects.Container {
         if (opts.tip !== undefined) tooltipOf(scene)?.hide();
       });
 
-      if (opts.hotkey) {
+      if (opts.hotkey && this.visual !== 'disabled') {
         scene.input.keyboard?.on(`keydown-${keyCodeFor(opts.hotkey)}`, () => {
           if (this.visual === 'disabled' || !this.active) return;
           this.playClickSound();

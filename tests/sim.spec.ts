@@ -85,8 +85,11 @@ describe('headless simulation', () => {
       inventory: [{ id: 'soil_deep', qty: 1 }],
       corpses: [{ ...corpse, diedDay: 1, grade: 'DAMAGED' as const, loot: ['soil_deep'] }],
     };
-    expect(damageAwarePolicy(office)).toEqual({ type: 'OFFICE/SELL', itemId: 'soil_deep' });
-    expect(damageAwarePolicy({ ...office, inventory: [], day: 3 })).not.toMatchObject({ type: 'OFFICE/SELL' });
+    const display = damageAwarePolicy(office);
+    expect(display).toEqual({ type: 'OFFICE/PLACE', slot: content.balance.equipment.utilitySlot, itemId: 'soil_deep' });
+    const displayed = reducer(office, display);
+    expect(damageAwarePolicy(displayed)).toEqual({ type: 'OFFICE/SELL_BATCH' });
+    expect(damageAwarePolicy({ ...office, inventory: [], day: 3 })).not.toMatchObject({ type: 'OFFICE/SELL_BATCH' });
   });
 
   it('uses one appeal per encounter day before returning to low-risk combat', () => {
@@ -123,7 +126,7 @@ describe('headless simulation', () => {
         const action = damageAwarePolicy(before);
         store.dispatch(action);
         const after = store.getState();
-        if (action.type === 'OFFICE/SELL') income.stock += after.gold - before.gold;
+        if (action.type === 'OFFICE/SELL_BATCH') income.stock += after.gold - before.gold;
         if (after.today !== null && after.today.diedFloor !== null && !settledDays.has(after.day)) {
           settledDays.add(after.day);
           income.superchat += after.today.income.superchat;

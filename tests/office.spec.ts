@@ -3,6 +3,7 @@ import { reducer } from '../src/core/reducer';
 import { createInitialState } from '../src/core/state';
 import { content } from '../src/core/content';
 import { randomPolicy } from '../src/core/sim';
+import { saleHaggleCount, saleOfferTried, salePriceMultiplier, salePurchaseChance, saleSlotSold } from '../src/core/systems/office';
 import type { Contract, GameState, Star } from '../src/core/types';
 
 function officeState(seed = 31): GameState {
@@ -124,25 +125,53 @@ describe('office', () => {
     expect(accepted.gold).toBe(offered.gold - discountedFee);
   });
 
-  it('keeps equipped gear, while selling stock grants gold and leaks truth relics', () => {
-    let state = { ...officeState(), inventory: [{ id: 'cloak_ash', qty: 1 }, { id: 'soil_deep', qty: 1 }] };
-    expect(reducer(state, { type: 'OFFICE/PLACE', slot: 0, itemId: 'cloak_ash' })).toEqual(state);
-    state = reducer(state, { type: 'OFFICE/PLACE', slot: content.balance.equipment.armorSlot, itemId: 'cloak_ash' });
-    expect(state.shelf).toEqual([null, 'cloak_ash', null]);
-    expect(reducer(state, { type: 'OFFICE/PLACE', slot: content.balance.equipment.utilitySlot, itemId: 'cloak_ash' })).toEqual(state);
-    expect(reducer(state, { type: 'OFFICE/SELL', itemId: 'cloak_ash' })).toEqual(state);
-
-    state = reducer(state, { type: 'OFFICE/PICK_STAR', starId: 'body_karin' });
-    state = reducer(state, { type: 'OFFICE/SELL', itemId: 'soil_deep' });
-    expect(state.gold).toBe(content.balance.start.gold + 4400);
-    expect(state.stats.goldEarned).toBe(4400);
-    expect(state.today?.income).toEqual({ superchat: 0, shelf: 4400, goods: 0 });
+  it('sells every displayed item with one successful roll and locks each sold category', () => {
+    const weaponSlot = content.balance.equipment.weaponSlot;
+    const utilitySlot = content.balance.equipment.utilitySlot;
+    let state = {
+      ...officeState(7),
+      inventory: [{ id: 'dagger_crack', qty: 1 }, { id: 'soil_deep', qty: 1 }, { id: 'lantern_old', qty: 1 }],
+    };
+    expect(reducer(state, { type: 'OFFICE/SELL_BATCH' })).toEqual(state);
+    state = reducer(state, { type: 'OFFICE/PLACE', slot: weaponSlot, itemId: 'dagger_crack' });
+    state = reducer(state, { type: 'OFFICE/PLACE', slot: utilitySlot, itemId: 'soil_deep' });
+    state = reducer(state, { type: 'OFFICE/SALE_PRICE_SET', multiplier: 0.5 });
+    expect(salePriceMultiplier(state)).toBe(0.5);
+    const daggerPrice = content.items.find((item) => item.id === 'dagger_crack')!.price;
+    const price = Math.round(daggerPrice * 0.5) + Math.round(4400 * 0.5);
+    state = reducer(state, { type: 'OFFICE/SELL_BATCH' });
+    expect(state.gold).toBe(content.balance.start.gold + price);
+    expect(state.stats.goldEarned).toBe(price);
+    expect(state.shelf[weaponSlot]).toBeNull();
+    expect(state.shelf[utilitySlot]).toBeNull();
     expect(state.leak).toBe(10);
-    expect(state.inventory).toEqual([{ id: 'cloak_ash', qty: 1 }]);
+    expect(saleSlotSold(state, weaponSlot)).toBe(true);
+    expect(saleSlotSold(state, utilitySlot)).toBe(true);
 
-    state = reducer(state, { type: 'OFFICE/CONFIRM' });
-    expect(state.gold).toBe(content.balance.start.gold + 4400);
-    expect(state.today?.hero).toEqual({ hp: 96, maxHp: 96, atk: 14, def: 9 });
+    const displayedAgain = reducer(state, { type: 'OFFICE/PLACE', slot: utilitySlot, itemId: 'lantern_old' });
+    expect(displayedAgain).toEqual(state);
+    expect(displayedAgain.shelf[utilitySlot]).toBeNull();
+  });
+
+  it('applies one seeded result to the whole shelf and allows at most three new price proposals', () => {
+    const weaponSlot = content.balance.equipment.weaponSlot;
+    const armorSlot = content.balance.equipment.armorSlot;
+    let state = { ...officeState(4), inventory: [{ id: 'dagger_crack', qty: 1 }, { id: 'rope_hemp', qty: 1 }] };
+    state = reducer(state, { type: 'OFFICE/PLACE', slot: weaponSlot, itemId: 'dagger_crack' });
+    state = reducer(state, { type: 'OFFICE/PLACE', slot: armorSlot, itemId: 'rope_hemp' });
+    expect(salePurchaseChance(0.5)).toBeGreaterThan(salePurchaseChance(1));
+    expect(salePurchaseChance(2)).toBeLessThan(salePurchaseChance(1));
+    for (let i = 0; i < content.balance.shopSale.maxHaggles; i += 1) {
+      state = reducer(state, { type: 'OFFICE/SALE_PRICE_SET', multiplier: 2 });
+      expect(saleOfferTried(state)).toBe(false);
+      state = reducer(state, { type: 'OFFICE/SELL_BATCH' });
+      expect(saleOfferTried(state)).toBe(true);
+    }
+    expect(state.shelf[weaponSlot]).toBe('dagger_crack');
+    expect(state.shelf[armorSlot]).toBe('rope_hemp');
+    expect(saleHaggleCount(state)).toBe(3);
+    const exhausted = reducer(state, { type: 'OFFICE/SALE_PRICE_SET', multiplier: 0.5 });
+    expect(exhausted).toEqual(state);
   });
 
   it('hands each star one weapon, armor, and utility; only the handed potion can be used live', () => {
