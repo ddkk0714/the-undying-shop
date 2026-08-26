@@ -769,7 +769,8 @@ export class OfficePhase extends PhaseScene {
     const documentStart = this.children.list.length;
     const asset = this.contractSheetAsset();
     if (asset === null) return;
-    const paperDepth = 800;
+    // 제출 서류는 하단 행동 버튼(900)과 겹쳐도 버튼 글자까지 덮는다.
+    const paperDepth = 1000;
     const scale = paper.w / 700;
     const textScale = paper.w / 560;
     const at = (x: number, y: number, value: string, textScale = 0.72) =>
@@ -894,7 +895,8 @@ export class OfficePhase extends PhaseScene {
     const paper = { x: foldedCenter.x - 308, y: foldedCenter.y - 390, w: 616, h: 779 };
     const documentStart = this.children.list.length;
     // 두 장이 겹치면 개인정보가 적힌 계약서보다 스탯 검수표를 항상 위에 둔다.
-    const depth = this.contractReaderOpen ? 950 : 800;
+    // 스탯 경력서는 계약서보다 앞, 하단 버튼보다도 앞에 놓인다.
+    const depth = this.contractReaderOpen ? 1150 : 1000;
     const scale = paper.w / 705;
     const at = (x: number, y: number, value: string, textScale = 0.64) =>
       this.text(paper.x + x * scale, paper.y + y * scale, value, 'ink')
@@ -1095,7 +1097,7 @@ export class OfficePhase extends PhaseScene {
       .setOrigin(0.5, 0.5)
       .setDisplaySize(paper.w, paper.h)
       // 한 장을 읽는 중에도 남은 축소본을 눌러 두 장을 함께 펼칠 수 있다.
-      .setDepth(this.contractReaderOpen || this.statsReaderOpen ? 900 : 20)
+      .setDepth(this.contractReaderOpen || this.statsReaderOpen ? 1000 : 20)
       .setInteractive({ cursor: 'pointer' });
     if (this.contractReaderOpen) sheet.setVisible(false).disableInteractive();
     // 접힌 상태는 글자 없이 계약서 원화만 남긴다. 세부 내용은 펼친 상태에서만 읽는다.
@@ -1118,7 +1120,7 @@ export class OfficePhase extends PhaseScene {
     const statsSheet = this.add.image(statsHome.x, statsHome.y, key(statsAsset))
       .setOrigin(0.5, 0.5)
       .setDisplaySize(154, 190)
-      .setDepth(this.contractReaderOpen || this.statsReaderOpen ? 900 : 20)
+      .setDepth(this.contractReaderOpen || this.statsReaderOpen ? 1000 : 20)
       .setInteractive({ cursor: 'pointer' });
     if (this.statsReaderOpen) statsSheet.setVisible(false).disableInteractive();
     if (!this.statsReaderOpen) {
@@ -1583,7 +1585,7 @@ export class OfficePhase extends PhaseScene {
 
     const actionButton = (index: number, opts: Omit<ConstructorParameters<typeof Button>[1], 'x' | 'y' | 'w' | 'h'>): Button => {
       const button = new Button(this, { x: actionX(index), y, w: ACTION_W, h, ...opts });
-      // 펼친 계약서는 작업대와 함께 행동 바 일부까지 덮는다. 행동 버튼은 항상 그 위에 둔다.
+      // 서류보다 낮게 두되 작업대 위의 행동 바에서는 항상 눌릴 수 있게 유지한다.
       return button.setDepth(900);
     };
 
