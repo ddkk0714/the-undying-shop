@@ -110,7 +110,7 @@ export class OfficePhase extends PhaseScene {
     this.buildGuest(s);
     this.buildBenchBackdrop();
     this.buildShelf(s);
-    this.buildSubmittedContracts(s);
+    if (s.today === null) this.buildSubmittedContracts(s);
     if (this.inventoryOpen) this.buildInventory(s);
     // 확대는 별도 장면이 아니라, 이미 그린 작업대 위에 원본 종이를 얹는다.
     if (this.contractReaderOpen) this.buildContract(s);
@@ -125,6 +125,9 @@ export class OfficePhase extends PhaseScene {
     const g = L.guest;
     this.rect(g.x, g.y, g.w, g.h, 'ink');
     this.spriteCover(g, ['bg.shop.room']);
+    // 배경 원화(1086×1324)의 왼쪽 상자 위 좌표를 좌측 용사 칸(752×792)으로 옮겼다.
+    // 용사 전신보다 먼저 그려, 참고 이미지처럼 방 안 소품으로 남긴다.
+    this.sprite(g.x + 32, g.y + 275, 'prop.tv', 152, 121);
     this.frame(g.x, g.y, g.w, g.h, 'dust');
     this.buildBenchBackdrop();
 
@@ -175,11 +178,25 @@ export class OfficePhase extends PhaseScene {
     const g = L.guest;
     this.rect(g.x, g.y, g.w, g.h, 'ink');
     this.spriteCover(g, ['bg.shop.room']);
+    // TV는 방 배경 다음, 용사 전신 전 단계에서 만들어져 항상 방 안 소품으로 남는다.
+    // 계약이 끝나면 재생 화면으로 바뀌며, 이 TV만 방송 시작 입력을 받는다.
+    const tv = this.spriteObject(g.x + 32, g.y + 275, s.today === null ? 'prop.tv' : 'prop.tv.live', 152, 121);
+    if (tv !== null && s.today !== null) {
+      const showLiveTv = (hovered: boolean): void => {
+        tv.setTexture(key(hovered && this.hasArt('prop.tv.live.hover') ? 'prop.tv.live.hover' : 'prop.tv.live'))
+          .setDisplaySize(152, 121);
+      };
+      tv.setInteractive({ cursor: 'pointer' });
+      tv.on('pointerover', () => showLiveTv(true));
+      tv.on('pointerout', () => showLiveTv(false));
+      tv.on('pointerup', () => this.store.dispatch({ type: 'OFFICE/CONFIRM' }));
+    }
     this.frame(g.x, g.y, g.w, g.h, 'dust');
 
     // 계약 모드에서 좌측에 서 있는 사람은 **방문자**다. 아직 계약 전이라 recruitPool 에 있다.
     // 이름만 방문자로 바꾸고 그림은 기존 출연자를 쓰면, 이름과 얼굴이 어긋난다
-    const visitor = s.visitors[this.contractIndex] ?? s.visitors[0];
+    // 계약이 완료된 뒤에는 남은 지원자가 아니라, 방금 계약한 오늘의 용사를 보여 준다.
+    const visitor = s.today === null ? s.visitors[this.contractIndex] ?? s.visitors[0] : undefined;
     const contracting = visitor !== undefined;
     const guest = contracting ? s.recruitPool.find((x) => x.id === visitor.starId) : undefined;
     const star = guest
@@ -699,6 +716,7 @@ export class OfficePhase extends PhaseScene {
       dragged = true;
       this.draggingInventoryItem = true;
       this.hideItemDetail();
+      playSfx(this, 'sfx.item.pick', 0.5);
       image.setDepth(1000).setScale(1.15);
     });
     image.on('drag', (_pointer: Phaser.Input.Pointer, dragX: number, dragY: number) => image.setPosition(Math.round(dragX), Math.round(dragY)));
@@ -707,6 +725,7 @@ export class OfficePhase extends PhaseScene {
       const slot = this.shelfSlotAt(image.x, image.y);
       if (slot === content.balance.equipment.slotByItem[item.id]) {
         this.selectedItemId = null;
+        playSfx(this, 'sfx.item.drop', 0.6);
         this.store.dispatch({ type: 'OFFICE/PLACE', slot, itemId: item.id });
         return;
       }
@@ -719,12 +738,14 @@ export class OfficePhase extends PhaseScene {
     image.setInteractive({ cursor: 'grab' });
     this.input.setDraggable(image);
     image.on('dragstart', () => {
+      playSfx(this, 'sfx.item.pick', 0.5);
       image.setDepth(1000).setScale(1.15);
     });
     image.on('drag', (_pointer: Phaser.Input.Pointer, dragX: number, dragY: number) => image.setPosition(Math.round(dragX), Math.round(dragY)));
     image.on('dragend', () => {
       if (this.inInventory(image.x, image.y)) {
         this.selectedItemId = null;
+        playSfx(this, 'sfx.item.drop', 0.45);
         this.store.dispatch({ type: 'OFFICE/PLACE', slot, itemId: null });
         return;
       }
@@ -743,6 +764,7 @@ export class OfficePhase extends PhaseScene {
   private placeSelected(slot: number): void {
     if (this.selectedItemId === null) return;
     if (content.balance.equipment.slotByItem[this.selectedItemId] !== slot) return;
+    playSfx(this, 'sfx.item.drop', 0.6);
     this.store.dispatch({ type: 'OFFICE/PLACE', slot, itemId: this.selectedItemId });
     this.selectedItemId = null;
   }
@@ -812,9 +834,10 @@ export class OfficePhase extends PhaseScene {
       });
       if (s.today !== null) {
         actionButton(3, {
-          label: '방송', hotkey: '4', variant: 'danger',
-          tip: '계약한 출연자와 함께 오늘의 방송을 시작합니다.',
-          onClick: () => this.store.dispatch({ type: 'OFFICE/CONFIRM' }),
+          label: '계약', hotkey: '4',
+          enabled: false,
+          tip: '계약이 완료되었습니다. 왼쪽 TV를 눌러 방송을 시작하세요.',
+          onClick: () => undefined,
         });
         return;
       }
@@ -863,6 +886,7 @@ export class OfficePhase extends PhaseScene {
           : `${selected.name}을(를) 알맞은 진열대에 놓습니다.`,
       onClick: () => {
         if (selected === undefined || selectedSlot === undefined || selectedSlotClosed || s.shelf.includes(selected.id)) return;
+        playSfx(this, 'sfx.item.drop', 0.6);
         this.store.dispatch({ type: 'OFFICE/PLACE', slot: selectedSlot, itemId: selected.id });
         this.selectedItemId = null;
       },

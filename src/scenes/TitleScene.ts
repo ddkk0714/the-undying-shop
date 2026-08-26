@@ -74,8 +74,6 @@ const LANTERN_PERIOD = 3200;
  *
  *      [ 새로 시작 ]   [ 이어하기 ]
  *      [ 옵션 ]        [ 조작 안내 ]
- *
- *   당신은 한 세계를 속이고 있다.
  */
 export class TitleScene extends Phaser.Scene {
   constructor() {
@@ -166,12 +164,6 @@ export class TitleScene extends Phaser.Scene {
       label: '조작 안내', hotkey: '4', variant: 'ghost',
       onClick: () => this.scene.start(SCENES.HELP),
     });
-
-    // 이 한 줄은 보도 위에 앉는다 — 거기가 그림에서 가장 밝은 자리다
-    this.veil(640, 984, 640, 72);
-    this.add
-      .text(BASE_W / 2, 1016, '당신은 한 세계를 속이고 있다.', { ...FONT, color: css('bone') })
-      .setOrigin(0.5);
 
     // 폰트 폴백 여부를 화면에 남긴다 (수용 기준 4 확인용)
     if (this.registry.get('fontOk') !== true) {

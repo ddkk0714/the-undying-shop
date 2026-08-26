@@ -59,9 +59,10 @@ describe('office', () => {
     expect(randomPolicy(office)).toMatchObject({ type: 'OFFICE/CONTRACT_ACCEPT' });
     const accepted = reducer(office, { type: 'OFFICE/CONTRACT_ACCEPT', starId: visitor!.starId });
     expect(accepted.stars.some((star) => star.id === visitor!.starId && star.status === 'ALIVE')).toBe(true);
-    expect(accepted.phase).toBe('LIVE');
+    expect(accepted.phase).toBe('OFFICE');
     expect(accepted.today?.starId).toBe(visitor!.starId);
     expect(accepted.today?.claimedCeiling).toBe(Math.max(...visitor!.claimedTiers.map((tier) => tier.floor)));
+    expect(reducer(accepted, { type: 'OFFICE/CONFIRM' }).phase).toBe('LIVE');
   });
 
   it('creates a real combatant and a non-stub ceiling when a star is picked', () => {
@@ -88,9 +89,10 @@ describe('office', () => {
     expect(accepted.gold).toBe(offered.gold - 1200);
     expect(accepted.stars.find((star) => star.id === applicant.id)?.honesty).toBe(0.7);
     expect(accepted.visitors).toEqual([]);
-    expect(accepted.phase).toBe('LIVE');
+    expect(accepted.phase).toBe('OFFICE');
     expect(accepted.today?.starId).toBe(applicant.id);
     expect(accepted.pendingFx.at(-1)?.kind).toBe('CONTRACT_SIGN');
+    expect(reducer(accepted, { type: 'OFFICE/CONFIRM' }).phase).toBe('LIVE');
 
     const rejected = reducer(offered, { type: 'OFFICE/CONTRACT_REJECT', starId: applicant.id });
     expect(rejected.recruitPool).toEqual([]);

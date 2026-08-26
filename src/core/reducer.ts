@@ -135,7 +135,9 @@ export function reducer(state: GameState, action: Action): GameState {
     case 'REVIVE/INHERIT': return inherit(state, action.personaId, action.toStarId);
     case 'OFFICE/CONTRACT_ACCEPT': {
       const signed = acceptContract(state, action.starId);
-      return signed === state ? state : startLive(pickStar(signed, action.starId));
+      // 계약 확정과 방송 시작은 서로 다른 입력이다.
+      // 수락 뒤에는 편성실에 머물고, 이어서 OFFICE/CONFIRM을 눌러 방송을 시작한다.
+      return signed === state ? state : pickStar(signed, action.starId);
     }
     case 'OFFICE/CONTRACT_REJECT': return populateVisitors(rejectContract(state, action.starId));
     // CCR-005 — 계약만 열어 둔 자리다. 흥정 로직은 Codex 몫이고, 이 줄은 그냥 덮어써라.
