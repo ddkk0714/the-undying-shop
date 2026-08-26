@@ -893,6 +893,13 @@
           ],
           "desc": "③ 좌측 층계 게이지 — 40층 채움"
         },
+        "ui.live.fx.sword": {
+          "type": "spritesheet",
+          "file": "ui/fx_sword.png",
+          "frameWidth": 480,
+          "frameHeight": 480,
+          "desc": "③ 공격 연출 — 칼 슬래시 10프레임, 공격 선택 시 1회 재생"
+        },
         "ui.live.map": {
           "type": "image",
           "file": "ui/live_map.png",
@@ -2976,6 +2983,13 @@
             936
           ],
           "desc": "③ 좌측 층계 게이지 — 40층 채움"
+        },
+        "ui.live.fx.sword": {
+          "type": "spritesheet",
+          "file": "ui/fx_sword.png",
+          "frameWidth": 480,
+          "frameHeight": 480,
+          "desc": "③ 공격 연출 — 칼 슬래시 10프레임, 공격 선택 시 1회 재생"
         },
         "ui.live.map": {
           "type": "image",

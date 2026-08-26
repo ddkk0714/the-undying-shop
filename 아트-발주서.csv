@@ -205,6 +205,7 @@
 4,UI · 기타,ui/floors/floor_38.png,210×936,1:1,③ 좌측 층계 게이지 — 38층 채움,도착,ui.live.floors.38
 4,UI · 기타,ui/floors/floor_39.png,210×936,1:1,③ 좌측 층계 게이지 — 39층 채움,도착,ui.live.floors.39
 4,UI · 기타,ui/floors/floor_40.png,210×936,1:1,③ 좌측 층계 게이지 — 40층 채움,도착,ui.live.floors.40
+4,UI · 기타,ui/fx_sword.png,1920×480,1:1,"③ 공격 연출 — 칼 슬래시 10프레임, 공격 선택 시 1회 재생",도착,ui.live.fx.sword
 4,UI · 기타,ui/hud_status.png,700×144,1:1,상단바 좌 — DAY·골드·팬·평판 4칸,도착,ui.hud.status
 4,UI · 기타,ui/hud_tools.png,740×144,1:1,상단바 우 — 시계·도달층 게이지,도착,ui.hud.tools
 4,UI · 기타,ui/icon_help_hover.png,112×112,1:1,상단바 아이콘 · 조작 안내(책) (눌림),도착,ui.icon.help.hover

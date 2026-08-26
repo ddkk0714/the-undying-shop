@@ -122,6 +122,18 @@ function bounceAmount(t: number): number {
 }
 
 /**
+ * 공격 명중 연출 — 적 체력이 줄어드는 순간(=명중, 반격과 대칭) 재생한다.
+ *
+ * `ui.live.fx.sword`(아트-발주서/아트_V3/전투화면/공격모션/칼.gif, 10프레임 · 70ms 간격)를
+ * 한 번만 재생하고 끈다 (사용자 확정). GIF 원본 그대로의 박자를 쓴다.
+ */
+const SWORD_FX_FRAMES = 10;
+const SWORD_FX_FRAME_MS = 70;
+/** 적 머리 위로 뜨는 피해 숫자 — 떠오르며 옅어진다 */
+const DAMAGE_TOAST_MS = 700;
+const DAMAGE_TOAST_RISE = 40;
+
+/**
  * 자동 전투 (사용자 확정) — 평범한 한 수는 씬이 알아서 낸다.
  * 플레이어는 **중요한 결정에만** 손을 댄다: 무전 갈림길, 그리고 체력이 바닥일 때 물약.
  *
@@ -197,6 +209,14 @@ export class LivePhase extends PhaseScene {
   /** 튕길 적 스프라이트와 원래 자리·크기. build 가 매번 다시 채운다 */
   private enemyBounce: { img: Phaser.GameObjects.Image; x: number; y: number; w: number; h: number } | null = null;
 
+  /** 적 체력을 지켜보다 **줄어드는 순간**을 명중으로 읽는다 (반격과 대칭) */
+  private lastEnemyHp = -1;
+  /** 공격 슬래시 연출 재생 시작 시각. 끝나면 null — keepAlive 로 redraw 를 견딘다 */
+  private attackFxAt: number | null = null;
+  private attackFxImg: Phaser.GameObjects.Image | null = null;
+  /** 떠 있는 피해 숫자들 */
+  private damageToasts: { obj: Phaser.GameObjects.Text; startAt: number; baseY: number }[] = [];
+
   /** 자동 전투 — 다음 한 수를 낼 시각. 방금 낸 수는 3택 자리에 적어 준다 */
   private autoAt = 0;
   private lastAuto: CombatChoice | null = null;
@@ -250,6 +270,10 @@ export class LivePhase extends PhaseScene {
     playSfx(this, 'sfx.signal.back', 0.55);
     this.lastHeroHp = -1;
     this.enemyBounce = null;
+    this.lastEnemyHp = -1;
+    this.attackFxAt = null;
+    this.attackFxImg = null;
+    this.damageToasts = [];
     this.autoAt = 0;
     this.lastAuto = null;
     this.potionDeclined = false;
@@ -361,6 +385,9 @@ export class LivePhase extends PhaseScene {
     super.update();
     const now = this.time.now;
     this.autoTurn(now);
+    // 연출 감소·목격 정지와 무관하게 항상 밀어준다 — 안 그러면 슬래시가 안 꺼지거나
+    // 피해 숫자가 화면에 박제된다
+    this.stepAttackFx(now);
 
     // 목격 정지가 끝나는 순간 한 번만 다시 그린다 (오버레이 제거)
     if (this.witnessFloor !== null && now >= this.witnessUntil) {
@@ -427,6 +454,20 @@ export class LivePhase extends PhaseScene {
     }
     this.lastHeroHp = hp;
 
+    /**
+     * 명중 — **적 체력이 줄었는가**로 읽는다 (위 반격 판정과 대칭). `resolveCombatChoice`
+     * 에서 ATTACK 은 빗나가는 경우가 없으므로(`core/systems/combat.ts`) 이 신호만으로 충분하다.
+     *
+     * 연출은 여기서 바로 띄우지 않고 값만 기억해 둔다 — `spawnAttackFx` 가 여기서
+     * 오브젝트를 만들면 뒤이어 그려지는 던전 배경·적 스프라이트에 깔린다.
+     * **build() 맨 끝, 다른 레이어를 전부 그린 뒤**에 띄워야 위에 얹힌다.
+     */
+    const enemyHp = s.today?.encounter?.enemy.hp ?? -1;
+    const justHit = this.lastEnemyHp >= 0 && enemyHp >= 0 && enemyHp < this.lastEnemyHp && s.today?.encounter != null
+      ? this.lastEnemyHp - enemyHp
+      : null;
+    this.lastEnemyHp = enemyHp;
+
     // 조우가 끝나는 순간 = **층을 클리어하고 내려간다**. 층은 틱마다 바뀌므로
     // `currentFloor` 로 잡으면 0.35초마다 연출이 터진다 — 조우의 끝으로 잡아야 한 번이다
     const fighting = s.today?.encounter != null;
@@ -466,6 +507,9 @@ export class LivePhase extends PhaseScene {
     this.buildChat(s);
     this.buildDialogue(s);
     this.buildChoices(s);
+
+    // 위 레이어를 전부 그린 다음에 띄운다 — 던전·적 스프라이트 위에 와야 한다
+    if (justHit !== null) this.spawnAttackFx(justHit);
 
     // 상시 팁은 걷어냈다 (사용자 확정). 전투 중에 화면 한 구석에 한 줄이 계속 떠 있으면
     // 거슬리기만 한다. 설명은 이제 **버튼에 마우스를 올렸을 때만** 커서 우측 위에 뜬다
@@ -546,7 +590,6 @@ export class LivePhase extends PhaseScene {
     // 종이 아트가 오면 판을 깔지 않는다 — 찢어진 가장자리가 사각형에 갇힌다
     if (!this.hasArt('ui.live.map')) this.rect(v.x, v.y, v.w, v.h, 'ink');
     this.sprite(v.x, v.y, 'ui.live.map', v.w, v.h);
-    this.label(v.x + 56, v.y + 56, '단면도', 'ink');
 
     // 방·복도는 **씬이 그린다.** 받은 종이 아트에는 눈금과 접힌 자국뿐이다 —
     // 지도는 매 다이브마다 달라야 하므로 그게 맞는 설계다.
@@ -1050,6 +1093,65 @@ export class LivePhase extends PhaseScene {
     const wipe = this.scene.get(SCENES.WIPE) as WipeScene | null;
     // 덮인 순간에 할 일은 없다 — 층은 core 가 이미 넘겼다. 연출만 얹는다
     wipe?.run(() => {});
+  }
+
+  /**
+   * 명중 순간 — 슬래시 연출을 적 위에 한 번 얹고, 피해 숫자를 띄운다.
+   * 프레임 진행은 `update()` 가 매 실제 프레임마다 밀어준다 — `build()` 는
+   * 채팅 등 다른 이유로도 자주 다시 불려서, 거기서 프레임을 넘기면 뚝뚝 끊긴다.
+   */
+  private spawnAttackFx(damage: number): void {
+    this.attackFxAt = this.time.now;
+    if (this.attackFxImg !== null) {
+      this.dropAlive(this.attackFxImg);
+      this.attackFxImg.destroy();
+      this.attackFxImg = null;
+    }
+    const e = L.live.enemy;
+    if (!this.reduced && this.hasArt('ui.live.fx.sword')) {
+      const size = Math.round(e.w * 1.7);
+      const img = this.add.image(e.x + e.w / 2, e.y + e.h / 2, key('ui.live.fx.sword'), 0)
+        .setOrigin(0.5)
+        .setDisplaySize(size, size);
+      this.keepAlive(img);
+      this.attackFxImg = img;
+    }
+    const toast = this.title(e.x + e.w / 2, e.y - 4, `-${damage}`, 'wax').setOrigin(0.5, 1);
+    this.keepAlive(toast);
+    this.damageToasts.push({ obj: toast, startAt: this.time.now, baseY: toast.y });
+  }
+
+  /** 슬래시 프레임과 피해 숫자를 매 실제 프레임 밀어준다 (`update()` 에서 호출) */
+  private stepAttackFx(now: number): void {
+    if (this.attackFxAt !== null) {
+      const frame = Math.floor((now - this.attackFxAt) / SWORD_FX_FRAME_MS);
+      if (frame >= SWORD_FX_FRAMES) {
+        if (this.attackFxImg !== null) {
+          this.dropAlive(this.attackFxImg);
+          this.attackFxImg.destroy();
+          this.attackFxImg = null;
+        }
+        this.attackFxAt = null;
+      } else {
+        this.attackFxImg?.setFrame(frame);
+      }
+    }
+
+    if (this.damageToasts.length === 0) return;
+    const keep: typeof this.damageToasts = [];
+    for (const t of this.damageToasts) {
+      const dt = now - t.startAt;
+      if (dt >= DAMAGE_TOAST_MS) {
+        this.dropAlive(t.obj);
+        t.obj.destroy();
+        continue;
+      }
+      const p = dt / DAMAGE_TOAST_MS;
+      t.obj.y = t.baseY - DAMAGE_TOAST_RISE * p;
+      t.obj.setAlpha(1 - p);
+      keep.push(t);
+    }
+    this.damageToasts = keep;
   }
 
   /**
