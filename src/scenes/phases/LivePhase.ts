@@ -134,6 +134,16 @@ const DAMAGE_TOAST_MS = 700;
 const DAMAGE_TOAST_RISE = 40;
 
 /**
+ * 방어 연출 — **플레이어가 DEFEND 를 고른 순간** 재생한다 (명중과 달리 체력
+ * 변화로 읽을 수 없다 — 막아도 완전히 무피해는 아니라서). `encounter.log`
+ * 길이가 늘고 마지막 값이 DEFEND 일 때가 그 순간이다.
+ *
+ * `ui.live.fx.shield`(방패모션.gif, 15프레임 · 50ms 간격)를 용사 초상 위에 한 번만 재생한다.
+ */
+const SHIELD_FX_FRAMES = 15;
+const SHIELD_FX_FRAME_MS = 50;
+
+/**
  * 자동 전투 (사용자 확정) — 평범한 한 수는 씬이 알아서 낸다.
  * 플레이어는 **중요한 결정에만** 손을 댄다: 무전 갈림길, 그리고 체력이 바닥일 때 물약.
  *
@@ -217,6 +227,11 @@ export class LivePhase extends PhaseScene {
   /** 떠 있는 피해 숫자들 */
   private damageToasts: { obj: Phaser.GameObjects.Text; startAt: number; baseY: number }[] = [];
 
+  /** 조우 로그 길이를 지켜보다 **DEFEND 가 막 추가된 순간**을 읽는다 */
+  private lastLogLength = -1;
+  private defendFxAt: number | null = null;
+  private defendFxImg: Phaser.GameObjects.Image | null = null;
+
   /** 자동 전투 — 다음 한 수를 낼 시각. 방금 낸 수는 3택 자리에 적어 준다 */
   private autoAt = 0;
   private lastAuto: CombatChoice | null = null;
@@ -274,6 +289,9 @@ export class LivePhase extends PhaseScene {
     this.attackFxAt = null;
     this.attackFxImg = null;
     this.damageToasts = [];
+    this.lastLogLength = -1;
+    this.defendFxAt = null;
+    this.defendFxImg = null;
     this.autoAt = 0;
     this.lastAuto = null;
     this.potionDeclined = false;
@@ -388,6 +406,7 @@ export class LivePhase extends PhaseScene {
     // 연출 감소·목격 정지와 무관하게 항상 밀어준다 — 안 그러면 슬래시가 안 꺼지거나
     // 피해 숫자가 화면에 박제된다
     this.stepAttackFx(now);
+    this.stepDefendFx(now);
 
     // 목격 정지가 끝나는 순간 한 번만 다시 그린다 (오버레이 제거)
     if (this.witnessFloor !== null && now >= this.witnessUntil) {
@@ -468,6 +487,15 @@ export class LivePhase extends PhaseScene {
       : null;
     this.lastEnemyHp = enemyHp;
 
+    /**
+     * 방어 — **로그가 늘고 마지막 값이 DEFEND** 인 순간을 그 턴으로 읽는다.
+     * 위 명중과 같은 이유로 여기서는 표시하지 않고 build() 맨 끝에서 띄운다.
+     */
+    const log = s.today?.encounter?.log ?? null;
+    const justDefended = log !== null && this.lastLogLength >= 0 && log.length > this.lastLogLength
+      && log.at(-1) === 'DEFEND';
+    this.lastLogLength = log?.length ?? -1;
+
     // 조우가 끝나는 순간 = **층을 클리어하고 내려간다**. 층은 틱마다 바뀌므로
     // `currentFloor` 로 잡으면 0.35초마다 연출이 터진다 — 조우의 끝으로 잡아야 한 번이다
     const fighting = s.today?.encounter != null;
@@ -510,6 +538,7 @@ export class LivePhase extends PhaseScene {
 
     // 위 레이어를 전부 그린 다음에 띄운다 — 던전·적 스프라이트 위에 와야 한다
     if (justHit !== null) this.spawnAttackFx(justHit);
+    if (justDefended) this.spawnDefendFx();
 
     // 상시 팁은 걷어냈다 (사용자 확정). 전투 중에 화면 한 구석에 한 줄이 계속 떠 있으면
     // 거슬리기만 한다. 설명은 이제 **버튼에 마우스를 올렸을 때만** 커서 우측 위에 뜬다
@@ -1152,6 +1181,40 @@ export class LivePhase extends PhaseScene {
       keep.push(t);
     }
     this.damageToasts = keep;
+  }
+
+  /** 방어 순간 — 방패 연출을 용사 초상 위에 한 번 얹는다 (명중과 같은 이유로 build() 맨 끝에서 호출) */
+  private spawnDefendFx(): void {
+    this.defendFxAt = this.time.now;
+    if (this.defendFxImg !== null) {
+      this.dropAlive(this.defendFxImg);
+      this.defendFxImg.destroy();
+      this.defendFxImg = null;
+    }
+    if (this.reduced || !this.hasArt('ui.live.fx.shield')) return;
+    const v = L.live.portrait;
+    const size = Math.round(v.w * 1.6);
+    const img = this.add.image(v.x + v.w / 2, v.y + v.h / 2, key('ui.live.fx.shield'), 0)
+      .setOrigin(0.5)
+      .setDisplaySize(size, size);
+    this.keepAlive(img);
+    this.defendFxImg = img;
+  }
+
+  /** 방패 프레임을 매 실제 프레임 밀어준다 (`update()` 에서 호출) */
+  private stepDefendFx(now: number): void {
+    if (this.defendFxAt === null) return;
+    const frame = Math.floor((now - this.defendFxAt) / SHIELD_FX_FRAME_MS);
+    if (frame >= SHIELD_FX_FRAMES) {
+      if (this.defendFxImg !== null) {
+        this.dropAlive(this.defendFxImg);
+        this.defendFxImg.destroy();
+        this.defendFxImg = null;
+      }
+      this.defendFxAt = null;
+    } else {
+      this.defendFxImg?.setFrame(frame);
+    }
   }
 
   /**

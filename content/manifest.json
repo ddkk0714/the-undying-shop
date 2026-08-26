@@ -146,6 +146,15 @@
           ],
           "desc": "Submitted hero contract; click its desk copy to inspect"
         },
+        "ui.revive.record": {
+          "type": "image",
+          "file": "ui/revive_record.png",
+          "size": [
+            740,
+            1226
+          ],
+          "desc": "소생실 사망 기록 서류 — 책상 위 축소본과 확대 리더가 같은 그림을 쓴다"
+        },
         "ui.icon.help": {
           "type": "image",
           "file": "ui/icon_help.png",
@@ -900,6 +909,13 @@
           "frameHeight": 480,
           "desc": "③ 공격 연출 — 칼 슬래시 10프레임, 공격 선택 시 1회 재생"
         },
+        "ui.live.fx.shield": {
+          "type": "spritesheet",
+          "file": "ui/fx_shield.png",
+          "frameWidth": 420,
+          "frameHeight": 420,
+          "desc": "③ 방어 연출 — 방패 막기 15프레임, 방어 선택 시 1회 재생"
+        },
         "ui.live.map": {
           "type": "image",
           "file": "ui/live_map.png",
@@ -1067,6 +1083,51 @@
             178
           ],
           "desc": "계약서 우측 하단에 찍는 확정 도장"
+        },
+        "prop.revive.stamp.s": {
+          "type": "image",
+          "file": "prop/revive_stamp_s.png",
+          "size": [
+            404,
+            420
+          ],
+          "desc": "소생실 서류 도장 — 시체 상태 등급 S (온전)"
+        },
+        "prop.revive.stamp.a": {
+          "type": "image",
+          "file": "prop/revive_stamp_a.png",
+          "size": [
+            412,
+            424
+          ],
+          "desc": "소생실 서류 도장 — 시체 상태 등급 A"
+        },
+        "prop.revive.stamp.b": {
+          "type": "image",
+          "file": "prop/revive_stamp_b.png",
+          "size": [
+            424,
+            420
+          ],
+          "desc": "소생실 서류 도장 — 시체 상태 등급 B"
+        },
+        "prop.revive.stamp.c": {
+          "type": "image",
+          "file": "prop/revive_stamp_c.png",
+          "size": [
+            380,
+            408
+          ],
+          "desc": "소생실 서류 도장 — 시체 상태 등급 C"
+        },
+        "prop.revive.stamp.f": {
+          "type": "image",
+          "file": "prop/revive_stamp_f.png",
+          "size": [
+            396,
+            404
+          ],
+          "desc": "소생실 서류 도장 — 시체 상태 등급 F (훼손)"
         },
         "prop.ledger": {
           "type": "image",
@@ -2073,6 +2134,21 @@
           "file": "sfx/item_drop.mp3",
           "desc": "장비를 진열대에 놓는다 (사운드V4 · 물건드랍_중간 철)"
         },
+        "sfx.item.drop.heavy": {
+          "type": "audio",
+          "file": "sfx/item_drop_heavy.mp3",
+          "desc": "장비를 진열대에 놓는 무거운 금속음"
+        },
+        "sfx.item.drop.light": {
+          "type": "audio",
+          "file": "sfx/item_drop_light.mp3",
+          "desc": "물약·유물을 진열대에 놓는 가벼운 금속음"
+        },
+        "sfx.office.walk": {
+          "type": "audio",
+          "file": "sfx/office_walk.mp3",
+          "desc": "편성실 용사의 입·퇴장 걸음"
+        },
         "sfx.item.pick": {
           "type": "audio",
           "file": "sfx/item_pick.mp3",
@@ -2262,6 +2338,15 @@
             1036
           ],
           "desc": "Submitted hero contract; click its desk copy to inspect"
+        },
+        "ui.revive.record": {
+          "type": "image",
+          "file": "ui/revive_record.png",
+          "size": [
+            740,
+            1226
+          ],
+          "desc": "소생실 사망 기록 서류 — 책상 위 축소본과 확대 리더가 같은 그림을 쓴다"
         },
         "ui.icon.help": {
           "type": "image",
@@ -2991,6 +3076,13 @@
           "frameHeight": 480,
           "desc": "③ 공격 연출 — 칼 슬래시 10프레임, 공격 선택 시 1회 재생"
         },
+        "ui.live.fx.shield": {
+          "type": "spritesheet",
+          "file": "ui/fx_shield.png",
+          "frameWidth": 420,
+          "frameHeight": 420,
+          "desc": "③ 방어 연출 — 방패 막기 15프레임, 방어 선택 시 1회 재생"
+        },
         "ui.live.map": {
           "type": "image",
           "file": "ui/live_map.png",
@@ -3158,6 +3250,51 @@
             178
           ],
           "desc": "계약서 우측 하단에 찍는 확정 도장"
+        },
+        "prop.revive.stamp.s": {
+          "type": "image",
+          "file": "prop/revive_stamp_s.png",
+          "size": [
+            404,
+            420
+          ],
+          "desc": "소생실 서류 도장 — 시체 상태 등급 S (온전)"
+        },
+        "prop.revive.stamp.a": {
+          "type": "image",
+          "file": "prop/revive_stamp_a.png",
+          "size": [
+            412,
+            424
+          ],
+          "desc": "소생실 서류 도장 — 시체 상태 등급 A"
+        },
+        "prop.revive.stamp.b": {
+          "type": "image",
+          "file": "prop/revive_stamp_b.png",
+          "size": [
+            424,
+            420
+          ],
+          "desc": "소생실 서류 도장 — 시체 상태 등급 B"
+        },
+        "prop.revive.stamp.c": {
+          "type": "image",
+          "file": "prop/revive_stamp_c.png",
+          "size": [
+            380,
+            408
+          ],
+          "desc": "소생실 서류 도장 — 시체 상태 등급 C"
+        },
+        "prop.revive.stamp.f": {
+          "type": "image",
+          "file": "prop/revive_stamp_f.png",
+          "size": [
+            396,
+            404
+          ],
+          "desc": "소생실 서류 도장 — 시체 상태 등급 F (훼손)"
         },
         "prop.ledger": {
           "type": "image",
