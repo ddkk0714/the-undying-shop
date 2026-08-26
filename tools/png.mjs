@@ -11,7 +11,9 @@ import { deflateSync, inflateSync } from 'node:zlib';
 
 /** 00-OVERVIEW §7-1 팔레트 5토큰 — src/render/palette.ts 와 같은 값이어야 한다 */
 export const PALETTE = {
-  ink: [0x0f, 0x1f, 0x17],
+  // 배경·그림자는 **순수 검정**이다. 예전 0x0f1f17 로 구우면 아트의 검정이
+  // 초록빛으로 밀려서, 받은 그림과 화면 색이 어긋났다 (사용자 확인)
+  ink: [0x00, 0x00, 0x00],
   mid: [0x3a, 0x3c, 0x31],
   bone: [0xc2, 0xc8, 0xa5],
   dust: [0x68, 0x73, 0x5e],
