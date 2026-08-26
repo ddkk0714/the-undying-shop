@@ -53,7 +53,9 @@ describe('narrative ending judgement', () => {
     expect(isEarlyClosure(revivable)).toBe(false);
     expect(reducer(revivable, { type: 'PHASE/ADVANCE' })).toMatchObject({ phase: 'OFFICE', isOver: false });
 
-    const recruitable = { ...revivable, gold: 0, recruitPool: [initial.recruitPool[0]!], corpses: [] };
+    // Day 1 계약 후보(루엔)를 써서 일차별 후보 제한과 무관하게 회복 경로를 검증한다.
+    const dayOneApplicant = initial.recruitPool.find((star) => star.id === 'body_juno')!;
+    const recruitable = { ...revivable, gold: 0, recruitPool: [dayOneApplicant], corpses: [] };
     expect(isEarlyClosure(recruitable)).toBe(false);
     const office = reducer(recruitable, { type: 'PHASE/ADVANCE' });
     expect(office).toMatchObject({ phase: 'OFFICE', isOver: false });

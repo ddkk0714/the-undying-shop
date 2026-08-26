@@ -7,6 +7,21 @@ function signedContractKey(starId: string): string {
   return `contractSigned:${starId}`;
 }
 
+/** 신문 일차별 누적 방문 후보. 계약 타입을 늘리지 않고 로스터 규칙으로만 관리한다. */
+const VISITOR_AVAILABLE_DAY: Readonly<Record<string, number>> = {
+  body_ilan: 1, // 미레
+  body_juno: 1, // 루엔
+  body_sela: 1, // 비오레
+  body_mor: 2, // 메르네
+  body_karin: 3, // 세이로
+};
+
+/** 새로 신문에 소개되는 날에는 해당 용사가 그날의 첫 방문자로 온다. */
+const PRIORITY_VISITOR_BY_DAY: Readonly<Record<number, string>> = {
+  2: 'body_mor', // 메르네
+  3: 'body_karin', // 세이로
+};
+
 function haggledContractKey(starId: string): string {
   return `contractHaggled:${starId}`;
 }
@@ -92,13 +107,20 @@ function profileClaimedTiers(starId: string): { floor: number; rate: number }[] 
 
 export function populateVisitors(state: GameState): GameState {
   if (state.phase !== 'OFFICE' || state.visitors.length > 0 || state.recruitPool.length === 0) return state;
-  const eligible = state.recruitPool.filter((star) => !state.rejectedStarIds.includes(star.id));
+  // availableDay는 '그 날부터 누적 등장 가능'한 날짜다. 신문 일차별 편성에 맞춰
+  // 1일차 3명 → 2일차 4명 → 3일차부터 5명으로 후보군이 확장된다.
+  const eligible = state.recruitPool.filter((star) => (
+    !state.rejectedStarIds.includes(star.id)
+    && (VISITOR_AVAILABLE_DAY[star.id] ?? 1) <= state.day
+  ));
   const candidates = eligible;
   if (candidates.length === 0) return state;
 
   const rules = content.balance.contract;
   const [candidateRoll, afterCandidate] = draw(state);
-  const star = candidates[Math.floor(candidateRoll * candidates.length)];
+  const priorityId = PRIORITY_VISITOR_BY_DAY[state.day];
+  const star = candidates.find((candidate) => candidate.id === priorityId)
+    ?? candidates[Math.floor(candidateRoll * candidates.length)];
   if (star === undefined) return afterCandidate;
   const [honestyRoll, next] = draw(afterCandidate);
   const honesty = rules.honestyMin + honestyRoll * (rules.honestyMax - rules.honestyMin);
@@ -219,11 +241,16 @@ export function acceptContract(state: GameState, starId: string): GameState {
   const contract = state.visitors.find((visitor) => visitor.starId === starId);
   const candidate = state.recruitPool.find((star) => star.id === starId);
   if (contract === undefined || candidate === undefined || state.gold < contract.fee) return state;
-  const recruited: Star = { ...candidate, honesty: contract.honesty, status: 'ALIVE' };
+  const existing = state.stars.find((star) => star.id === starId);
+  // 루엔/세이로처럼 이미 소속된 용사가 후보로 선택된 경우에는 새 몸을 추가하지 않고,
+  // 원래 페르소나·소생 횟수를 가진 기존 Star를 오늘 출연자로 연결한다.
+  const recruited: Star = { ...(existing ?? candidate), honesty: contract.honesty, status: 'ALIVE' };
   return {
     ...state,
     gold: state.gold - contract.fee,
-    stars: [...state.stars, recruited],
+    stars: existing === undefined
+      ? [...state.stars, recruited]
+      : state.stars.map((star) => star.id === starId ? recruited : star),
     recruitPool: state.recruitPool.filter((star) => star.id !== starId),
     visitors: state.visitors.filter((visitor) => visitor.starId !== starId),
     flags: { ...state.flags, [signedContractKey(starId)]: true },

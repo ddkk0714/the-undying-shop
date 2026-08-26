@@ -3,7 +3,7 @@ import { reducer } from '../src/core/reducer';
 import { createInitialState } from '../src/core/state';
 import { content } from '../src/core/content';
 import { randomPolicy } from '../src/core/sim';
-import { saleHaggleCount, saleOfferTried, salePriceMultiplier, salePurchaseChance, saleSlotSold } from '../src/core/systems/office';
+import { populateVisitors, saleHaggleCount, saleOfferTried, salePriceMultiplier, salePurchaseChance, saleSlotSold } from '../src/core/systems/office';
 import type { Contract, GameState, Star } from '../src/core/types';
 
 function officeState(seed = 31): GameState {
@@ -23,18 +23,34 @@ function contractFor(star: Star): Contract {
 }
 
 describe('office', () => {
-  it('starts with two signed stars and three hidden applicants', () => {
+  it('keeps all five heroes as hidden daily-contract candidates without duplicating signed stars', () => {
     const state = createInitialState(30);
     expect(state.stars).toHaveLength(2);
-    expect(state.recruitPool).toHaveLength(3);
+    expect(state.recruitPool).toHaveLength(5);
     expect(state.recruitPool.every((star) => star.status === 'HIDDEN')).toBe(true);
-    expect(state.recruitPool.some((candidate) => state.stars.some((star) => star.id === candidate.id))).toBe(false);
+    expect(state.recruitPool.filter((candidate) => state.stars.some((star) => star.id === candidate.id))).toHaveLength(2);
     expect(state.inventory).toEqual([
       { id: 'dagger_crack', qty: 1 },
       { id: 'rope_hemp', qty: 1 },
       { id: 'potion_crimson', qty: 1 },
       { id: 'lantern_old', qty: 1 },
     ]);
+  });
+
+  it('limits newspaper visitor candidates cumulatively by day', () => {
+    const dayOne = new Set<string>();
+    for (let seed = 1; seed <= 120; seed += 1) {
+      const state = { ...createInitialState(seed), day: 1, phase: 'OFFICE' as const };
+      dayOne.add(populateVisitors(state).visitors[0]!.starId);
+    }
+    expect([...dayOne].sort()).toEqual(['body_ilan', 'body_juno', 'body_sela']); // 미레, 루엔, 비오레
+
+    for (let seed = 1; seed <= 120; seed += 1) {
+      const dayTwo = populateVisitors({ ...createInitialState(seed), day: 2, phase: 'OFFICE' as const });
+      const dayThree = populateVisitors({ ...createInitialState(seed), day: 3, phase: 'OFFICE' as const });
+      expect(dayTwo.visitors[0]?.starId).toBe('body_mor'); // 메르네 우선
+      expect(dayThree.visitors[0]?.starId).toBe('body_karin'); // 세이로 우선
+    }
   });
 
   it('offers a unique, affordable visitor when no living star remains', () => {
@@ -84,7 +100,7 @@ describe('office', () => {
   it('charges accepted contracts and permanently removes rejected applicants', () => {
     const initial = officeState();
     const applicant = initial.recruitPool[0]!;
-    const offered = { ...initial, recruitPool: [applicant], visitors: [contractFor(applicant)] };
+    const offered = { ...initial, gold: 2_000, recruitPool: [applicant], visitors: [contractFor(applicant)] };
     const accepted = reducer(offered, { type: 'OFFICE/CONTRACT_ACCEPT', starId: applicant.id });
     expect(accepted.gold).toBe(offered.gold - 1200);
     expect(accepted.stars.find((star) => star.id === applicant.id)?.honesty).toBe(0.7);

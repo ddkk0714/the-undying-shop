@@ -1,7 +1,7 @@
 [
   {
     "id": "body_karin", "name": "노일 세이로", "grit": 7, "cha": 6, "luck": 5,
-    "startPersonaId": "persona_rion", "availableDay": 1,
+    "startPersonaId": "persona_rion", "availableDay": 3,
     "profile": {
       "stageName": "NOIL", "realName": "SEIRO NOIL", "role": "검사 / 에고 웨폰", "origin": "EAST OUTSKIRTS", "heightCm": 186,
       "hp": 154, "atk": 29, "def": 24, "will": 6, "fame": "C", "fans": 6400, "pastRevivals": 2, "nature": "TIMID", "refuses": "NONE", "purse": 85,
@@ -23,7 +23,7 @@
   },
   {
     "id": "body_sela", "name": "녹스 비오레 / 크로우", "grit": 8, "cha": 4, "luck": 6,
-    "availableDay": 3,
+    "availableDay": 1,
     "profile": {
       "stageName": "CROW & VIORE", "realName": "VIORE NOX", "role": "도적 / 흡혈귀", "origin": "NOX ESTATE", "heightCm": 171,
       "hp": 143, "atk": 10, "def": 23, "will": 5, "fame": "A", "fans": 44200, "pastRevivals": 6, "nature": "PROUD", "refuses": "CHEAP GEAR", "purse": 2400,
@@ -34,7 +34,7 @@
   },
   {
     "id": "body_ilan", "name": "미레 바인", "grit": 4, "cha": 9, "luck": 3,
-    "availableDay": 5,
+    "availableDay": 1,
     "profile": {
       "stageName": "MIRE", "realName": "MIRE VAIN", "role": "마법사 / 영매사", "origin": "OLD NORTH WOODS", "heightCm": 149,
       "hp": 76, "atk": 27, "def": 7, "will": 20, "fame": "B", "fans": 19800, "pastRevivals": 1, "nature": "DETACHED", "refuses": "HOLY GEAR", "purse": 1180,
@@ -45,7 +45,7 @@
   },
   {
     "id": "body_mor", "name": "헤일 메르네", "grit": 6, "cha": 5, "luck": 8,
-    "availableDay": null,
+    "availableDay": 2,
     "profile": {
       "stageName": "HAIL", "realName": "HAIL MERNE", "role": "성녀 / 간호사", "origin": "SAINT LEL HOSPITAL", "heightCm": 158,
       "hp": 103, "atk": 15, "def": 14, "will": 21, "fame": "B", "fans": 37700, "pastRevivals": 4, "nature": "ODD", "refuses": "NOTHING", "purse": 42,

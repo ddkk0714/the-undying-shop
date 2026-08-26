@@ -26,7 +26,9 @@ function startingInventory(): GameState['inventory'] {
 
 export function createInitialState(seed: number): GameState {
   const stars = structuredClone(content.stars.slice(0, 2));
-  const recruitPool = structuredClone(content.stars.slice(2)).map((star) => ({ ...star, status: 'HIDDEN' as const, personaId: null }));
+  // 이미 소속된 용사도 날짜별 계약서 후보에는 나타날 수 있다. 수락할 때는 같은 id의
+  // 기존 Star를 재사용하므로 중복 몸이 생기지 않는다.
+  const recruitPool = structuredClone(content.stars).map((star) => ({ ...star, status: 'HIDDEN' as const, personaId: null }));
   return {
     version: 1,
     seed,
