@@ -243,6 +243,8 @@ export class LivePhase extends PhaseScene {
     this.deathAt = null;
     this.lastFans = -1;
     this.counterAt = null;
+    // 어제 방송은 「방송사고」로 끝났다. 오늘 켜지는 소리가 그 짝이다
+    playSfx(this, 'sfx.signal.back', 0.55);
     this.lastHeroHp = -1;
     this.enemyBounce = null;
     this.autoAt = 0;
@@ -346,6 +348,9 @@ export class LivePhase extends PhaseScene {
     const choice = autoChoice(run.hero, enc.turn);
     this.lastAuto = choice;
     this.autoAt = now + AUTO_TURN_MS;
+    // 어필은 소리를 내지 않는다 — 카메라를 보는 동작이지 부딪는 동작이 아니다
+    if (choice === 'ATTACK') playSfx(this, 'sfx.combat.attack', 0.55);
+    else if (choice === 'DEFEND') playSfx(this, 'sfx.combat.guard', 0.5);
     this.store.dispatch({ type: 'COMBAT/CHOOSE', choice });
   }
 
@@ -414,6 +419,7 @@ export class LivePhase extends PhaseScene {
     const hp = s.today?.hero.hp ?? -1;
     if (this.lastHeroHp >= 0 && hp >= 0 && hp < this.lastHeroHp && s.today?.encounter != null) {
       this.counterAt = this.time.now;
+      playSfx(this, 'sfx.combat.hit', 0.6);
       if (!this.reduced) this.cameras.main.shake(COUNTER_SHAKE_MS, COUNTER_SHAKE);
     }
     this.lastHeroHp = hp;
@@ -780,7 +786,9 @@ export class LivePhase extends PhaseScene {
       // 배너 왼쪽 위가 사선으로 잘려 있어서, 첫 줄을 너무 올리거나 왼쪽에 붙이면
       // 밝은 쐐기에 글자 윗부분이 먹힌다 (실측). 안쪽으로 한 칸 더 들여 앉힌다
       const inset = Math.round(v.w * 0.24);
-      const usable = v.w - Math.round(v.w * 0.38);
+      // 오른쪽을 더 비운다 (0.38 → 0.455). 배너의 검은 띠가 오른쪽으로 갈수록 사선으로
+      // 좁아져서, 꽉 채우면 첫 줄 끝과 ▼ 가 띠 밖으로 삐져나왔다 (사용자 확인)
+      const usable = v.w - Math.round(v.w * 0.455);
       const line = new Dialogue(this, {
         x: v.x + inset,
         y: v.y + Math.round(v.h / 2) - 6,                       // 사용자 확정 — 10px 내려 앉힌다
@@ -880,7 +888,10 @@ export class LivePhase extends PhaseScene {
           ...place(i),
           label: a.label, hotkey: a.hotkey, tip: a.tip,
           variant: a.dir === 'UNKNOWN' ? 'ghost' : 'default',
-          onClick: () => this.store.dispatch({ type: 'RADIO/ANSWER', dir: a.dir }),
+          onClick: () => {
+            playSfx(this, 'sfx.radio.fork', 0.5);
+            this.store.dispatch({ type: 'RADIO/ANSWER', dir: a.dir });
+          },
         });
       });
       return;
@@ -896,7 +907,10 @@ export class LivePhase extends PhaseScene {
         ...place(0), w: buttonW * 2 + gap,
         label: '물약을 쓴다', hotkey: '1',
         tip: `체력을 ${healing} 회복한다. 진열대에 올려 둔 한 병이 사라진다.`,
-        onClick: () => this.store.dispatch({ type: 'COMBAT/USE_ITEM', itemId: potion }),
+        onClick: () => {
+          playSfx(this, 'sfx.potion', 0.7);
+          this.store.dispatch({ type: 'COMBAT/USE_ITEM', itemId: potion });
+        },
       });
       new Button(this, {
         ...place(2),
