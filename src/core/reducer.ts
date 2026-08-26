@@ -3,6 +3,7 @@ import { createInitialState } from './state';
 import { answerRadio, chooseCombat, startLive, tickLive, useCombatItem } from './systems/dive';
 import { damageAutopsyCorpse, detachCarried, discardReviveCorpse, reclaimCorpseCarried, reviveQuote, takeCorpseCarried } from './systems/economy';
 import { acceptContract, confirmOffice, haggleContract, pickStar, placeOfficeItem, populateVisitors, rejectContract, sellOfficeBatch, setShopSalePrice } from './systems/office';
+import { rollCorpseParts } from './systems/corpse';
 import { inherit } from './systems/roster';
 import { awardSuperchat, expireChats, moderateChat, spawnChat } from './systems/opinion';
 import { isEarlyClosure, judgeEnding } from './systems/narrative';
@@ -56,7 +57,9 @@ function concludeRun(state: GameState): GameState {
   const goodsIncome = Math.floor(state.fans * content.balance.income.goodsPerFan);
   // 들고 내려간 장비는 저절로 돌아오지 않는다 — 몸에 남고, 소생실에서 회수한다 (CCR-006)
   const { carried, inventory } = detachCarried(state, state.shelf);
-  const corpse: Corpse = { starId: star.id, diedFloor, diedDay: state.day, grade: 'INTACT', announced: null, loot: [], carried };
+  // 몸의 실제 상태(부위별 손상)는 여기서 정해져 시체에 남는다 — 검시 판정(grade)과는 다른 것이다 (HO-029)
+  const parts = rollCorpseParts(state.seed, star.id, state.day, diedFloor);
+  const corpse: Corpse = { starId: star.id, diedFloor, diedDay: state.day, grade: 'INTACT', announced: null, loot: [], carried, parts };
   const stars = state.stars.map((candidate) => candidate.id === star.id ? { ...candidate, status: 'DEAD' as const } : candidate);
   const maxFloor = Math.max(state.maxFloor, diedFloor);
   const settled: GameState = {

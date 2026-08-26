@@ -146,6 +146,16 @@ export interface Encounter {
 
 export type CorpseGrade = 'INTACT' | 'DAMAGED';
 
+/** 검시대에서 살펴보는 부위. 소생실 부위 마크가 이 순서로 읽는다 */
+export type CorpsePartId = 'HEAD' | 'CHEST' | 'LEFT ARM' | 'RIGHT ARM' | 'LEFT LEG' | 'RIGHT LEG';
+/** INTACT 온전 · TORN 찢김(붙이면 산다) · LOST 소실(붙일 것이 없다) */
+export type CorpsePartState = 'INTACT' | 'TORN' | 'LOST';
+
+export interface CorpsePart {
+  part: CorpsePartId;
+  state: CorpsePartState;
+}
+
 export interface Corpse {
   starId: StarId;
   diedFloor: number;
@@ -159,6 +169,14 @@ export interface Corpse {
    * 선택 필드다 — 예전 세이브와 기존 테스트 리터럴이 그대로 통과해야 한다.
    */
   carried?: ItemId[];
+  /**
+   * 부위별 손상 (HO-029). `grade` 는 사람이 내리는 검시 **판정**이고,
+   * 이쪽은 몸의 **실제 상태**다 — 죽은 층이 깊을수록 험하게 상한다.
+   * 시체 식별자에서 결정되므로 같은 시체는 언제 다시 봐도 같은 표가 나온다.
+   * 선택 필드다 — 예전 세이브와 기존 테스트 리터럴이 그대로 통과해야 한다.
+   * 없으면 `corpsePartsOf()` 가 같은 규칙으로 그 자리에서 만들어 준다.
+   */
+  parts?: CorpsePart[];
 }
 
 /* ── 3. 오늘의 방송 ────────────────────────────────────────── */

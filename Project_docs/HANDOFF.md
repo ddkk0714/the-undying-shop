@@ -1337,6 +1337,33 @@ carried?: ItemId[];   // 죽을 때 지니고 내려간 장비. 선택 필드 �
 **상태**: [ ] 미처리
 
 ---
+
+## HO-030  (from: Claude Code → to: Codex)  D8 · **밸런스 조정으로 테스트 5개가 깨져 있다**
+
+**필요한 것**: `npm test` 가 5개 실패한다. 전부 네 밸런스 조정과 테스트 기대값이 어긋난 것이다.
+내 부위 손상 작업과는 무관하다 (`npx tsc --noEmit` 은 통과한다).
+
+```
+tests/economy.spec.ts > revive economy > matches the balance reference at 12F / 24F / 31F
+tests/roster.spec.ts  > roster > inherits a persona with fandom loss, ...
+tests/roster.spec.ts  > roster > allows a persona to inherit from a discarded body record
+```
+
+- **economy 3개** — `balance.revive.base` 를 400 → 200 으로 내렸다. 테스트는 12F 에서
+  722 이상을 기대하는데 380 이 나온다. 기준표를 새 값에 맞추거나 `base` 를 되돌려야 한다.
+- **roster 2개** — `balance.start.gold` 를 12840 → 1000 으로 내렸다. 두 테스트의 `signSela()`
+  가 쓰는 계약 수수료는 1200 이라 `acceptContract` 의 `state.gold < contract.fee` 에 걸려
+  **계약이 조용히 무효화**된다. 그래서 그 뒤의 상속이 전부 어긋난다. 시작 골드가 의도한
+  값이라면 테스트 쪽 수수료를 낮춰라.
+
+**이유**: 커밋 `0e30d9a` 이후 `main` 기준으로 재현된다. 어느 쪽이 옳은 값인지는 밸런스 결정이라
+내가 정할 수 없다.
+
+**내가 하지 않은 이유**: `content/balance.json` 과 `tests/**` 는 네 영역이다.
+
+**상태**: [ ] 미처리
+
+---
 ---
 
 # 세션 인계 (2) — Claude Code → 다음 Claude Code   D8 · 2026-08-26 밤
@@ -1489,7 +1516,36 @@ parts?: { part: 'HEAD' | 'CHEST' | 'LEFT ARM' | 'RIGHT ARM' | 'LEFT LEG' | 'RIGH
 그 표로 갈아끼우면 끝난다. 부위가 3개든 6개든 자리만 늘리면 된다.
 **내가 하지 않은 이유**: `src/core/types.ts` 는 계약 파일이고, 부위 손상은 검시 규칙이다.
 
-**상태**: [ ] 미처리
+**상태**: [x] 처리됨 (D8, Claude Code) — **사람이 분담 변경을 승인해 판정까지 내가 넣었다.**
+Codex 영역(`reducer.ts` · `content.ts` · `balance.json`)을 건드렸으니 아래를 보고 넘어가라.
+
+- `types.ts` — `CorpsePartId`(6부위) · `CorpsePartState`(INTACT/TORN/LOST) · `CorpsePart`,
+  그리고 `Corpse.parts?` **선택 필드**. `carried?` 와 같은 방식이라 예전 세이브와
+  기존 테스트 리터럴이 그대로 통과한다.
+- **`src/core/systems/corpse.ts` (새 파일)** — 판정은 전부 여기 있다. 네 미커밋 편집과
+  겹치지 않게 일부러 새 파일로 뺐다.
+- `reducer.ts` `settleDeath` — 시체를 만들 때 `parts` 를 붙인다 (한 줄 + import).
+- `balance.json` / `content.ts` — `corpseParts` 블록(확률·LOST 비율·`neverLost`)과 검증.
+- `RevivePhase.ts` — `MARK_SPOTS` 두 자리 하드코딩을 6부위 앵커표로 갈아끼웠다.
+
+**⚠️ `draw()` 를 쓰지 않았다.** 사망 처리에 뽑기를 끼우면 `state.rngCursor` 가 밀려
+그 뒤의 모든 난수가 어긋난다 (시뮬·테스트가 조용히 달라진다). 대신 시체 식별자
+(`seed`+`starId`+`diedDay`+`diedFloor`)에서 바로 뽑는다. 그래서 저장/불러오기에도
+같은 표가 나오고, `parts` 가 없는 예전 세이브도 `corpsePartsOf()` 가 같은 값을 되돌린다.
+
+**아직 안 한 것** — `economy.ts` 의 `damageAutopsyCorpse`(해체) 는 손대지 않았다.
+해체한 몸은 `DISCARDED` 가 되어 소생실 목록에서 빠지므로 화면에 드러날 일이 없다.
+해체가 부위를 더 망가뜨려야 한다면 그건 검시 규칙이니 네가 판단해라.
+
+**표시 규칙 (사람 확정)** — **흰색(bone) 하나만 쓴다. 빨간 상처 아트는 폐지했다.**
+`ui.revive.mark.wound` 는 이제 아무도 안 쓴다 (매니페스트에는 남겨 뒀다).
+마크는 **상한 부위만**, 험한 순서로 최대 2개. 몸이 통째로 멀쩡하면 가슴 한 곳에
+`CHEST / INTACT` 를 세운다. 라벨 박스는 「다음 n/m」 버튼과 서로를 덮지 않게 비켜 앉는다.
+
+**검증**: puppeteer(1920x1080, 시스템 Chrome) — 34층에서 죽은 몸은
+`HEAD/TORN` + `RIGHT ARM/LOST` 두 마크, 4층 몸은 `CHEST/INTACT` 한 마크.
+콘솔 오류 0. `npx tsc --noEmit` 통과. 분포는 3층 0.7부위/구 · 24층 2.5 · 40층 3.7,
+`HEAD`·`CHEST` 는 절대 `LOST` 가 되지 않는다.
 
 ---
 ---
@@ -1540,8 +1596,8 @@ tests/office.spec.ts(6,10)         no exported member 'equippedItemIds'
 
 ## 4. 다음에 할 일
 
-1. **HO-029** — 부위별 손상(`Corpse.parts`)이 core 에 없다. 지금은 훼손된 몸이면
-   두 부위 모두에 상처를 얹는다. `MARK_SPOTS` 표만 갈아끼우면 되게 해 뒀다
+1. ~~**HO-029** — 부위별 손상~~ **처리됨 (D8)**. 위 HO-029 항목을 봐라 —
+   사람 승인으로 분담을 바꿔 core 판정까지 넣었다
 2. 미처리 HANDOFF: HO-003 · 005 · 006 · 007 · 012 · 013 · 014 · 016 · 018 · 019
 3. D6 오후는 제출물이다 (`05-PRIORITY.md` §3) — **신기능 금지**
 

@@ -3,6 +3,7 @@ import { SCENES } from '../../config';
 import { content } from '../../core/content';
 import { reviveDaysHeld, reviveQuote } from '../../core/systems/economy';
 import { pickDialogue, totalRevivals } from '../../core/systems/dialogue';
+import { damagedCorpseParts } from '../../core/systems/corpse';
 import { key, starArt } from '../../render/assets';
 import { FONT } from '../../render/font';
 import { css } from '../../render/palette';
@@ -15,7 +16,7 @@ import { portrait } from '../../ui/Portrait';
 import { createTooltip } from '../../ui/Tooltip';
 import { playBgm, playSfx } from '../../audio/Sfx';
 import { PhaseScene } from './PhaseScene';
-import type { Corpse, GameState, ItemDef, Persona, Star } from '../../core/types';
+import type { Corpse, CorpsePartId, CorpsePartState, GameState, ItemDef, Persona, Star } from '../../core/types';
 
 /**
  * M04 ① 소생실 — 이 게임의 유일한 지출.
@@ -49,8 +50,7 @@ const MARK_REVEAL = [
 ];
 /** 프레임 간격 — 28프레임 × 46ms ≈ 1.3초. 한 번만 재생하고 마지막에 멈춘다 */
 const MARK_FRAME_MS = 46;
-/** 마크 사각형(=부위를 가리키는 점)의 자리와 중심. 이 중심이 시체의 부위 위에 온다 */
-const MARK_SQUARE = { x: 0, y: 146, w: 76, h: 80 };
+/** 마크 사각형(=부위를 가리키는 점)의 중심. 이 점이 시체의 부위 위에 온다 */
 const MARK_ANCHOR = { x: 38, y: 186 };
 /** 라벨 박스 내부 — 부위명은 GIF 에 없다(빈 박스로 끝난다). 여기에 글자를 넣는다 */
 const MARK_LABEL_BOX = { x: 295, y: 0, w: 237, h: 80 };
@@ -59,14 +59,28 @@ const MARK_LABEL_BOX = { x: 295, y: 0, w: 237, h: 80 };
  * 작업대 위에서 부위를 가리키는 자리. `L.bench` 기준 **비율**이다 —
  * 다섯 명의 시체 그림이 저마다 자세가 달라 픽셀로 박으면 한 명에게만 맞는다.
  *
- * ⚠️ 어느 부위가 **손상됐는지**는 아직 core 에 없다 (`Corpse.grade` 는 몸 전체를
- *    INTACT/DAMAGED 로만 나눈다). 그래서 지금은 훼손된 몸이면 두 부위 모두에
- *    상처를 얹는다. 부위별 상태가 생기면 그대로 갈아끼우면 된다 → HO-029
+ * 마크는 왼쪽 아래 사각형이 부위를 짚고 오른쪽 위로 선이 뻗어 라벨이 붙는 모양이라,
+ * `fx` 가 크면 라벨 박스가 화면 밖으로 나간다. 그래서 자리를 몸의 왼쪽·가운데로 잡았다
+ * (그래도 `buildPartMarks` 에서 화면 폭에 맞춰 한 번 더 물린다).
  */
-const MARK_SPOTS = [
-  { part: 'CHEST', fx: 0.40, fy: 0.50 },
-  { part: 'LEFT LEG', fx: 0.50, fy: 0.78 },
-] as const;
+const PART_ANCHOR: Record<CorpsePartId, { fx: number; fy: number }> = {
+  HEAD: { fx: 0.17, fy: 0.30 },
+  CHEST: { fx: 0.36, fy: 0.52 },
+  'LEFT ARM': { fx: 0.28, fy: 0.74 },
+  'RIGHT ARM': { fx: 0.50, fy: 0.32 },
+  'LEFT LEG': { fx: 0.52, fy: 0.70 },
+  'RIGHT LEG': { fx: 0.44, fy: 0.86 },
+};
+/** 한 번에 가리키는 부위 수. 셋을 넘기면 선과 라벨이 서로를 덮는다 */
+const MARK_LIMIT = 2;
+/** 라벨 박스가 서로 겹치지 않는 최소 세로 간격 */
+const MARK_MIN_GAP = MARK_LABEL_BOX.h + 12;
+/** 부위 상태를 라벨 아래줄에 적는 말 — 빨간 상처 아트는 쓰지 않는다 (사용자 확정: 흰색만) */
+const PART_STATE_LABEL: Record<CorpsePartState, string> = {
+  INTACT: 'INTACT',
+  TORN: 'TORN',
+  LOST: 'LOST',
+};
 
 export class RevivePhase extends PhaseScene {
   private index = 0;
@@ -97,7 +111,7 @@ export class RevivePhase extends PhaseScene {
   private markKey: string | null = null;
   private markAt = 0;
   /** build() 가 매번 다시 채운다. update() 가 프레임을 밀어 준다 */
-  private marks: { img: Phaser.GameObjects.Image; label: Phaser.GameObjects.Text; wound: Phaser.GameObjects.Image | null }[] = [];
+  private marks: { img: Phaser.GameObjects.Image; label: Phaser.GameObjects.Text; state: Phaser.GameObjects.Text }[] = [];
 
   constructor() {
     super(SCENES.PHASE_REVIVE);
@@ -266,28 +280,53 @@ export class RevivePhase extends PhaseScene {
     }
 
     const b = L.bench;
-    const damaged = corpse.grade === 'DAMAGED';
-    for (const spot of MARK_SPOTS) {
+    /**
+     * 어느 부위가 상했는지는 `core/systems/corpse.ts` 가 정한다 (HO-029).
+     * 이 씬은 판정하지 않는다 — 험한 순서로 받아서 앞에서 몇 개만 짚는다.
+     * 몸이 통째로 멀쩡하면 그것도 정보다 — 가슴 한 곳에 `INTACT` 를 세워 둔다.
+     */
+    const damaged = damagedCorpseParts(this.store.getState().seed, corpse);
+    const shown: { part: CorpsePartId; state: CorpsePartState }[] = damaged.length === 0
+      ? [{ part: 'CHEST', state: 'INTACT' }]
+      : damaged.slice(0, MARK_LIMIT);
+
+    // 작업대 오른쪽 위는 `buildPager` 의 「다음 n/m」 자리다 — 라벨 박스가 그 위에 얹히면
+    // 둘 다 못 읽는다. 겹치는 마크는 버튼 아래로 내려 보낸다
+    const pagerBottom = b.y + L.pad * 3 + 28 + 56 + 10;
+    const pagerLeft = b.x + b.w - 320;
+
+    // 라벨이 서로를 덮지 않도록 위에서 아래로 세우고, 붙으면 아래쪽을 조금 밀어 내린다
+    const placed = shown
+      .map((entry) => {
+        const ox = Math.round(b.x + b.w * PART_ANCHOR[entry.part].fx - MARK_ANCHOR.x);
+        const oy = Math.round(b.y + b.h * PART_ANCHOR[entry.part].fy - MARK_ANCHOR.y);
+        const hitsPager = ox + MARK_LABEL_BOX.x + MARK_LABEL_BOX.w > pagerLeft;
+        return { entry, ox, oy: hitsPager ? Math.max(oy, pagerBottom) : oy };
+      })
+      .sort((a, c) => a.oy - c.oy);
+    for (let index = 1; index < placed.length; index += 1) {
+      const gap = placed[index].oy - placed[index - 1].oy;
+      if (gap < MARK_MIN_GAP) placed[index].oy += MARK_MIN_GAP - gap;
+    }
+
+    for (const spot of placed) {
       // 마크 사각형의 중심이 부위 위에 오도록 이미지를 끌어다 놓는다
-      const ox = Math.round(b.x + b.w * spot.fx - MARK_ANCHOR.x);
-      const oy = Math.round(b.y + b.h * spot.fy - MARK_ANCHOR.y);
+      // 라벨 박스는 마크의 오른쪽 끝이라, 화면 밖으로 나가지 않게 여기서 한 번 물린다
+      const ox = Math.min(spot.ox, this.scale.width - MARK_NATIVE.w - 8);
+      const oy = spot.oy;
 
       const img = this.add.image(ox, oy, key('ui.revive.mark')).setOrigin(0, 0);
+      const cx = ox + MARK_LABEL_BOX.x + Math.round(MARK_LABEL_BOX.w / 2);
+      const cy = oy + MARK_LABEL_BOX.y + Math.round(MARK_LABEL_BOX.h / 2);
+      // 부위명 위 · 상태 아래. 색은 bone 하나뿐이다 (사용자 확정: 흰색만, 빨간 마크 폐지)
       const label = this.add
-        .text(
-          ox + MARK_LABEL_BOX.x + Math.round(MARK_LABEL_BOX.w / 2),
-          oy + MARK_LABEL_BOX.y + Math.round(MARK_LABEL_BOX.h / 2),
-          spot.part,
-          { ...FONT, color: css('bone'), fontSize: '30px' },
-        )
+        .text(cx, cy - 15, spot.entry.part, { ...FONT, color: css('bone'), fontSize: '26px' })
+        .setOrigin(0.5);
+      const state = this.add
+        .text(cx, cy + 15, PART_STATE_LABEL[spot.entry.state], { ...FONT, color: css('bone'), fontSize: '22px' })
         .setOrigin(0.5);
 
-      // 상처는 마크 사각형 자리에 그대로 덮는다 (75x79 원본이 76x80 마크 칸에 들어맞는다)
-      const wound = damaged && this.hasArt('ui.revive.mark.wound')
-        ? this.add.image(ox + MARK_SQUARE.x, oy + MARK_SQUARE.y, key('ui.revive.mark.wound')).setOrigin(0, 0)
-        : null;
-
-      this.marks.push({ img, label, wound });
+      this.marks.push({ img, label, state });
     }
     this.stepPartMarks(this.time.now);
   }
@@ -310,7 +349,7 @@ export class RevivePhase extends PhaseScene {
       m.img.setCrop(0, 0, shown, MARK_NATIVE.h);
       // 부위명과 상처는 **다 그려진 뒤에** 들어온다 (사용자 확정)
       m.label.setVisible(done);
-      m.wound?.setVisible(done);
+      m.state.setVisible(done);
     }
   }
 

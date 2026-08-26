@@ -114,6 +114,8 @@ export interface Balance {
     maxPurchaseChance: number;
     maxHaggles: number;
   };
+  /** 부위별 손상 판정 (HO-029). 화면이 아니라 core 가 정한다 */
+  corpseParts: { baseChance: number; perFloor: number; maxChance: number; lostChance: number; neverLost: string[] };
   autopsy: { lootMin: number; lootMax: number; truthRelicMinFloor: number; truthRelicIds: string[] };
   roster: { inheritFandomLoss: number; inheritSuspicion: number };
 }
@@ -416,7 +418,7 @@ export function loadContent(): Content {
   assertNumber(balanceJson.reputation.onSuccessAnnounce, 'balance.reputation.onSuccessAnnounce');
   assertNumber(balanceJson.reputation.onFailureAnnounce, 'balance.reputation.onFailureAnnounce');
   assertShape(balanceJson.reputation.grades.every((grade) => Array.isArray(grade) && grade.length === 2 && typeof grade[0] === 'number' && typeof grade[1] === 'string'), 'balance.reputation.grades invalid');
-  assertShape(isRecord(balanceJson.recruit) && isRecord(balanceJson.roster) && isRecord(balanceJson.contract) && isRecord(balanceJson.shopSale) && isRecord(balanceJson.autopsy), 'balance.recruit/roster/contract/shopSale/autopsy missing');
+  assertShape(isRecord(balanceJson.recruit) && isRecord(balanceJson.roster) && isRecord(balanceJson.contract) && isRecord(balanceJson.shopSale) && isRecord(balanceJson.autopsy) && isRecord(balanceJson.corpseParts), 'balance.recruit/roster/contract/shopSale/autopsy/corpseParts missing');
   for (const key of ['baseSlots', 'lossPerFailures'] as const) assertNumber(balanceJson.recruit[key], `balance.recruit.${key}`);
   for (const key of ['inheritFandomLoss', 'inheritSuspicion'] as const) assertNumber(balanceJson.roster[key], `balance.roster.${key}`);
   for (const key of ['visitorsPerDay', 'feeBase', 'feePerFandomK', 'feeHonestyBias', 'haggleFeeMultiplier', 'honestyMin', 'honestyMax', 'fandomBase', 'fandomPerCharisma'] as const) assertNumber(balanceJson.contract[key], `balance.contract.${key}`);
@@ -436,6 +438,10 @@ export function loadContent(): Content {
   assertShape(balanceJson.autopsy.lootMin > 0 && balanceJson.autopsy.lootMin <= balanceJson.autopsy.lootMax, 'balance.autopsy loot range invalid');
   assertShape(Array.isArray(balanceJson.autopsy.truthRelicIds) && balanceJson.autopsy.truthRelicIds.length === 2 && balanceJson.autopsy.truthRelicIds.every((id) => typeof id === 'string'), 'balance.autopsy truth relic ids invalid');
   assertShape(balanceJson.autopsy.truthRelicIds.every((id) => items.some((item) => item.id === id && item.isRelic)), 'balance.autopsy truth relic ids must be relic items');
+  for (const key of ['baseChance', 'perFloor', 'maxChance', 'lostChance'] as const) assertNumber(balanceJson.corpseParts[key], `balance.corpseParts.${key}`);
+  assertShape(balanceJson.corpseParts.baseChance >= 0 && balanceJson.corpseParts.maxChance <= 1 && balanceJson.corpseParts.baseChance <= balanceJson.corpseParts.maxChance, 'balance.corpseParts chance range invalid');
+  assertShape(balanceJson.corpseParts.lostChance >= 0 && balanceJson.corpseParts.lostChance <= 1, 'balance.corpseParts.lostChance out of range');
+  assertShape(Array.isArray(balanceJson.corpseParts.neverLost) && balanceJson.corpseParts.neverLost.every((id) => typeof id === 'string'), 'balance.corpseParts.neverLost invalid');
   assertShape(isRecord(radioJson) && isRecord(chatJson) && isRecord(narrativeJson), 'localized content must be objects');
   for (const key of ['combatHealthy', 'combatHalf', 'combatDanger', 'combatMentalBreak', 'combatAppeal', 'degrade4'] as const) {
     const lines = radioJson[key];
