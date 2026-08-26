@@ -21,7 +21,9 @@ const PUBLIC = join(ROOT, 'public');
 /* ── 00-OVERVIEW §7-1 팔레트 5토큰 (v3.1) ───────────────────────────── */
 const P = {
   // 00-OVERVIEW §7-1 (v3.1) — 지정 3색 + 파생 dust + 강조 wax
-  ink: 0x0f1f17,
+  // ink 는 순수 검정이다. 예전 0x0f1f17(초록기 도는 검정)로 구우면 다른 도구가
+  // 만든 검정 아트 위에서 배경만 떠 보인다 (tools/png.mjs 와 같은 값으로 맞춤, 사용자 확인)
+  ink: 0x000000,
   mid: 0x3a3c31,
   bone: 0xc2c8a5,
   dust: 0x68735e,
