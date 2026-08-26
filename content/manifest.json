@@ -533,6 +533,366 @@
           ],
           "desc": "③ 좌측 층계 게이지 (탑 단면)"
         },
+        "ui.live.floors.1": {
+          "type": "image",
+          "file": "ui/floors/floor_01.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 1층 채움"
+        },
+        "ui.live.floors.2": {
+          "type": "image",
+          "file": "ui/floors/floor_02.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 2층 채움"
+        },
+        "ui.live.floors.3": {
+          "type": "image",
+          "file": "ui/floors/floor_03.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 3층 채움"
+        },
+        "ui.live.floors.4": {
+          "type": "image",
+          "file": "ui/floors/floor_04.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 4층 채움"
+        },
+        "ui.live.floors.5": {
+          "type": "image",
+          "file": "ui/floors/floor_05.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 5층 채움"
+        },
+        "ui.live.floors.6": {
+          "type": "image",
+          "file": "ui/floors/floor_06.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 6층 채움"
+        },
+        "ui.live.floors.7": {
+          "type": "image",
+          "file": "ui/floors/floor_07.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 7층 채움"
+        },
+        "ui.live.floors.8": {
+          "type": "image",
+          "file": "ui/floors/floor_08.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 8층 채움"
+        },
+        "ui.live.floors.9": {
+          "type": "image",
+          "file": "ui/floors/floor_09.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 9층 채움"
+        },
+        "ui.live.floors.10": {
+          "type": "image",
+          "file": "ui/floors/floor_10.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 10층 채움"
+        },
+        "ui.live.floors.11": {
+          "type": "image",
+          "file": "ui/floors/floor_11.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 11층 채움"
+        },
+        "ui.live.floors.12": {
+          "type": "image",
+          "file": "ui/floors/floor_12.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 12층 채움"
+        },
+        "ui.live.floors.13": {
+          "type": "image",
+          "file": "ui/floors/floor_13.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 13층 채움"
+        },
+        "ui.live.floors.14": {
+          "type": "image",
+          "file": "ui/floors/floor_14.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 14층 채움"
+        },
+        "ui.live.floors.15": {
+          "type": "image",
+          "file": "ui/floors/floor_15.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 15층 채움"
+        },
+        "ui.live.floors.16": {
+          "type": "image",
+          "file": "ui/floors/floor_16.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 16층 채움"
+        },
+        "ui.live.floors.17": {
+          "type": "image",
+          "file": "ui/floors/floor_17.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 17층 채움"
+        },
+        "ui.live.floors.18": {
+          "type": "image",
+          "file": "ui/floors/floor_18.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 18층 채움"
+        },
+        "ui.live.floors.19": {
+          "type": "image",
+          "file": "ui/floors/floor_19.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 19층 채움"
+        },
+        "ui.live.floors.20": {
+          "type": "image",
+          "file": "ui/floors/floor_20.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 20층 채움"
+        },
+        "ui.live.floors.21": {
+          "type": "image",
+          "file": "ui/floors/floor_21.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 21층 채움"
+        },
+        "ui.live.floors.22": {
+          "type": "image",
+          "file": "ui/floors/floor_22.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 22층 채움"
+        },
+        "ui.live.floors.23": {
+          "type": "image",
+          "file": "ui/floors/floor_23.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 23층 채움"
+        },
+        "ui.live.floors.24": {
+          "type": "image",
+          "file": "ui/floors/floor_24.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 24층 채움"
+        },
+        "ui.live.floors.25": {
+          "type": "image",
+          "file": "ui/floors/floor_25.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 25층 채움"
+        },
+        "ui.live.floors.26": {
+          "type": "image",
+          "file": "ui/floors/floor_26.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 26층 채움"
+        },
+        "ui.live.floors.27": {
+          "type": "image",
+          "file": "ui/floors/floor_27.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 27층 채움"
+        },
+        "ui.live.floors.28": {
+          "type": "image",
+          "file": "ui/floors/floor_28.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 28층 채움"
+        },
+        "ui.live.floors.29": {
+          "type": "image",
+          "file": "ui/floors/floor_29.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 29층 채움"
+        },
+        "ui.live.floors.30": {
+          "type": "image",
+          "file": "ui/floors/floor_30.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 30층 채움"
+        },
+        "ui.live.floors.31": {
+          "type": "image",
+          "file": "ui/floors/floor_31.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 31층 채움"
+        },
+        "ui.live.floors.32": {
+          "type": "image",
+          "file": "ui/floors/floor_32.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 32층 채움"
+        },
+        "ui.live.floors.33": {
+          "type": "image",
+          "file": "ui/floors/floor_33.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 33층 채움"
+        },
+        "ui.live.floors.34": {
+          "type": "image",
+          "file": "ui/floors/floor_34.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 34층 채움"
+        },
+        "ui.live.floors.35": {
+          "type": "image",
+          "file": "ui/floors/floor_35.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 35층 채움"
+        },
+        "ui.live.floors.36": {
+          "type": "image",
+          "file": "ui/floors/floor_36.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 36층 채움"
+        },
+        "ui.live.floors.37": {
+          "type": "image",
+          "file": "ui/floors/floor_37.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 37층 채움"
+        },
+        "ui.live.floors.38": {
+          "type": "image",
+          "file": "ui/floors/floor_38.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 38층 채움"
+        },
+        "ui.live.floors.39": {
+          "type": "image",
+          "file": "ui/floors/floor_39.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 39층 채움"
+        },
+        "ui.live.floors.40": {
+          "type": "image",
+          "file": "ui/floors/floor_40.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 40층 채움"
+        },
         "ui.live.map": {
           "type": "image",
           "file": "ui/live_map.png",
@@ -2256,6 +2616,366 @@
             936
           ],
           "desc": "③ 좌측 층계 게이지 (탑 단면)"
+        },
+        "ui.live.floors.1": {
+          "type": "image",
+          "file": "ui/floors/floor_01.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 1층 채움"
+        },
+        "ui.live.floors.2": {
+          "type": "image",
+          "file": "ui/floors/floor_02.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 2층 채움"
+        },
+        "ui.live.floors.3": {
+          "type": "image",
+          "file": "ui/floors/floor_03.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 3층 채움"
+        },
+        "ui.live.floors.4": {
+          "type": "image",
+          "file": "ui/floors/floor_04.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 4층 채움"
+        },
+        "ui.live.floors.5": {
+          "type": "image",
+          "file": "ui/floors/floor_05.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 5층 채움"
+        },
+        "ui.live.floors.6": {
+          "type": "image",
+          "file": "ui/floors/floor_06.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 6층 채움"
+        },
+        "ui.live.floors.7": {
+          "type": "image",
+          "file": "ui/floors/floor_07.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 7층 채움"
+        },
+        "ui.live.floors.8": {
+          "type": "image",
+          "file": "ui/floors/floor_08.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 8층 채움"
+        },
+        "ui.live.floors.9": {
+          "type": "image",
+          "file": "ui/floors/floor_09.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 9층 채움"
+        },
+        "ui.live.floors.10": {
+          "type": "image",
+          "file": "ui/floors/floor_10.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 10층 채움"
+        },
+        "ui.live.floors.11": {
+          "type": "image",
+          "file": "ui/floors/floor_11.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 11층 채움"
+        },
+        "ui.live.floors.12": {
+          "type": "image",
+          "file": "ui/floors/floor_12.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 12층 채움"
+        },
+        "ui.live.floors.13": {
+          "type": "image",
+          "file": "ui/floors/floor_13.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 13층 채움"
+        },
+        "ui.live.floors.14": {
+          "type": "image",
+          "file": "ui/floors/floor_14.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 14층 채움"
+        },
+        "ui.live.floors.15": {
+          "type": "image",
+          "file": "ui/floors/floor_15.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 15층 채움"
+        },
+        "ui.live.floors.16": {
+          "type": "image",
+          "file": "ui/floors/floor_16.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 16층 채움"
+        },
+        "ui.live.floors.17": {
+          "type": "image",
+          "file": "ui/floors/floor_17.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 17층 채움"
+        },
+        "ui.live.floors.18": {
+          "type": "image",
+          "file": "ui/floors/floor_18.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 18층 채움"
+        },
+        "ui.live.floors.19": {
+          "type": "image",
+          "file": "ui/floors/floor_19.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 19층 채움"
+        },
+        "ui.live.floors.20": {
+          "type": "image",
+          "file": "ui/floors/floor_20.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 20층 채움"
+        },
+        "ui.live.floors.21": {
+          "type": "image",
+          "file": "ui/floors/floor_21.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 21층 채움"
+        },
+        "ui.live.floors.22": {
+          "type": "image",
+          "file": "ui/floors/floor_22.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 22층 채움"
+        },
+        "ui.live.floors.23": {
+          "type": "image",
+          "file": "ui/floors/floor_23.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 23층 채움"
+        },
+        "ui.live.floors.24": {
+          "type": "image",
+          "file": "ui/floors/floor_24.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 24층 채움"
+        },
+        "ui.live.floors.25": {
+          "type": "image",
+          "file": "ui/floors/floor_25.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 25층 채움"
+        },
+        "ui.live.floors.26": {
+          "type": "image",
+          "file": "ui/floors/floor_26.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 26층 채움"
+        },
+        "ui.live.floors.27": {
+          "type": "image",
+          "file": "ui/floors/floor_27.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 27층 채움"
+        },
+        "ui.live.floors.28": {
+          "type": "image",
+          "file": "ui/floors/floor_28.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 28층 채움"
+        },
+        "ui.live.floors.29": {
+          "type": "image",
+          "file": "ui/floors/floor_29.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 29층 채움"
+        },
+        "ui.live.floors.30": {
+          "type": "image",
+          "file": "ui/floors/floor_30.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 30층 채움"
+        },
+        "ui.live.floors.31": {
+          "type": "image",
+          "file": "ui/floors/floor_31.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 31층 채움"
+        },
+        "ui.live.floors.32": {
+          "type": "image",
+          "file": "ui/floors/floor_32.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 32층 채움"
+        },
+        "ui.live.floors.33": {
+          "type": "image",
+          "file": "ui/floors/floor_33.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 33층 채움"
+        },
+        "ui.live.floors.34": {
+          "type": "image",
+          "file": "ui/floors/floor_34.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 34층 채움"
+        },
+        "ui.live.floors.35": {
+          "type": "image",
+          "file": "ui/floors/floor_35.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 35층 채움"
+        },
+        "ui.live.floors.36": {
+          "type": "image",
+          "file": "ui/floors/floor_36.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 36층 채움"
+        },
+        "ui.live.floors.37": {
+          "type": "image",
+          "file": "ui/floors/floor_37.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 37층 채움"
+        },
+        "ui.live.floors.38": {
+          "type": "image",
+          "file": "ui/floors/floor_38.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 38층 채움"
+        },
+        "ui.live.floors.39": {
+          "type": "image",
+          "file": "ui/floors/floor_39.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 39층 채움"
+        },
+        "ui.live.floors.40": {
+          "type": "image",
+          "file": "ui/floors/floor_40.png",
+          "size": [
+            210,
+            936
+          ],
+          "desc": "③ 좌측 층계 게이지 — 40층 채움"
         },
         "ui.live.map": {
           "type": "image",

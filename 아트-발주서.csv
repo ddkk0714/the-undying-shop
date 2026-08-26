@@ -165,6 +165,46 @@
 4,UI · 기타,ui/clock_minute.png,8×56,1:1,HUD game-clock minute hand,도착,ui.clock.minute
 4,UI · 기타,ui/contract_sheet.png,795×1036,1:1,Submitted hero contract; click its desk copy to inspect,도착,ui.contract.sheet
 4,UI · 기타,ui/cursor.png,32×32,1:1,"마우스 커서 — 봉랍 도장. 뾰족한 끝이 좌상단(0,0)에 오게 그려라",대기,ui.cursor
+4,UI · 기타,ui/floors/floor_01.png,210×936,1:1,③ 좌측 층계 게이지 — 1층 채움,도착,ui.live.floors.1
+4,UI · 기타,ui/floors/floor_02.png,210×936,1:1,③ 좌측 층계 게이지 — 2층 채움,도착,ui.live.floors.2
+4,UI · 기타,ui/floors/floor_03.png,210×936,1:1,③ 좌측 층계 게이지 — 3층 채움,도착,ui.live.floors.3
+4,UI · 기타,ui/floors/floor_04.png,210×936,1:1,③ 좌측 층계 게이지 — 4층 채움,도착,ui.live.floors.4
+4,UI · 기타,ui/floors/floor_05.png,210×936,1:1,③ 좌측 층계 게이지 — 5층 채움,도착,ui.live.floors.5
+4,UI · 기타,ui/floors/floor_06.png,210×936,1:1,③ 좌측 층계 게이지 — 6층 채움,도착,ui.live.floors.6
+4,UI · 기타,ui/floors/floor_07.png,210×936,1:1,③ 좌측 층계 게이지 — 7층 채움,도착,ui.live.floors.7
+4,UI · 기타,ui/floors/floor_08.png,210×936,1:1,③ 좌측 층계 게이지 — 8층 채움,도착,ui.live.floors.8
+4,UI · 기타,ui/floors/floor_09.png,210×936,1:1,③ 좌측 층계 게이지 — 9층 채움,도착,ui.live.floors.9
+4,UI · 기타,ui/floors/floor_10.png,210×936,1:1,③ 좌측 층계 게이지 — 10층 채움,도착,ui.live.floors.10
+4,UI · 기타,ui/floors/floor_11.png,210×936,1:1,③ 좌측 층계 게이지 — 11층 채움,도착,ui.live.floors.11
+4,UI · 기타,ui/floors/floor_12.png,210×936,1:1,③ 좌측 층계 게이지 — 12층 채움,도착,ui.live.floors.12
+4,UI · 기타,ui/floors/floor_13.png,210×936,1:1,③ 좌측 층계 게이지 — 13층 채움,도착,ui.live.floors.13
+4,UI · 기타,ui/floors/floor_14.png,210×936,1:1,③ 좌측 층계 게이지 — 14층 채움,도착,ui.live.floors.14
+4,UI · 기타,ui/floors/floor_15.png,210×936,1:1,③ 좌측 층계 게이지 — 15층 채움,도착,ui.live.floors.15
+4,UI · 기타,ui/floors/floor_16.png,210×936,1:1,③ 좌측 층계 게이지 — 16층 채움,도착,ui.live.floors.16
+4,UI · 기타,ui/floors/floor_17.png,210×936,1:1,③ 좌측 층계 게이지 — 17층 채움,도착,ui.live.floors.17
+4,UI · 기타,ui/floors/floor_18.png,210×936,1:1,③ 좌측 층계 게이지 — 18층 채움,도착,ui.live.floors.18
+4,UI · 기타,ui/floors/floor_19.png,210×936,1:1,③ 좌측 층계 게이지 — 19층 채움,도착,ui.live.floors.19
+4,UI · 기타,ui/floors/floor_20.png,210×936,1:1,③ 좌측 층계 게이지 — 20층 채움,도착,ui.live.floors.20
+4,UI · 기타,ui/floors/floor_21.png,210×936,1:1,③ 좌측 층계 게이지 — 21층 채움,도착,ui.live.floors.21
+4,UI · 기타,ui/floors/floor_22.png,210×936,1:1,③ 좌측 층계 게이지 — 22층 채움,도착,ui.live.floors.22
+4,UI · 기타,ui/floors/floor_23.png,210×936,1:1,③ 좌측 층계 게이지 — 23층 채움,도착,ui.live.floors.23
+4,UI · 기타,ui/floors/floor_24.png,210×936,1:1,③ 좌측 층계 게이지 — 24층 채움,도착,ui.live.floors.24
+4,UI · 기타,ui/floors/floor_25.png,210×936,1:1,③ 좌측 층계 게이지 — 25층 채움,도착,ui.live.floors.25
+4,UI · 기타,ui/floors/floor_26.png,210×936,1:1,③ 좌측 층계 게이지 — 26층 채움,도착,ui.live.floors.26
+4,UI · 기타,ui/floors/floor_27.png,210×936,1:1,③ 좌측 층계 게이지 — 27층 채움,도착,ui.live.floors.27
+4,UI · 기타,ui/floors/floor_28.png,210×936,1:1,③ 좌측 층계 게이지 — 28층 채움,도착,ui.live.floors.28
+4,UI · 기타,ui/floors/floor_29.png,210×936,1:1,③ 좌측 층계 게이지 — 29층 채움,도착,ui.live.floors.29
+4,UI · 기타,ui/floors/floor_30.png,210×936,1:1,③ 좌측 층계 게이지 — 30층 채움,도착,ui.live.floors.30
+4,UI · 기타,ui/floors/floor_31.png,210×936,1:1,③ 좌측 층계 게이지 — 31층 채움,도착,ui.live.floors.31
+4,UI · 기타,ui/floors/floor_32.png,210×936,1:1,③ 좌측 층계 게이지 — 32층 채움,도착,ui.live.floors.32
+4,UI · 기타,ui/floors/floor_33.png,210×936,1:1,③ 좌측 층계 게이지 — 33층 채움,도착,ui.live.floors.33
+4,UI · 기타,ui/floors/floor_34.png,210×936,1:1,③ 좌측 층계 게이지 — 34층 채움,도착,ui.live.floors.34
+4,UI · 기타,ui/floors/floor_35.png,210×936,1:1,③ 좌측 층계 게이지 — 35층 채움,도착,ui.live.floors.35
+4,UI · 기타,ui/floors/floor_36.png,210×936,1:1,③ 좌측 층계 게이지 — 36층 채움,도착,ui.live.floors.36
+4,UI · 기타,ui/floors/floor_37.png,210×936,1:1,③ 좌측 층계 게이지 — 37층 채움,도착,ui.live.floors.37
+4,UI · 기타,ui/floors/floor_38.png,210×936,1:1,③ 좌측 층계 게이지 — 38층 채움,도착,ui.live.floors.38
+4,UI · 기타,ui/floors/floor_39.png,210×936,1:1,③ 좌측 층계 게이지 — 39층 채움,도착,ui.live.floors.39
+4,UI · 기타,ui/floors/floor_40.png,210×936,1:1,③ 좌측 층계 게이지 — 40층 채움,도착,ui.live.floors.40
 4,UI · 기타,ui/hud_status.png,700×144,1:1,상단바 좌 — DAY·골드·팬·평판 4칸,도착,ui.hud.status
 4,UI · 기타,ui/hud_tools.png,740×144,1:1,상단바 우 — 시계·도달층 게이지,도착,ui.hud.tools
 4,UI · 기타,ui/icon_help_hover.png,112×112,1:1,상단바 아이콘 · 조작 안내(책) (눌림),도착,ui.icon.help.hover

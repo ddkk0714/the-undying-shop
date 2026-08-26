@@ -68,6 +68,9 @@ function zoneScreen(s: Readonly<GameState>): string {
 const WINDOW_ROWS = 14;
 const WINDOW_LEAD = 4;
 
+/** 좌측 층계 게이지 — 층마다 한 장씩(`ui.live.floors.1`~`.40`), 내려갈수록 채워진 그림으로 갈아 끼운다 */
+const FLOOR_FILL_FRAMES = 40;
+
 /** M06 §8 사망 타임라인 (ms) */
 const DEATH_HITSTOP = 150;
 const DEATH_SCANLINE = 350;
@@ -522,32 +525,19 @@ export class LivePhase extends PhaseScene {
    * 대신 이 방송이 누구 것인지는 우상단 초상 아래에 적는다 (`buildPortrait`).
    */
 
-  /* ── ② 좌측 층수 게이지 — 아래로 깊어진다 (M06 §6) ──── */
+  /**
+   * ── ② 좌측 층수 게이지 — 아래로 깊어진다 (M06 §6) ────
+   *
+   * 숫자 목록 대신 **그림 한 장을 통째로 갈아 끼운다** (사용자 확정). `ui.live.floors`
+   * 는 아무 층도 못 간 상태(0층)이고, 한 층 내려갈 때마다 `ui.live.floors.<층>`
+   * (1~40, `아트-발주서/아트_V3/타워`)로 바뀐다 — 그림 안의 붉은 칸이 위에서부터
+   * 하나씩 차오르는 것으로 진행을 보여준다.
+   */
   private buildFloors(s: Readonly<GameState>): void {
     const v = L.live.floors;
+    const floor = Math.max(0, Math.min(FLOOR_FILL_FRAMES, s.today?.currentFloor ?? 0));
     this.rect(v.x, v.y, v.w, v.h, 'ink');
-    this.sprite(v.x, v.y, 'ui.live.floors', v.w, v.h);
-
-    const floor = s.today?.currentFloor ?? 0;
-    const top = windowTop(floor);
-    const rowH = Math.floor((v.h - 8) / WINDOW_ROWS);
-
-    for (let i = 0; i < WINDOW_ROWS; i += 1) {
-      const f = top + i;
-      const y = v.y + 4 + i * rowH;
-      const here = f === floor;
-      if (here) this.rect(v.x + 2, y, v.w - 4, rowH, 'mid');
-      this.text(v.x + 20, y + Math.floor((rowH - 36) / 2), String(f).padStart(2, '0'), here ? 'wax' : 'dust');
-
-      // 최고 기록 눈금 — 넘어서는 순간 눈금이 부서진다
-      if (f !== s.maxFloor) continue;
-      if (floor > s.maxFloor) {
-        this.rect(v.x + 8, y + rowH - 2, 28, L.line, 'bone');
-        this.rect(v.x + v.w - 36, y + rowH - 2, 28, L.line, 'bone');
-      } else {
-        this.rect(v.x + 8, y + rowH - 2, v.w - 16, L.line, 'bone');
-      }
-    }
+    this.sprite(v.x, v.y, floor === 0 ? 'ui.live.floors' : `ui.live.floors.${floor}`, v.w, v.h);
   }
 
   /* ── ③ 던전 지도 — 프로시저럴. 갈림길 정답은 그리지 않는다 ─ */
@@ -991,19 +981,8 @@ export class LivePhase extends PhaseScene {
       }
     }
 
-    // 상태 한 줄은 **초상 안 우측 아래**에 작게 앉는다 (사용자 확정).
-    // 그림 위에 바로 쓰면 머리카락에 묻히므로 글자 크기를 재서 ink 판을 깔고 그 위에 올린다.
-    // 판을 먼저 그릴 수가 없다 — 폭을 알려면 글자가 먼저 있어야 해서, 만들고 재고 되올린다
-    // 16px 라벨이므로 `clip` 에 'label' 을 준다 — 기본값(body, 32px)으로 재면
-    // 폭을 두 배로 잡아 「땀. 눈썹이 ·」처럼 멀쩡한 글이 잘린다 (실측)
-    const tag = this.label(0, 0, this.clip(mood.text, v.w - 24, 'label'), appealing ? 'wax' : 'dust');
-    const tw = Math.ceil(tag.width);
-    const th = Math.ceil(tag.height);
-    const tx = v.x + v.w - 8 - tw;
-    const ty = v.y + v.h - 8 - th;
-    this.rect(tx - 6, ty - 4, tw + 12, th + 8, 'ink');
-    tag.setPosition(tx, ty);
-    this.children.bringToTop(tag);
+    // 상태 한 줄(예: 「땀. 눈썹이 처졌다」)은 초상 안에 그리지 않는다 (사용자 확정).
+    // 표정은 `mood.face` 가 이미 그림으로 보여준다 — 글자는 겹쳐 적지 않는다.
 
     // HP 15% 이하 — 초상만 미세하게 흔들린다
     if (ratio < 0.15 && !this.reduced) {
