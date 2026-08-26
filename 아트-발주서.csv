@@ -71,8 +71,11 @@
 4,소리,sfx/fork.mp3,,1:1,무전 — 갈림길에서 문을 열었다 (사운드V4),도착,sfx.radio.fork
 4,소리,sfx/guard.mp3,,1:1,전투 — 막았다 (사운드V4),도착,sfx.combat.guard
 4,소리,sfx/hit.mp3,,1:1,전투 — 적의 반격이 들어왔다 (사운드V4 · 공격_혹),도착,sfx.combat.hit
+4,소리,sfx/item_drop_heavy.mp3,,1:1,장비를 진열대에 놓는 무거운 금속음,도착,sfx.item.drop.heavy
+4,소리,sfx/item_drop_light.mp3,,1:1,물약·유물을 진열대에 놓는 가벼운 금속음,도착,sfx.item.drop.light
 4,소리,sfx/item_drop.mp3,,1:1,장비를 진열대에 놓는다 (사운드V4 · 물건드랍_중간 철),도착,sfx.item.drop
 4,소리,sfx/item_pick.mp3,,1:1,장비를 집어 든다 (사운드V4 · 버튼 뽑),도착,sfx.item.pick
+4,소리,sfx/office_walk.mp3,,1:1,편성실 용사의 입·퇴장 걸음,도착,sfx.office.walk
 4,소리,sfx/potion.mp3,,1:1,전투 — 물약을 마신다 (사운드V4 · 포션먹음이),도착,sfx.potion
 4,소리,sfx/record.mp3,,1:1,신기록 갱신,도착,sfx.record
 4,소리,sfx/revive_knock.mp3,,1:1,빈 소생실에서 2초 뒤 들리는 편성실 쪽 노크,도착,sfx.revive.knock
@@ -88,6 +91,11 @@
 4,소품,prop/contract_stamp.png,179×178,1:1,계약서 우측 하단에 찍는 확정 도장,도착,prop.contract.stamp
 4,소품,prop/lamp.png,224×352,1:1,작업대의 실제 석유 램프,도착,prop.lamp
 4,소품,prop/ledger.png,336×264,1:1,작업대의 출연자 서류철,도착,prop.ledger
+4,소품,prop/revive_stamp_a.png,412×424,1:1,소생실 서류 도장 — 시체 상태 등급 A,도착,prop.revive.stamp.a
+4,소품,prop/revive_stamp_b.png,424×420,1:1,소생실 서류 도장 — 시체 상태 등급 B,도착,prop.revive.stamp.b
+4,소품,prop/revive_stamp_c.png,380×408,1:1,소생실 서류 도장 — 시체 상태 등급 C,도착,prop.revive.stamp.c
+4,소품,prop/revive_stamp_f.png,396×404,1:1,소생실 서류 도장 — 시체 상태 등급 F (훼손),도착,prop.revive.stamp.f
+4,소품,prop/revive_stamp_s.png,404×420,1:1,소생실 서류 도장 — 시체 상태 등급 S (온전),도착,prop.revive.stamp.s
 4,소품,prop/scroll.png,176×64,1:1,계약서 서류 조각,도착,prop.scroll
 4,소품,prop/stamp.png,128×208,1:1,최종 판정서에서 잘라낸 실물 도장,도착,prop.stamp
 4,소품,prop/tag.png,152×104,1:1,작업대의 가격표,도착,prop.tag
@@ -205,6 +213,7 @@
 4,UI · 기타,ui/floors/floor_38.png,210×936,1:1,③ 좌측 층계 게이지 — 38층 채움,도착,ui.live.floors.38
 4,UI · 기타,ui/floors/floor_39.png,210×936,1:1,③ 좌측 층계 게이지 — 39층 채움,도착,ui.live.floors.39
 4,UI · 기타,ui/floors/floor_40.png,210×936,1:1,③ 좌측 층계 게이지 — 40층 채움,도착,ui.live.floors.40
+4,UI · 기타,ui/fx_shield.png,1680×420,1:1,"③ 방어 연출 — 방패 막기 15프레임, 방어 선택 시 1회 재생",도착,ui.live.fx.shield
 4,UI · 기타,ui/fx_sword.png,1920×480,1:1,"③ 공격 연출 — 칼 슬래시 10프레임, 공격 선택 시 1회 재생",도착,ui.live.fx.sword
 4,UI · 기타,ui/hud_status.png,700×144,1:1,상단바 좌 — DAY·골드·팬·평판 4칸,도착,ui.hud.status
 4,UI · 기타,ui/hud_tools.png,740×144,1:1,상단바 우 — 시계·도달층 게이지,도착,ui.hud.tools
@@ -234,6 +243,7 @@
 4,UI · 기타,ui/live_radio.png,220×420,1:1,③ 무전기,도착,ui.live.radio
 4,UI · 기타,ui/live_superchat.png,383×62,1:1,③ 슈퍼챗 팝업 판 — 받은 원본이 383x62 라 1:1 로 놓는다,도착,ui.live.superchat
 4,UI · 기타,ui/logo.png,960×240,1:1,타이틀 로고,대기,ui.logo
+4,UI · 기타,ui/revive_record.png,740×1226,1:1,소생실 사망 기록 서류 — 책상 위 축소본과 확대 리더가 같은 그림을 쓴다,도착,ui.revive.record
 4,UI · 기타,ui/seal.png,768×192,192×192 프레임 1칸 (1:1),봉랍 도장 4프레임,대기,ui.seal
 4,UI · 기타,ui/shelf_arrow.png,154×161,정확히 1/2 (77x80),진열대 지시 화살표 — 고른 장비를 놓을 칸 위에 뜬다,도착,ui.shelf.arrow
 4,UI · 기타,ui/suspicion1.png,192×128,1:1,의심도 1/5 — 눈이 떠지는 5단 (5장 다 있어야 승계 화면에 뜬다),도착,ui.suspicion1

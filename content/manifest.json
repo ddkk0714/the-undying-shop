@@ -4293,6 +4293,21 @@
           "file": "sfx/item_drop.mp3",
           "desc": "장비를 진열대에 놓는다 (사운드V4 · 물건드랍_중간 철)"
         },
+        "sfx.item.drop.heavy": {
+          "type": "audio",
+          "file": "sfx/item_drop_heavy.mp3",
+          "desc": "장비를 진열대에 놓는 무거운 금속음"
+        },
+        "sfx.item.drop.light": {
+          "type": "audio",
+          "file": "sfx/item_drop_light.mp3",
+          "desc": "물약·유물을 진열대에 놓는 가벼운 금속음"
+        },
+        "sfx.office.walk": {
+          "type": "audio",
+          "file": "sfx/office_walk.mp3",
+          "desc": "편성실 용사의 입·퇴장 걸음"
+        },
         "sfx.item.pick": {
           "type": "audio",
           "file": "sfx/item_pick.mp3",

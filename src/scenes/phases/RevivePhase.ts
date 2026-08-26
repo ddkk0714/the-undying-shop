@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { SCENES } from '../../config';
 import { content } from '../../core/content';
 import { pickDialogue, totalRevivals } from '../../core/systems/dialogue';
-import { reviveQuote } from '../../core/systems/economy';
+import { reviveDaysHeld, reviveQuote } from '../../core/systems/economy';
 import { starVoice } from '../../audio/Voice';
 import { key, starArt } from '../../render/assets';
 import { L, actionX, ACTION_W } from '../../ui/layout';
@@ -29,6 +29,9 @@ const CARRIED_PANEL = { w: 736, h: 420 };
 // 진열대가 3칸이라 소지품도 최대 3점이다. 4칸으로 나누면 글자가 옆 칸에 붙는다
 const CARRIED_COLUMNS = 3;
 
+/** 사망 기록 서류(`ui.revive.record`) 원본 크기 — at() 좌표계의 기준이다 */
+const RECORD_NATIVE = { w: 740, h: 1226 };
+
 export class RevivePhase extends PhaseScene {
   private index = 0;
   /** 도장이 찍히는 동안 다시 누르지 못하게 */
@@ -42,6 +45,10 @@ export class RevivePhase extends PhaseScene {
   /** 빈 소생실에서 한 번만 울리는 편성실 쪽 노크 */
   private emptyKnockTimer: Phaser.Time.TimerEvent | null = null;
   private emptyKnockPlayed = false;
+  /** 사망 기록 서류를 확대해 읽는 중 (편성실 계약서 리더와 같은 패턴) */
+  private recordOpen = false;
+  /** 서류 도장이 찍히는 동안 다시 누르지 못하게 */
+  private recordStamping = false;
 
   constructor() {
     super(SCENES.PHASE_REVIVE);
@@ -59,6 +66,8 @@ export class RevivePhase extends PhaseScene {
     this.carriedOpen = false;
     this.emptyKnockTimer = null;
     this.emptyKnockPlayed = false;
+    this.recordOpen = false;
+    this.recordStamping = false;
     super.create();
     // 소생실은 편성실과 다른 곡을 쓴다 (사운드V4 · 소생실메인브금).
     //
@@ -101,12 +110,15 @@ export class RevivePhase extends PhaseScene {
     const star = corpse === undefined ? undefined : s.stars.find((st) => st.id === corpse.starId);
 
     this.buildGuest(s, star, waiting.length);
-    this.buildBench(s, corpse, star);
+    if (corpse !== undefined) this.buildDeathRecord();
+    this.buildBench(corpse, star);
     this.buildPager(waiting.length);
     this.buildCarriedButton(corpse);
     this.buildInheritButton(s);
     this.buildActions(s, corpse, star);
     if (this.carriedOpen && corpse !== undefined) this.buildCarried(corpse);
+    // 확대 리더는 맨 위에 얹는다 — 소지품 창보다도 위여야 도장이 항상 눌린다
+    if (this.recordOpen && corpse !== undefined && star !== undefined) this.buildDeathRecordReader(s, corpse, star);
   }
 
   /** 빈 화면이 유지된 경우에만 2초 뒤 한 번 울린다. 별도 안내 문구는 추가하지 않는다. */
@@ -177,7 +189,7 @@ export class RevivePhase extends PhaseScene {
 
   /* ── 우 · 작업대에 올린 시체 기록 ─────────────────────── */
 
-  private buildBench(s: Readonly<GameState>, corpse: Corpse | undefined, star: Star | undefined): void {
+  private buildBench(corpse: Corpse | undefined, star: Star | undefined): void {
     const b = L.bench;
     this.rect(b.x, b.y, b.w, b.h, 'ink');
     /**
@@ -191,40 +203,143 @@ export class RevivePhase extends PhaseScene {
     this.spriteCover(b, [...(corpseArt === null ? [] : [corpseArt]), 'bg.revive.bench', 'bg.shop.bench']);
     // 소생실에서는 작업대에 장부와 도장만 올려 둔다 (진열은 편성실 몫)
     this.frame(b.x, b.y, b.w, b.h, 'dust');
+    // 사망 위치·시체 상태·부활 횟수·소생 비용은 전부 좌측의 사망 기록 서류로 옮겼다
+    // (사용자 확정) — 작업대는 몸 그림만 남기고 글자를 지운다.
+  }
 
-    if (corpse === undefined || star === undefined) return;
+  /* ── 좌 · 사망 기록 서류 ──────────────────────────────── */
 
-    const ox = b.x + L.pad * 3;
-    let oy = b.y + L.pad * 3;
+  /**
+   * 책상 위에 놓인 사망 기록 축소본 — 누르면 확대해서 읽는다.
+   * 시체 상태·부활 횟수·사망 위치·소생 비용은 전부 이 서류(확대판)에만 적는다.
+   */
+  private buildDeathRecord(): void {
+    if (this.recordOpen || !this.hasArt('ui.revive.record')) return; // 확대 리더가 같은 그림을 그대로 보여준다
+    const g = L.guest;
+    const w = 300;
+    const h = Math.round((w * RECORD_NATIVE.h) / RECORD_NATIVE.w);
+    const x = g.x + Math.round((g.w - w) / 2);
+    // 방 이름판 아래 ~ 대사창 위, 빈 칸 한가운데
+    const top = g.y + 160;
+    const bottom = L.dialogue.y;
+    const y = top + Math.round((bottom - top - h) / 2);
+    const sheet = this.add.image(x, y, key('ui.revive.record'))
+      .setOrigin(0, 0)
+      .setDisplaySize(w, h)
+      .setInteractive({ cursor: 'pointer' });
+    sheet.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      if (!pointer.leftButtonDown()) return;
+      this.recordOpen = true;
+      this.redraw();
+    });
+    this.scrimBlock(x - 12, y + h + 4, w + 24, 44);
+    this.text(x, y + h + 10, '눌러서 사망 기록을 확인합니다.', 'dust').setScale(0.6);
+  }
+
+  /**
+   * 확대한 사망 기록 — 편성실 계약서 리더와 같은 패턴이다.
+   * 서류 자체를 누르면 접히고, 도장란(원화에 인쇄된 원형 자리)을 누르면
+   * 도장이 찍히며 그 자리에서 바로 소생(`REVIVE/PAY`)이 확정된다.
+   */
+  private buildDeathRecordReader(s: Readonly<GameState>, corpse: Corpse, star: Star): void {
+    if (!this.hasArt('ui.revive.record')) {
+      this.recordOpen = false;
+      return;
+    }
+    const paperH = 800;
+    const paperW = Math.round((paperH * RECORD_NATIVE.w) / RECORD_NATIVE.h);
+    const paper = { x: L.guest.x + Math.round((L.guest.w - paperW) / 2), y: 100, w: paperW, h: paperH };
+    const scale = paper.w / RECORD_NATIVE.w;
+    const depth = 800;
+    const at = (nx: number, ny: number, value: string, ts = 0.62, color: 'ink' | 'wax' = 'ink') =>
+      this.text(paper.x + nx * scale, paper.y + ny * scale, value, color).setScale(ts * scale).setDepth(depth + 2);
+
+    // 종이를 별도 팝업처럼 검게 가리지 않는다 — 책상 위 축소본이 그대로 커진 것처럼 보인다
+    this.add.image(paper.x, paper.y, key('ui.revive.record')).setOrigin(0, 0).setDisplaySize(paper.w, paper.h).setDepth(depth);
+
+    const persona = s.personas.find((p) => p.id === star.personaId);
     const quote = reviveQuote(s, corpse, star);
-    const when = s.day - corpse.diedDay === 1 ? '어제' : `${corpse.diedDay}일차`;
+    const daysHeld = reviveDaysHeld(s, corpse);
 
-    // 작업대 배경이 고주파 디더라 그 위의 본문이 읽히지 않는다. 기록이 놓이는 만큼만 덮는다.
-    // 죽은 자리를 시체 상태·부활 횟수와 한 덩어리로 묶었다 (사용자 확정) — 첫 줄이 "언제·어디서"다
-    const rows = 176 + (quote.witnessWarning ? 160 : 0);
-    this.scrimBlock(b.x + L.pad, oy - L.pad, b.w - L.pad * 2, rows + L.pad * 2);
+    // 좌상단은 종이 자체에 그려진 클립 그림과 겹친다 — 제목은 클립을 피해 오른쪽에서 시작한다
+    at(170, 70, '사망 기록', 0.92);
+    at(600, 78, `#${star.reviveCount + 1}`, 0.5, 'ink');
+    at(60, 175, `이름 : ${this.clip(persona?.displayName ?? star.bodyName, 560, 'body')}`, 0.7);
+    at(60, 235, `사망 층 : ${corpse.diedFloor}F`, 0.7);
+    at(60, 295, `경과 : ${daysHeld}일`, 0.7);
+    at(60, 410, `상태 : ${corpse.grade === 'INTACT' ? '온전' : '훼손'}`, 0.7);
 
-    this.text(ox, oy, `${when}, ${corpse.diedFloor}F에서 죽었습니다.`);
-    this.text(ox, oy + 44, `시체 상태 : ${corpse.grade === 'INTACT' ? '온전' : '훼손'}`, 'dust');
-    this.text(ox, oy + 88, `부활 횟수 : ${star.reviveCount}회`, 'dust');
+    // 도장이 앉는 원형 워터마크 자리(약 400~840)를 비워 두고, 그 아래 좁은 띠에 나머지를 몰아 적는다.
+    // 목격·경고·비용을 한 줄씩으로 압축한다 — 최대 4줄이 895~1080 구간(185px)에 다 들어가야 한다.
+    let by = 900;
     if (star.witnessed.length > 0) {
-      this.text(ox, oy + 132, `그가 본 것 : ${star.witnessed.map((f) => `${f}F`).join(' ')}`, 'dust');
+      at(60, by, `목격 : ${star.witnessed.map((f) => `${f}F`).join(' · ')}`, 0.56);
+      by += 42;
     }
-
     if (quote.witnessWarning) {
-      oy += 212;
-      this.text(ox, oy, '이 사람은 아래에서 무언가를 봤다.', 'wax');
-      this.text(ox, oy + 44, '되살리면 방송에서 말할 것이다.', 'wax');
+      at(60, by, '아래를 본 사람이다 — 되살리면 방송에서 말한다.', 0.5, 'wax');
+      by += 42;
     }
+    at(60, by, `소생 비용 : ${fmtGold(quote.cost)} G   ·   보유 : ${fmtGold(s.gold)} G`, 0.58, quote.affordable ? 'ink' : 'wax');
+    by += 42;
+    at(
+      60, by,
+      quote.affordable ? '도장을 누르면 소생을 확정합니다.' : '자금이 부족합니다. 종이를 누르면 접습니다.',
+      0.44, quote.affordable ? 'ink' : 'wax',
+    );
 
-    // 비용 — 작업대 아래쪽 가격표 자리
-    const py = b.y + b.h - 160;
-    this.scrimRow(b.x + L.pad, py - 56, b.w - L.pad * 2, 150);
-    this.label(ox, py, '소생 비용', 'dust');
-    this.title(ox, py + 28, `${fmtGold(quote.cost)} G`);
-    this.label(b.x + b.w - L.pad * 3 - 200, py, '보유', 'dust');
-    this.textRight(b.x + b.w - L.pad * 3, py + 32, `${fmtGold(s.gold)} G`, 'dust');
-    if (!quote.affordable) this.text(ox + 320, py + 32, '자금이 부족합니다', 'wax');
+    // 도장 — 서류에 인쇄된 원형 자리에 앉힌다. 등급은 시체 상태 그대로다 (온전=S · 훼손=F)
+    const stampKey = corpse.grade === 'INTACT' ? 'prop.revive.stamp.s' : 'prop.revive.stamp.f';
+    const stampW = Math.round(340 * scale);
+    const stampH = Math.round(354 * scale);
+    const stampCenter = { x: paper.x + 370 * scale, y: paper.y + 620 * scale };
+    const stampBox = {
+      x: Math.round(stampCenter.x - stampW / 2), y: Math.round(stampCenter.y - stampH / 2), w: stampW, h: stampH,
+    };
+    const stamp = this.spriteObject(stampBox.x, stampBox.y, stampKey, stampBox.w, stampBox.h);
+    stamp?.setDepth(depth + 4).setAlpha(0);
+
+    // 펼침을 만든 첫 클릭과 충돌하지 않도록, 다음 프레임부터만 접기 입력을 받는다 (편성실과 동일)
+    const page = this.add.zone(paper.x, paper.y, paper.w, paper.h).setOrigin(0, 0).setDepth(depth + 1);
+    this.time.delayedCall(0, () => {
+      if (!page.active) return;
+      page.setInteractive({ cursor: 'pointer' });
+      page.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+        if (!pointer.leftButtonDown()) return;
+        if (pointer.x >= stampBox.x && pointer.x <= stampBox.x + stampBox.w
+          && pointer.y >= stampBox.y && pointer.y <= stampBox.y + stampBox.h) return;
+        this.recordOpen = false;
+        this.redraw();
+      });
+    });
+
+    const stampZone = this.add.zone(stampBox.x, stampBox.y, stampBox.w, stampBox.h)
+      .setOrigin(0, 0)
+      .setDepth(depth + 5)
+      .setInteractive({ cursor: quote.affordable ? 'pointer' : 'not-allowed' });
+    // 자금이 부족해도 도장이 어디 앉는지는 보여준다 — 확정만 막는다
+    stampZone.on('pointerover', () => stamp?.setAlpha(quote.affordable ? 0.38 : 0.16));
+    stampZone.on('pointerout', () => { if (!this.recordStamping) stamp?.setAlpha(0); });
+    stampZone.on('pointerup', () => {
+      if (this.recordStamping || stamp === null || !quote.affordable) return;
+      this.recordStamping = true;
+      stamp.setAlpha(1).setY(stampBox.y - 44);
+      this.tweens.add({
+        targets: stamp,
+        y: stampBox.y,
+        duration: 120,
+        ease: 'Quad.easeIn',
+        onComplete: () => {
+          playSfx(this, 'sfx.contract.stamp', 0.2);
+          this.time.delayedCall(180, () => {
+            this.recordStamping = false;
+            this.recordOpen = false;
+            playSfx(this, 'sfx.revive', 0.8);
+            this.store.dispatch({ type: 'REVIVE/PAY', starId: corpse.starId });
+          });
+        },
+      });
+    });
   }
 
   /* ── 우 · 시체가 지니고 있던 것 (CCR-006) ─────────────── */
