@@ -72,11 +72,19 @@ function writeSave(state: Readonly<GameState>, slot = activeSlot()): boolean {
   }
 }
 
+/**
+ * 직전 판의 자동 저장 구독. 판을 갈아끼울 때 **반드시 끊는다** —
+ * 안 끊으면 버린 store 가 계속 살아서, 아직 안 내려간 옛 단계 씬이 dispatch 할 때마다
+ * 그 판의 상태를 슬롯에 덮어쓴다. 방금 불러온 판이 조용히 오염되는 길이다.
+ */
+let stopAutosave: (() => void) | null = null;
+
 function registerRun(game: Phaser.Game, store: Store, slot = activeSlot()): Store {
+  stopAutosave?.();
   game.registry.set(KEY, store);
   game.registry.set('run.saveSlot', slot);
   writeSave(store.getState(), slot);
-  store.subscribe((state) => { writeSave(state, slot); });
+  stopAutosave = store.subscribe((state) => { writeSave(state, slot); });
   if (import.meta.env.DEV) {
     console.debug(`[run] active store · seed=${store.getState().seed}`);
     // 디버깅/자동화용. 프로덕션 번들에는 들어가지 않는다.

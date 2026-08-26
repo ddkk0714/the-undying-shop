@@ -97,6 +97,14 @@ export class DayScene extends Phaser.Scene {
      */
     this.handedOver = false;
     this.dayEndHold = false;
+    /**
+     * ★ 그 전에 **띄워 둔 단계 씬을 직접 내린다.** `scene.restart()` 는 이 씬만 다시
+     * 시작할 뿐, 여기서 `launch` 해 둔 단계 씬은 그대로 살아남는다. `launched` 만 지우면
+     * 아무도 그것을 stop 하지 않아서, 불러오기 뒤에 **이전 방과 새 방이 겹쳐 그려진다**
+     * (실측: 편성실 위에 소생실 작업대가 같이 떴다). 살아남은 씬은 옛 store 를 붙들고
+     * 있으므로 입력을 받으면 버린 판에 dispatch 하기까지 한다.
+     */
+    this.stopPhaseScenes();
     this.launched = null;
     this.swapAt = 0;
     this.skipCurtain = false;
@@ -468,6 +476,18 @@ export class DayScene extends Phaser.Scene {
       return;
     }
     this.swap(want);
+  }
+
+  /**
+   * 살아 있는 단계 씬을 전부 내린다. `launched` 하나만 믿지 않고 표 전체를 훑는 이유는,
+   * 재시작 경로가 여럿(타이틀→새 판, 저장창→불러오기)이고 그때마다 `launched` 가
+   * 실제 화면과 어긋나 있을 수 있기 때문이다.
+   */
+  private stopPhaseScenes(): void {
+    const keys = [...Object.values(PHASE_SCENE), SCENES.PHASE_DAYEND];
+    for (const k of keys) {
+      if (k !== undefined && this.scene.isActive(k)) this.scene.stop(k);
+    }
   }
 
   /** `DayEndPhase` 의 「다음 날 시작」이 부른다. state 는 이미 다음 날이다 — 화면만 넘긴다 */
