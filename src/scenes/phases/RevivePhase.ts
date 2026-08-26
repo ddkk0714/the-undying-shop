@@ -6,7 +6,7 @@ import { pickDialogue, totalRevivals } from '../../core/systems/dialogue';
 import { damagedCorpseParts } from '../../core/systems/corpse';
 import { key, starArt } from '../../render/assets';
 import { FONT } from '../../render/font';
-import { css } from '../../render/palette';
+import { PALETTE, css } from '../../render/palette';
 import { L, actionX, ACTION_W } from '../../ui/layout';
 import { Button } from '../../ui/Button';
 import { Dialogue } from '../../ui/Dialogue';
@@ -111,7 +111,12 @@ export class RevivePhase extends PhaseScene {
   private markKey: string | null = null;
   private markAt = 0;
   /** build() 가 매번 다시 채운다. update() 가 프레임을 밀어 준다 */
-  private marks: { img: Phaser.GameObjects.Image; label: Phaser.GameObjects.Text; state: Phaser.GameObjects.Text }[] = [];
+  private marks: {
+    fill: Phaser.GameObjects.Graphics;
+    img: Phaser.GameObjects.Image;
+    label: Phaser.GameObjects.Text;
+    state: Phaser.GameObjects.Text;
+  }[] = [];
 
   constructor() {
     super(SCENES.PHASE_REVIVE);
@@ -315,6 +320,23 @@ export class RevivePhase extends PhaseScene {
       const ox = Math.min(spot.ox, this.scale.width - MARK_NATIVE.w - 8);
       const oy = spot.oy;
 
+      /*
+       * 라벨 박스는 외곽선뿐이라 안쪽으로 시체 그림이 그대로 비친다. 머리 마크처럼
+       * 밝은 부분(머리카락) 위에 앉으면 bone 글자가 묻혀서 읽히지 않는다 — 실측했다.
+       * 그래서 박스 안쪽만 ink 로 막는다. 자리를 옮기는 것으로는 안 된다: 앵커는
+       * `L.bench` 비율이고 다섯 시체 그림의 자세가 저마다 달라서, 한 명에게 맞추면
+       * 다른 넷이 어긋난다.
+       * ★ `img` 보다 **먼저** 그린다. 나중에 그리면 박스 외곽선을 덮어 버린다.
+       */
+      const fill = this.add.graphics();
+      fill.fillStyle(PALETTE.ink, 1);
+      fill.fillRect(
+        ox + MARK_LABEL_BOX.x + L.line,
+        oy + MARK_LABEL_BOX.y + L.line,
+        MARK_LABEL_BOX.w - L.line * 2,
+        MARK_LABEL_BOX.h - L.line * 2,
+      );
+
       const img = this.add.image(ox, oy, key('ui.revive.mark')).setOrigin(0, 0);
       const cx = ox + MARK_LABEL_BOX.x + Math.round(MARK_LABEL_BOX.w / 2);
       const cy = oy + MARK_LABEL_BOX.y + Math.round(MARK_LABEL_BOX.h / 2);
@@ -326,7 +348,7 @@ export class RevivePhase extends PhaseScene {
         .text(cx, cy + 15, PART_STATE_LABEL[spot.entry.state], { ...FONT, color: css('bone'), fontSize: '22px' })
         .setOrigin(0.5);
 
-      this.marks.push({ img, label, state });
+      this.marks.push({ fill, img, label, state });
     }
     this.stepPartMarks(this.time.now);
   }
@@ -348,6 +370,8 @@ export class RevivePhase extends PhaseScene {
     for (const m of this.marks) {
       m.img.setCrop(0, 0, shown, MARK_NATIVE.h);
       // 부위명과 상처는 **다 그려진 뒤에** 들어온다 (사용자 확정)
+      // 박스 안쪽 채움도 같은 박자다 — 먼저 들어오면 와이프 도중에 검은 판이 뜬다
+      m.fill.setVisible(done);
       m.label.setVisible(done);
       m.state.setVisible(done);
     }
