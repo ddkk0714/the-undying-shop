@@ -9,8 +9,8 @@ import {
 
 describe('V3 dialogue assets', () => {
   it('loads every workbook row with a unique fixed id', () => {
-    expect(content.dialogue.lines).toHaveLength(238);
-    expect(new Set(content.dialogue.lines.map((line) => line.id)).size).toBe(238);
+    expect(content.dialogue.lines).toHaveLength(283);
+    expect(new Set(content.dialogue.lines.map((line) => line.id)).size).toBe(283);
     expect(new Set(content.dialogue.lines.map((line) => line.starId))).toEqual(new Set(content.stars.map((star) => star.id)));
   });
 

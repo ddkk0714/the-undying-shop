@@ -1032,7 +1032,12 @@ export class LivePhase extends PhaseScene {
     }
     const encounterText = run.encounter?.line ?? '';
     if (encounterText === '') return { text: '', expression: null, effects: [] };
-    for (const situation of ['DUN_EVENT', 'DUN_HURT', 'DUN_LOW', 'DUN_MENTAL'] as const) {
+    for (const situation of [
+      'DUN_EVENT', 'DUN_HURT', 'DUN_LOW', 'DUN_MENTAL',
+      'DUN_BROADCAST_ATTACK_SUCCESS', 'DUN_BROADCAST_ATTACK_FAIL',
+      'DUN_BROADCAST_DEFEND_SUCCESS', 'DUN_BROADCAST_DEFEND_FAIL',
+      'DUN_BROADCAST_PLEAD_SUCCESS', 'DUN_BROADCAST_PLEAD_FAIL',
+    ] as const) {
       const line = dialogueCandidates(star.id, situation, context)
         .find((candidate) => interpolateDialogue(candidate.text, context) === encounterText);
       if (line !== undefined) return { text: encounterText, expression: line.expression, effects: line.effects };

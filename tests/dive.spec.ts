@@ -4,6 +4,7 @@ import { createInitialState } from '../src/core/state';
 import { createEncounter } from '../src/core/systems/combat';
 import { content } from '../src/core/content';
 import { descentForecast, firstPlayableForecastFloor } from '../src/core/systems/forecast';
+import { dialogueCandidates, interpolateDialogue } from '../src/core/systems/dialogue';
 import type { GameState } from '../src/core/types';
 
 function liveState(seed: number, currentFloor: number, claimedCeiling = 40): GameState {
@@ -48,16 +49,19 @@ describe('live dive', () => {
     expect(state.waitingSince).not.toBeNull();
   });
 
-  it('updates a surviving encounter with the contextual appeal and degradation dialogue', () => {
+  it('updates a surviving encounter with character-specific broadcast and degradation dialogue', () => {
     let appealState = liveState(131, 3);
     appealState = { ...appealState, today: { ...appealState.today!, encounter: createEncounter(3, 'NONE', 0) } };
     const appealed = reducer(appealState, { type: 'COMBAT/CHOOSE', choice: 'APPEAL' });
-    expect(content.dialogue.lines.some((line) => line.starId === 'body_karin' && line.text === appealed.today?.encounter?.line)).toBe(true);
+    const broadcastLines = (['DUN_BROADCAST_PLEAD_SUCCESS', 'DUN_BROADCAST_PLEAD_FAIL'] as const).flatMap((situation) =>
+      dialogueCandidates('body_karin', situation, { floor: 3, mental: 100 }).map((line) => interpolateDialogue(line.text, { floor: 3, mental: 100 })),
+    );
+    expect(broadcastLines).toContain(appealed.today?.encounter?.line);
 
     let degradedState = liveState(132, 2);
     degradedState = { ...degradedState, stars: degradedState.stars.map((star) => star.id === 'body_karin' ? { ...star, reviveCount: 4 } : star) };
     const entered = reducer(degradedState, { type: 'LIVE/TICK', dt: content.balance.dive.floorSeconds });
-    expect(content.radio.degrade4).toContain(entered.today?.encounter?.line);
+    expect(content.dialogue.lines.some((line) => line.starId === 'body_karin' && line.situation === 'DUN_EVENT' && line.text === entered.today?.encounter?.line)).toBe(true);
   });
 
   it('reduces mental for deep enemies, witness events, and heavy damage according to WILL', () => {

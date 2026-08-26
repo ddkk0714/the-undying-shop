@@ -11,14 +11,14 @@ describe('combat', () => {
     expect(isEncounterFloor(4)).toBe(true);
     expect(hero.maxHp).toBe(96);
     expect(hero.def).toBe(9);
-    expect(content.radio.combatHealthy).toContain(createEncounter(3, 'NONE', 0).line);
+    expect(createEncounter(3, 'NONE', 0).line).toBe('사장님, 이 정도면 갑니다. 가까워요.');
   });
 
   it('selects each contextual combat line from localized content', () => {
-    expect(content.radio.combatHalf).toContain(combatLine('HALF', 0));
-    expect(content.radio.combatDanger).toContain(combatLine('DANGER', 0));
-    expect(content.radio.combatAppeal).toContain(combatLine('APPEAL', 0));
-    expect(content.radio.degrade4).toContain(combatLine('DEGRADE4', 0));
+    expect(combatLine('HALF', 0)).toBe('좀 버겁긴 한데… 아직 내려갈 수 있어요.');
+    expect(combatLine('DANGER', 0)).toBe('사장님… 나 지금 죽으면 뉴스로 내보내실 거예요?');
+    expect(combatLine('APPEAL', 0)).toBe('이게 먹히면… 오늘은 좀 버텨도 되는 거죠?');
+    expect(combatLine('DEGRADE4', 0)).toBe('...제가 여기 왜 있죠?');
   });
 
   it('attack damages the enemy and only counterattacks at the configured chance', () => {

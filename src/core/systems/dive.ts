@@ -62,7 +62,20 @@ function characterCombatLine(
   damage = 0,
 ): string {
   const tone = combatLineTone(star, hero, mental, choice);
-  const situation = tone === 'MENTAL_BREAK' || tone === 'DEGRADE4'
+  const actionSucceeded = choice === 'ATTACK'
+    ? damage === 0
+    : choice === 'DEFEND'
+      ? damage <= 1
+      : choice === 'APPEAL'
+        ? damage === 0
+        : false;
+  const situation = choice === 'ATTACK'
+    ? actionSucceeded ? 'DUN_BROADCAST_ATTACK_SUCCESS' : 'DUN_BROADCAST_ATTACK_FAIL'
+    : choice === 'DEFEND'
+      ? actionSucceeded ? 'DUN_BROADCAST_DEFEND_SUCCESS' : 'DUN_BROADCAST_DEFEND_FAIL'
+      : choice === 'APPEAL'
+        ? actionSucceeded ? 'DUN_BROADCAST_PLEAD_SUCCESS' : 'DUN_BROADCAST_PLEAD_FAIL'
+        : tone === 'MENTAL_BREAK' || tone === 'DEGRADE4'
     ? 'DUN_MENTAL'
     : hero.hp / hero.maxHp <= 0.25
       ? 'DUN_LOW'
@@ -71,12 +84,13 @@ function characterCombatLine(
         : choice === undefined
           ? 'DUN_EVENT'
           : null;
-  const line = situation === null ? null : pickDialogue(star.id, situation, {
+  const context = {
     floor,
     revives: totalRevivals(star.id, star.reviveCount),
     mental,
-  }, roll);
-  return line?.text ?? combatLine(tone, roll);
+  };
+  const line = situation === null ? null : pickDialogue(star.id, situation, context, roll);
+  return line?.text ?? pickDialogue(star.id, 'DUN_EVENT', context, roll)?.text ?? combatLine(tone, roll);
 }
 
 function waitingPenalty(state: GameState, now: number): GameState {
@@ -102,8 +116,12 @@ export function startLive(state: GameState): GameState {
     };
   }
   const [roll, nextState] = draw(state);
-  const lines = content.radio.lieCallback;
-  const line = lines[Math.floor(roll * lines.length)] ?? lines[0] ?? '';
+  const dialogue = pickDialogue(star.id, 'DUN_RADIO', {
+    floor: initialFloor,
+    revives: totalRevivals(star.id, star.reviveCount),
+    mental: content.balance.mental.max,
+  }, roll);
+  const line = dialogue?.text ?? content.radio.lieCallback[Math.floor(roll * content.radio.lieCallback.length)] ?? '';
   const flags = { ...nextState.flags };
   delete flags[callbackKey];
   return {

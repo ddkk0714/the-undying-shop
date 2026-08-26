@@ -165,7 +165,11 @@ export interface StarProfile {
 
 export type DialogueSituation =
   | 'SHOP_FIRST' | 'SHOP_GREET' | 'SHOP_TOUCH' | 'SHOP_ITEM' | 'SHOP_CONTRACT' | 'SHOP_LEAVE'
+  | 'SHOP_SELL_ALL_SUCCESS' | 'SHOP_SELL_ALL_FAIL' | 'SHOP_BARGAIN'
   | 'DUN_START' | 'DUN_RADIO' | 'DUN_EVENT' | 'DUN_HURT' | 'DUN_LOW' | 'DUN_MENTAL'
+  | 'DUN_BROADCAST_ATTACK_SUCCESS' | 'DUN_BROADCAST_ATTACK_FAIL'
+  | 'DUN_BROADCAST_DEFEND_SUCCESS' | 'DUN_BROADCAST_DEFEND_FAIL'
+  | 'DUN_BROADCAST_PLEAD_SUCCESS' | 'DUN_BROADCAST_PLEAD_FAIL'
   | 'DEATH' | 'REVIVE';
 
 export interface DialogueLine {
@@ -301,7 +305,11 @@ function makeDialogue(raw: unknown): DialogueContent {
   const ids = new Set<string>();
   const situations = new Set<DialogueSituation>([
     'SHOP_FIRST', 'SHOP_GREET', 'SHOP_TOUCH', 'SHOP_ITEM', 'SHOP_CONTRACT', 'SHOP_LEAVE',
+    'SHOP_SELL_ALL_SUCCESS', 'SHOP_SELL_ALL_FAIL', 'SHOP_BARGAIN',
     'DUN_START', 'DUN_RADIO', 'DUN_EVENT', 'DUN_HURT', 'DUN_LOW', 'DUN_MENTAL', 'DEATH', 'REVIVE',
+    'DUN_BROADCAST_ATTACK_SUCCESS', 'DUN_BROADCAST_ATTACK_FAIL',
+    'DUN_BROADCAST_DEFEND_SUCCESS', 'DUN_BROADCAST_DEFEND_FAIL',
+    'DUN_BROADCAST_PLEAD_SUCCESS', 'DUN_BROADCAST_PLEAD_FAIL',
   ]);
   const lines = raw.lines.map((value, index) => {
     assertShape(isRecord(value), `dialogue.lines[${index}] invalid`);
@@ -445,7 +453,7 @@ export function loadContent(): Content {
   assertShape(isRecord(radioJson) && isRecord(chatJson) && isRecord(narrativeJson), 'localized content must be objects');
   for (const key of ['combatHealthy', 'combatHalf', 'combatDanger', 'combatMentalBreak', 'combatAppeal', 'degrade4'] as const) {
     const lines = radioJson[key];
-    assertShape(Array.isArray(lines) && lines.length > 0 && lines.every((line) => typeof line === 'string' && line.length > 0), `radio.${key} lines missing`);
+    assertShape(Array.isArray(lines) && (lines as readonly unknown[]).every((line) => typeof line === 'string' && line.length > 0), `radio.${key} lines invalid`);
   }
   return {
     balance: balanceJson as unknown as Balance,
