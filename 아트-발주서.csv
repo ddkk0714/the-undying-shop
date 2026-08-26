@@ -48,7 +48,7 @@
 4,기타,bgm/revive.mp3,,1:1,① 소생실 BGM (사운드V4 · 소생실메인브금 122초),도착,bgm.revive
 4,기타,bgm/shop.mp3,,1:1,② 편성실 BGM (사운드V4 · 메인화면 브금 120초),도착,bgm.shop
 4,기타,bgm/tension.mp3,,1:1,④⑤⑥ 사망·검시·발표 BGM (사운드V4 · 완전 똥줄타는 긴장감 123초),도착,bgm.tension
-4,기타,bgm/title_noise.mp3,,1:1,타이틀 화면 저음량 백색소음,도착,bgm.title.noise
+4,기타,bgm/title_noise.mp3,,1:1,타이틀 화면 저음량 백색소음 (사운드V4 원본),도착,bgm.title.noise
 4,기타,bgm/title.mp3,,1:1,타이틀 화면 BGM (원본 앞 2초 제거),도착,bgm.title
 4,기타,item/blade_tallow.png,174×189,1:1,촛농검 장비 도트,도착,item.blade_tallow
 4,기타,item/boots_quiet.png,165×159,1:1,죽은 자의 신발 장비 도트,도착,item.boots_quiet
@@ -64,13 +64,21 @@
 4,기타,item/rope_hemp.png,117×147,1:1,삼줄 장비 도트,도착,item.rope_hemp
 4,기타,item/soil_deep.png,102×150,1:1,아래의 흙 한 줌 유품 도트,도착,item.soil_deep
 4,기타,item/tooth_gate.png,129×174,1:1,문지기의 이빨 장비 도트,도착,item.tooth_gate
+4,소리,sfx/attack.mp3,,1:1,전투 — 용사가 때린다 (사운드V4 · 공격_확),도착,sfx.combat.attack
 4,소리,sfx/click.mp3,,1:1,버튼 누름,도착,sfx.click
 4,소리,sfx/death.mp3,,1:1,신호 두절 — 방송 끊김음 + 저역 험 (M06 §8 「소리가 절반이다」),도착,sfx.death
+4,소리,sfx/fork.mp3,,1:1,무전 — 갈림길에서 문을 열었다 (사운드V4),도착,sfx.radio.fork
+4,소리,sfx/guard.mp3,,1:1,전투 — 막았다 (사운드V4),도착,sfx.combat.guard
+4,소리,sfx/hit.mp3,,1:1,전투 — 적의 반격이 들어왔다 (사운드V4 · 공격_혹),도착,sfx.combat.hit
+4,소리,sfx/item_drop.mp3,,1:1,장비를 진열대에 놓는다 (사운드V4 · 물건드랍_중간 철),도착,sfx.item.drop
+4,소리,sfx/item_pick.mp3,,1:1,장비를 집어 든다 (사운드V4 · 버튼 뽑),도착,sfx.item.pick
+4,소리,sfx/potion.mp3,,1:1,전투 — 물약을 마신다 (사운드V4 · 포션먹음이),도착,sfx.potion
 4,소리,sfx/record.mp3,,1:1,신기록 갱신,도착,sfx.record
 4,소리,sfx/revive_knock.mp3,,1:1,빈 소생실에서 2초 뒤 들리는 편성실 쪽 노크,도착,sfx.revive.knock
 4,소리,sfx/revive.mp3,,1:1,소생 — 수조에서 몸이 일어난다,도착,sfx.revive
+4,소리,sfx/signal_back.mp3,,1:1,방송 개시 — 끊겼던 신호가 돌아온다 (사운드V4 · 방송사고_끝),도착,sfx.signal.back
 4,소리,sfx/stamp.mp3,,1:1,봉랍 도장 — 검시 판정·폐기 확정,도착,sfx.stamp
-4,소리,sfx/superchat.mp3,,1:1,슈퍼챗 알림,도착,sfx.superchat
+4,소리,sfx/superchat.mp3,,1:1,슈퍼챗 알림 (사운드V4 · 전용 효과음),도착,sfx.superchat
 4,소리,sfx/text_female.wav,,1:1,대사 타자음 · 여성 — 원본의 반복 중 한 방만 잘라 낸 90ms (tools/cut-sfx.mjs),도착,sfx.text.female
 4,소리,sfx/text_male.wav,,1:1,대사 타자음 · 남성 — 원본의 반복 중 한 방만 잘라 낸 90ms (tools/cut-sfx.mjs),도착,sfx.text.male
 4,소리,sfx/text.mp3,,1:1,생방송 채팅이 들어올 때의 낮은 텍스트 틱,도착,sfx.text
@@ -81,6 +89,9 @@
 4,소품,prop/scroll.png,176×64,1:1,계약서 서류 조각,도착,prop.scroll
 4,소품,prop/stamp.png,128×208,1:1,최종 판정서에서 잘라낸 실물 도장,도착,prop.stamp
 4,소품,prop/tag.png,152×104,1:1,작업대의 가격표,도착,prop.tag
+4,소품,prop/tv_live_hover.png,228×216,1:1,방송 시작 TV의 마우스 오버 상태,도착,prop.tv.live.hover
+4,소품,prop/tv_live.png,219×202,1:1,계약 확정 뒤 방송을 시작할 수 있는 TV,도착,prop.tv.live
+4,소품,prop/tv.png,219×202,1:1,편성실 용사 배경의 왼쪽 상자 위 브라운관 TV,도착,prop.tv
 4,캐릭터 · 기타,star/expressions/ilan_angry.png,752×792,1:1,ilan angry 대사 표정 전신,도착,star.expression.ilan.angry
 4,캐릭터 · 기타,star/expressions/ilan_blank.png,752×792,1:1,ilan blank 대사 표정 전신,도착,star.expression.ilan.blank
 4,캐릭터 · 기타,star/expressions/ilan_blush.png,752×792,1:1,ilan blush 대사 표정 전신,도착,star.expression.ilan.blush

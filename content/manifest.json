@@ -665,6 +665,33 @@
           ],
           "desc": "작업대의 실제 석유 램프"
         },
+        "prop.tv": {
+          "type": "image",
+          "file": "prop/tv.png",
+          "size": [
+            219,
+            202
+          ],
+          "desc": "편성실 용사 배경의 왼쪽 상자 위 브라운관 TV"
+        },
+        "prop.tv.live": {
+          "type": "image",
+          "file": "prop/tv_live.png",
+          "size": [
+            219,
+            202
+          ],
+          "desc": "계약 확정 뒤 방송을 시작할 수 있는 TV"
+        },
+        "prop.tv.live.hover": {
+          "type": "image",
+          "file": "prop/tv_live_hover.png",
+          "size": [
+            228,
+            216
+          ],
+          "desc": "방송 시작 TV의 마우스 오버 상태"
+        },
         "prop.ledger": {
           "type": "image",
           "file": "prop/ledger.png",
@@ -1578,7 +1605,47 @@
         "sfx.superchat": {
           "type": "audio",
           "file": "sfx/superchat.mp3",
-          "desc": "슈퍼챗 알림"
+          "desc": "슈퍼챗 알림 (사운드V4 · 전용 효과음)"
+        },
+        "sfx.combat.attack": {
+          "type": "audio",
+          "file": "sfx/attack.mp3",
+          "desc": "전투 — 용사가 때린다 (사운드V4 · 공격_확)"
+        },
+        "sfx.combat.hit": {
+          "type": "audio",
+          "file": "sfx/hit.mp3",
+          "desc": "전투 — 적의 반격이 들어왔다 (사운드V4 · 공격_혹)"
+        },
+        "sfx.combat.guard": {
+          "type": "audio",
+          "file": "sfx/guard.mp3",
+          "desc": "전투 — 막았다 (사운드V4)"
+        },
+        "sfx.potion": {
+          "type": "audio",
+          "file": "sfx/potion.mp3",
+          "desc": "전투 — 물약을 마신다 (사운드V4 · 포션먹음이)"
+        },
+        "sfx.radio.fork": {
+          "type": "audio",
+          "file": "sfx/fork.mp3",
+          "desc": "무전 — 갈림길에서 문을 열었다 (사운드V4)"
+        },
+        "sfx.signal.back": {
+          "type": "audio",
+          "file": "sfx/signal_back.mp3",
+          "desc": "방송 개시 — 끊겼던 신호가 돌아온다 (사운드V4 · 방송사고_끝)"
+        },
+        "sfx.item.drop": {
+          "type": "audio",
+          "file": "sfx/item_drop.mp3",
+          "desc": "장비를 진열대에 놓는다 (사운드V4 · 물건드랍_중간 철)"
+        },
+        "sfx.item.pick": {
+          "type": "audio",
+          "file": "sfx/item_pick.mp3",
+          "desc": "장비를 집어 든다 (사운드V4 · 버튼 뽑)"
         },
         "sfx.death": {
           "type": "audio",
@@ -1640,7 +1707,7 @@
           "type": "audio",
           "file": "bgm/title_noise.mp3",
           "loop": true,
-          "desc": "타이틀 화면 저음량 백색소음"
+          "desc": "타이틀 화면 저음량 백색소음 (사운드V4 원본)"
         },
         "bgm.revive": {
           "type": "audio",
@@ -2257,6 +2324,33 @@
             352
           ],
           "desc": "작업대의 실제 석유 램프"
+        },
+        "prop.tv": {
+          "type": "image",
+          "file": "prop/tv.png",
+          "size": [
+            219,
+            202
+          ],
+          "desc": "편성실 용사 배경의 왼쪽 상자 위 브라운관 TV"
+        },
+        "prop.tv.live": {
+          "type": "image",
+          "file": "prop/tv_live.png",
+          "size": [
+            219,
+            202
+          ],
+          "desc": "계약 확정 뒤 방송을 시작할 수 있는 TV"
+        },
+        "prop.tv.live.hover": {
+          "type": "image",
+          "file": "prop/tv_live_hover.png",
+          "size": [
+            228,
+            216
+          ],
+          "desc": "방송 시작 TV의 마우스 오버 상태"
         },
         "prop.ledger": {
           "type": "image",
@@ -3163,7 +3257,47 @@
         "sfx.superchat": {
           "type": "audio",
           "file": "sfx/superchat.mp3",
-          "desc": "슈퍼챗 알림"
+          "desc": "슈퍼챗 알림 (사운드V4 · 전용 효과음)"
+        },
+        "sfx.combat.attack": {
+          "type": "audio",
+          "file": "sfx/attack.mp3",
+          "desc": "전투 — 용사가 때린다 (사운드V4 · 공격_확)"
+        },
+        "sfx.combat.hit": {
+          "type": "audio",
+          "file": "sfx/hit.mp3",
+          "desc": "전투 — 적의 반격이 들어왔다 (사운드V4 · 공격_혹)"
+        },
+        "sfx.combat.guard": {
+          "type": "audio",
+          "file": "sfx/guard.mp3",
+          "desc": "전투 — 막았다 (사운드V4)"
+        },
+        "sfx.potion": {
+          "type": "audio",
+          "file": "sfx/potion.mp3",
+          "desc": "전투 — 물약을 마신다 (사운드V4 · 포션먹음이)"
+        },
+        "sfx.radio.fork": {
+          "type": "audio",
+          "file": "sfx/fork.mp3",
+          "desc": "무전 — 갈림길에서 문을 열었다 (사운드V4)"
+        },
+        "sfx.signal.back": {
+          "type": "audio",
+          "file": "sfx/signal_back.mp3",
+          "desc": "방송 개시 — 끊겼던 신호가 돌아온다 (사운드V4 · 방송사고_끝)"
+        },
+        "sfx.item.drop": {
+          "type": "audio",
+          "file": "sfx/item_drop.mp3",
+          "desc": "장비를 진열대에 놓는다 (사운드V4 · 물건드랍_중간 철)"
+        },
+        "sfx.item.pick": {
+          "type": "audio",
+          "file": "sfx/item_pick.mp3",
+          "desc": "장비를 집어 든다 (사운드V4 · 버튼 뽑)"
         },
         "sfx.death": {
           "type": "audio",
@@ -3225,7 +3359,7 @@
           "type": "audio",
           "file": "bgm/title_noise.mp3",
           "loop": true,
-          "desc": "타이틀 화면 저음량 백색소음"
+          "desc": "타이틀 화면 저음량 백색소음 (사운드V4 원본)"
         },
         "bgm.revive": {
           "type": "audio",
