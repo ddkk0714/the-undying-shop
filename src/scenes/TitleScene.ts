@@ -358,13 +358,14 @@ export class TitleScene extends Phaser.Scene {
       // 인터랙티브로 잡아 둔다 — 비활성 버튼은 히트 영역이 없어, 안 잡으면 클릭이
       // 이 판을 뚫고 아래 배경(닫기 트리거)까지 떨어져 팝업이 조용히 닫혀 버린다.
       add(this.add.rectangle(box.x + 42, y, box.w - 84, 128, PALETTE.mid, 0.45).setOrigin(0).setInteractive());
-      add(this.add.text(box.x + 66, y + 22, label, { ...FONT, color: css('bone'), fontSize: '32px' }));
+      add(this.add.text(box.x + 66, y + 22, label, { ...FONT, color: css('bone'), fontSize: '32px', letterSpacing: -2 }));
       add(this.add.text(box.x + 66, y + 74, detail, { ...FONT, color: css(pendingConfirm ? 'wax' : 'dust'), fontSize: '21px' }));
 
       const actionLabel = mode === 'continue' ? '불러오기' : empty ? '시작' : '선택';
       const finalStep = mode === 'new' && (empty || pendingConfirm);
+      // '불러오기' 는 글자 네 자라 130px 폭으로는 좌우가 잘렸다 — 160px 로 넓힌다.
       add(new Button(this, {
-        x: box.x + box.w - 172, y: y + 22, w: 130, h: 76,
+        x: box.x + box.w - 206, y: y + 22, w: 160, h: 76,
         label: actionLabel,
         variant: pendingConfirm ? 'danger' : 'default',
         enabled: mode === 'continue' ? !empty : true,

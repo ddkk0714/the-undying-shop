@@ -260,14 +260,15 @@ export class DayScene extends Phaser.Scene {
         : `슬롯 ${slot}  ·  DAY ${info.state.day} · ${PHASE_LABEL[info.state.phase]}`;
       const detail = info.savedAt === null ? '저장할 수 있습니다.' : new Date(info.savedAt).toLocaleString('ko-KR');
       add(this.add.rectangle(box.x + 42, y, box.w - 84, 128, PALETTE.mid, 0.45).setOrigin(0));
-      add(this.add.text(box.x + 66, y + 22, label, { ...FONT, color: css('bone'), fontSize: '32px' }));
+      add(this.add.text(box.x + 66, y + 22, label, { ...FONT, color: css('bone'), fontSize: '32px', letterSpacing: -2 }));
       add(this.add.text(box.x + 66, y + 74, detail, { ...FONT, color: css('dust'), fontSize: '21px' }));
-      const save = new Button(this, { x: box.x + box.w - 280, y: y + 22, w: 104, h: 76, label: '저장', onClick: () => {
+      const save = new Button(this, { x: box.x + box.w - 316, y: y + 22, w: 104, h: 76, label: '저장', onClick: () => {
         saveRun(this.store, slot);
         this.closeSavePopup();
       } });
       add(save);
-      const load = new Button(this, { x: box.x + box.w - 160, y: y + 22, w: 104, h: 76, label: '불러오기', enabled: info.state !== null, onClick: () => {
+      // '불러오기' 는 글자 네 자라 104px 폭으로는 좌우가 잘렸다 — 148px 로 넓힌다.
+      const load = new Button(this, { x: box.x + box.w - 198, y: y + 22, w: 148, h: 76, label: '불러오기', enabled: info.state !== null, onClick: () => {
         if (loadRun(this.game, slot) === null) return;
         this.closeSavePopup();
         this.scene.restart();
