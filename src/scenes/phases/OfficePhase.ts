@@ -1,6 +1,6 @@
 import { SCENES } from '../../config';
 import Phaser from 'phaser';
-import { content } from '../../core/content';
+import { content, type DialogueSituation } from '../../core/content';
 import { pickDialogue, totalRevivals } from '../../core/systems/dialogue';
 import { saleHaggleCount, saleOfferTried, salePriceMultiplier, salePurchaseChance, saleSlotSold } from '../../core/systems/office';
 import { key, starArt, starExpression } from '../../render/assets';
@@ -30,13 +30,26 @@ import type { GameState, ItemDef, Persona } from '../../core/types';
  * 계약서의 honesty 는 절대 그리지 않는다 (02-DATA-SCHEMA §2-b).
  */
 const SLOT_NAMES = ['무기', '방어구', '기타'] as const;
-const INVENTORY_COLUMNS = 4;
+const INVENTORY_COLUMNS = 5;
 const INVENTORY_VISIBLE_ROWS = 2;
 // 원화의 아래만 잘라 작업대 비율로 맞춘 뒤, 세 사각 홈을 옮긴 값.
 const SHELF_SLOTS = [
   { x: 1016, y: 249, w: 223, h: 266 },
   { x: 1248, y: 249, w: 214, h: 266 },
   { x: 1488, y: 249, w: 214, h: 266 },
+] as const;
+
+/**
+ * 원래 장비는 캐릭터 스탯 원장에서 이름으로만 관리한다. 서류에서는 슬롯 성격을
+ * 바로 읽을 수 있도록 인벤토리의 공용 장비 도트를 사용하고, 실제 진열 장비가
+ * 들어오면 그 아이템 도트로 교체한다.
+ */
+const BASE_EQUIPMENT_ICON_IDS = ['blade_tallow', 'cloak_ash', 'charm_seal'] as const;
+const DESCENT_BANDS = [
+  { label: '1–10F', difficulty: 70 },
+  { label: '11–20F', difficulty: 150 },
+  { label: '21–30F', difficulty: 230 },
+  { label: '31–40F', difficulty: 310 },
 ] as const;
 
 /** 한글은 공백 없이 길어질 수 있어, 편성실 대사창 폭에 맞춰 명시적으로 줄을 나눈다. */
@@ -81,7 +94,7 @@ export class OfficePhase extends PhaseScene {
   private contractConfirmationOpen = false;
   /** 계약서에 도장을 내리치는 중에는 중복 입력을 막는다. */
   private contractStamping = false;
-  /** 계약한 용사는 돌려보내기를 누르기 전까지 편성실에서 감사 인사를 남긴다. */
+  /** 계약 완료 대사와 작별 대사가 끝나면 자동으로 퇴장한 상태. */
   private contractedGuestDeparted = false;
   /** 첫날에는 배경의 문을 직접 열기 전까지 손님을 맞지 않는다. */
   private shopOpened = false;
@@ -112,6 +125,12 @@ export class OfficePhase extends PhaseScene {
   private saleDialogOpen = false;
   private saleMultiplier = 1;
   private saleReaction: string | null = null;
+  /** 버튼 조작 직후 기본 인사 대신 한 번 재생할 대사집 상황. */
+  private officeDialogueSituation: DialogueSituation | null = null;
+  /** SHOP_ITEM 치환/조건에 쓸, 방금 진열한 장비. */
+  private officeDialogueItemId: string | null = null;
+  /** 계약 확정 뒤에는 계약 대사와 작별 대사를 순서대로 끝낸 뒤 자동 퇴장한다. */
+  private contractDepartureStep: 'CONTRACT' | 'LEAVE' | null = null;
 
   constructor() {
     super(SCENES.PHASE_OFFICE);
@@ -161,6 +180,9 @@ export class OfficePhase extends PhaseScene {
     this.saleDialogOpen = false;
     this.saleMultiplier = 1;
     this.saleReaction = null;
+    this.officeDialogueSituation = null;
+    this.officeDialogueItemId = null;
+    this.contractDepartureStep = null;
     // 방송 화면과 같은 버튼 툴팁. redraw 때 버튼만 다시 만들어져도 툴팁 판은 유지한다.
     this.keepAlive(...createTooltip(this).objects());
     super.create();
@@ -194,10 +216,21 @@ export class OfficePhase extends PhaseScene {
     this.buildBenchBackdrop();
     this.buildShelf(s);
     if (s.today === null) this.buildSubmittedContracts(s);
-    if (this.inventoryOpen) this.buildInventory(s);
     // 확대는 별도 장면이 아니라, 이미 그린 작업대 위에 원본 종이를 얹는다.
     if (this.contractReaderOpen) this.buildContract(s);
     else if (this.statsReaderOpen) this.buildStatsSheet(s);
+    if (this.inventoryOpen) {
+      // 인벤토리는 어떤 서류를 열었을 때도 최상단 모달이다. buildInventory()가 만든
+      // 모든 입력 영역까지 함께 올려서, 서류가 인벤토리의 클릭을 가로채지 않게 한다.
+      const firstInventoryChild = this.children.list.length;
+      this.buildInventory(s);
+      this.children.list.slice(firstInventoryChild).forEach((child) => {
+        // 모달 전체는 서류보다 위에 두되, 장비 칸 내부에서 지정한 순서는 보존한다.
+        // (기본 칸 10 → 선택 프레임 20 → 도트 30)
+        const depthable = child as Phaser.GameObjects.GameObject & { depth: number; setDepth: (depth: number) => unknown };
+        depthable.setDepth(1200 + depthable.depth);
+      });
+    }
     this.buildActions(s);
     if (this.saleDialogOpen) this.buildSaleDialog(s);
   }
@@ -305,7 +338,9 @@ export class OfficePhase extends PhaseScene {
       ? 'TV를 눌러 방송 시작'
       : contracting
         ? visitor.displayName
-        : s.personas.find((p) => p.id === star?.personaId)?.displayName ?? '무명';
+        // 페르소나(예: 불꽃의 리온)가 아니라 지금 서 있는 용사의 실제 이름을 쓴다.
+        // 노일 세이로(검사)와 펜로 루엔(궁수)의 이름이 계약 전후로 바뀌지 않는다.
+        : star?.bodyName ?? '무명';
 
     // 전신 CG 자리 — star.body.* → star.portrait.* → 실루엣 순으로 내려간다
     const art = star === undefined ? null : starArt(star.id);
@@ -315,7 +350,7 @@ export class OfficePhase extends PhaseScene {
     const y = g.y + g.h - h - 24;
     // 전신은 좌측 칸과 1:1 이다 (752x792). 이름 글자는 그 위에 얹는다
     const full = { x: g.x, y: g.y, w: g.w, h: g.h };
-    // 돌려보내기를 누르기 전까지 계약한 용사는 감사 인사를 위해 자리에 남는다.
+    // 계약 대사와 작별 대사가 끝날 때까지는 방금 계약한 용사를 그대로 보여 준다.
     const body = broadcastReady || art === null ? null : this.spriteFitObject(full, [art.body]);
     if (!broadcastReady && body === null && !this.spriteFit({ x, y, w, h }, [...(art === null ? [] : [art.portrait]), 'star.silhouette'])) {
       this.rect(x, y, w, h, 'mid');
@@ -334,20 +369,27 @@ export class OfficePhase extends PhaseScene {
     const d = L.dialogue;
     this.rect(d.x, d.y, d.w, d.h, 'ink');
     const profile = star === undefined ? undefined : content.starProfiles[star.id];
-    const situation = this.guestTouchCount > 0
+    const defaultSituation = this.guestTouchCount > 0
       ? 'SHOP_TOUCH'
       : contracting ? 'SHOP_FIRST' : 'SHOP_GREET';
+    const situation = this.officeDialogueSituation ?? defaultSituation;
     const contractedGuestWaiting = s.today !== null && !this.contractedGuestDeparted;
-    const speechLine = broadcastReady || contractedGuestWaiting || star === undefined ? null : pickDialogue(star.id, situation, {
+    const dialogueItem = this.officeDialogueItemId === null
+      ? undefined
+      : content.items.find((item) => item.id === this.officeDialogueItemId);
+    const speechLine = broadcastReady || star === undefined ? null : pickDialogue(star.id, situation, {
       floor: profile?.targetFloor,
       revives: totalRevivals(star.id, star.reviveCount),
       viewers: profile?.fans,
       deaths: s.stats.totalDiscarded,
       generation: s.personas.find((persona) => persona.id === star.personaId)?.generation,
+      item: dialogueItem?.name,
+      itemUsed: dialogueItem?.isRelic === true,
+      hasWeapon: s.shelf[0] !== null,
     }, ((s.day * 17 + this.contractIndex * 7 + this.guestTouchCount) % 100) / 100);
     const speech: { line: string; expressionAsset?: string; effects?: readonly string[] } = {
       line: contractedGuestWaiting
-        ? '계약해 주셔서 감사합니다. 방송에서 뵐게요.'
+        ? (speechLine?.text ?? '계약해 주셔서 감사합니다. 방송에서 뵐게요.')
         : this.saleReaction ?? speechLine?.text ?? (contracting ? '...일할 자리 있나요?' : '...강한 무기 있나요?'),
       expressionAsset: star === undefined || speechLine === null ? undefined : starExpression(star.id, speechLine.expression),
       effects: speechLine?.effects,
@@ -381,7 +423,16 @@ export class OfficePhase extends PhaseScene {
     // 입 연출 — 폐지. 말하는 동안 입을 얹던 자리
     // const mouth = this.buildGuestMouth(bodyGeometry, star?.id, speech.expressionAsset);
     if (!broadcastReady) {
-      const dialogueKey = [star?.id ?? '', speech.line, speech.expressionAsset ?? '', ...(speech.effects ?? [])].join('\u0001');
+      // 퇴장 대사는 같은 문장이 우연히 이미 떠 있어도 반드시 새 Dialogue로 만든다.
+      // 기존 키에는 퇴장 대기 상태가 없어서, 이미 완료된 대사 객체가 재사용되면
+      // onComplete가 없는 이전 객체를 그대로 쓰게 되어 departGuest()가 호출되지 않았다.
+      const dialogueKey = [
+        star?.id ?? '',
+        speech.line,
+        speech.expressionAsset ?? '',
+        ...(speech.effects ?? []),
+        this.contractDepartureStep ?? '',
+      ].join('\u0001');
       if (this.guestDialogueKey !== dialogueKey || this.guestDialogue === null || !this.guestDialogue.active) {
         if (this.guestDialogue !== null) {
           this.dropAlive(this.guestDialogue);
@@ -395,8 +446,11 @@ export class OfficePhase extends PhaseScene {
         line: wrapOfficeDialogue(speech.line),
         size: 'body',
         scale: 0.90,
-        effects: speech.effects,
-        voice: starVoice(star?.id),
+          effects: speech.effects,
+          voice: starVoice(star?.id),
+          onComplete: this.contractDepartureStep !== null
+            ? () => this.advanceContractDeparture()
+            : undefined,
         // 입 연출 — 폐지
         // onComplete: () => mouth?.setVisible(false),
         });
@@ -418,8 +472,49 @@ export class OfficePhase extends PhaseScene {
   ): void {
     const target = this.guestDialogueTarget;
     if (target === null || currentlyOver[0] !== target) return;
-    this.guestTouchCount += 1;
+    // 계약 확정 뒤 대사가 재생되는 동안에는 클릭으로 순서를 건너뛸 수 없다.
+    if (this.contractDepartureStep !== null) return;
+    if (this.officeDialogueSituation !== null) {
+      // 장비/계약 반응을 먼저 끝까지 보여 준 뒤, 다음 클릭부터 평소 대사 순서로 돌아간다.
+      this.officeDialogueSituation = null;
+      this.officeDialogueItemId = null;
+    } else this.guestTouchCount += 1;
     this.redraw();
+  }
+
+  /** 대사집에만 있던 편성실 상황을 현재 방문자에게 한 번 연결한다. */
+  private showOfficeDialogue(situation: DialogueSituation, itemId: string | null = null): void {
+    this.officeDialogueSituation = situation;
+    this.officeDialogueItemId = itemId;
+  }
+
+  /** 계약 → 작별 → 퇴장을 대사 UI 재생 순서와 분리해 한 번만 진행한다. */
+  private advanceContractDeparture(): void {
+    if (this.contractDepartureStep === 'CONTRACT') {
+      this.contractDepartureStep = 'LEAVE';
+      // 계약 대사를 다 읽은 뒤 1초를 쉬고 작별 대사를 시작한다. redraw는 대사 객체의
+      // finish 호출 스택 밖에서 실행해야 현재 대사가 다시 persistent 목록에 남지 않는다.
+      this.time.delayedCall(1000, () => {
+        if (this.contractDepartureStep !== 'LEAVE') return;
+        this.showOfficeDialogue('SHOP_LEAVE');
+        this.redraw();
+      });
+      return;
+    }
+    if (this.contractDepartureStep !== 'LEAVE') return;
+    // Dialogue.finish()의 호출 스택 안에서 해당 객체를 바로 destroy하면, 브라우저에
+    // 따라 후속 트윈이 취소될 수 있다. 작별 대사가 끝난 뒤 1초를 둔 다음 별도 틱에서
+    // 퇴장 트윈을 시작한다. 이 대기 중에도 step을 유지해 용사 클릭으로 넘기지 못한다.
+    this.time.delayedCall(1000, () => {
+      if (this.contractDepartureStep !== 'LEAVE' || this.guestExitInProgress) return;
+      this.contractDepartureStep = null;
+      this.officeDialogueSituation = null;
+      this.officeDialogueItemId = null;
+      this.departGuest(() => {
+        this.contractedGuestDeparted = true;
+        this.redraw();
+      });
+    });
   }
 
   /** 용사 스프라이트만 아주 작게 상하로 흔들어 정지 화면에서도 숨 쉬는 느낌을 준다. */
@@ -653,6 +748,9 @@ export class OfficePhase extends PhaseScene {
               this.contractReaderOpen = false;
               this.contractConfirmationOpen = false;
               this.contractedGuestDeparted = false;
+              // 계약 대사 뒤 작별 대사를 보여 준 뒤 자동으로 퇴장한다.
+              this.showOfficeDialogue('SHOP_CONTRACT');
+              this.contractDepartureStep = 'CONTRACT';
               this.store.dispatch({ type: 'OFFICE/CONTRACT_ACCEPT', starId: visitor.starId });
             });
           },
@@ -714,34 +812,67 @@ export class OfficePhase extends PhaseScene {
     const hp = profile?.hp ?? 0;
     const atk = profile?.atk ?? 0;
     const def = profile?.def ?? 0;
+    const displayedEquipment = s.shelf.map((itemId, slot) => {
+      const item = itemId === null ? undefined : content.items.find((candidate) => candidate.id === itemId);
+      const baseIcon = content.items.find((candidate) => candidate.id === BASE_EQUIPMENT_ICON_IDS[slot]);
+      return {
+        item,
+        icon: item ?? baseIcon,
+        label: item === undefined ? (originalEquipment[slot] ?? '기본 장비 없음') : item.name,
+        isShelfItem: item !== undefined,
+      };
+    });
+    const bonus = displayedEquipment.reduce(
+      (total, entry) => entry.item === undefined
+        ? total
+        : { hp: total.hp + entry.item.hp, atk: total.atk + entry.item.atk, def: total.def + entry.item.def },
+      { hp: 0, atk: 0, def: 0 },
+    );
+    const effective = { hp: hp + bonus.hp, atk: atk + bonus.atk, def: def + bonus.def };
 
     // 서류 안의 글씨는 예시보다 한 단계 크게 잡아 확대 없이도 읽힌다.
     at(98, 70, '하강 예상서', 1.28);
     at(96, 134, '캐릭터 스탯', 0.88);
-    at(112, 178, `체력 ${hp}     공격 ${atk}     방어 ${def}`, 0.76);
-    at(112, 222, `특이사항  ${profile?.nature ?? '기록 없음'}${profile?.refuses ? ` · ${profile.refuses}` : ''}`, 0.62);
+    at(112, 178, `체력 ${effective.hp}     공격 ${effective.atk}     방어 ${effective.def}`, 0.76);
+    at(112, 216, `진열 보정  HP ${bonus.hp >= 0 ? '+' : ''}${bonus.hp}  ATK ${bonus.atk >= 0 ? '+' : ''}${bonus.atk}  DEF ${bonus.def >= 0 ? '+' : ''}${bonus.def}`, 0.54);
+    at(112, 246, `특이사항  ${profile?.nature ?? '기록 없음'}${profile?.refuses ? ` · ${profile.refuses}` : ''}`, 0.54);
 
-    at(96, 280, '장비 현황', 0.88);
-    if (originalEquipment.length === 0) {
-      at(112, 334, '등록된 착용 장비가 없습니다.', 0.62);
-    }
-    originalEquipment.slice(0, 3).forEach((item, index) => {
-      const rowY = 322 + index * 64;
-      at(112, rowY, `${index + 1}.`, 0.62);
-      at(160, rowY, item, 0.66);
+    at(96, 286, '장비 현황', 0.88);
+    displayedEquipment.forEach((entry, index) => {
+      const rowY = 348 + index * 56;
+      at(112, rowY, SLOT_NAMES[index] ?? '기타', 0.56);
+      if (entry.icon !== undefined) {
+        const icon = this.itemArt(entry.icon, {
+          x: paper.x + 188 * scale,
+          y: paper.y + (rowY - 20) * scale,
+          w: Math.round(42 * scale),
+          h: Math.round(42 * scale),
+        });
+        if (icon !== null) {
+          icon.setDepth(depth + 4);
+          if (entry.item !== undefined) {
+            icon.setInteractive({ cursor: 'help' });
+            icon.on('pointerover', (pointer: Phaser.Input.Pointer) => this.showItemDetail(entry.item!, pointer, this.featuredPersona(s)));
+            icon.on('pointerout', () => this.hideItemDetail());
+          }
+        }
+      }
+      at(242, rowY, this.clip(entry.label, 250, 'body'), entry.isShelfItem ? 0.62 : 0.54);
+      at(532, rowY, entry.isShelfItem ? '진열' : '기본', entry.isShelfItem ? 0.48 : 0.42);
     });
 
-    at(96, 530, '구역별 하강 확률', 0.88);
-    const zones = ['RUIN', 'SEWER', 'FLAME', 'ABYSS'];
-    const bestZone = profile?.bestZone ?? '';
-    const combatScore = hp * 0.22 + atk * 2.4 + def * 1.8;
-    zones.forEach((zone, row) => {
-      const chance = Math.max(5, Math.min(95, Math.round(74 - row * 17 + combatScore * 0.34 + (zone === bestZone ? 10 : 0))));
+    at(96, 516, '구간별 하강 확률', 0.88);
+    // 체력은 버티는 시간, 공격/방어는 전투 손실을 줄이는 정도로 환산한다.
+    // 난도와 점수 차이는 시그모이드로 변환해 장비 보정이 각 구간에서 부드럽게 반영된다.
+    const combatScore = effective.hp * 0.55 + effective.atk * 4 + effective.def * 3;
+    DESCENT_BANDS.forEach((band, row) => {
+      const chance = Math.max(1, Math.min(99, Math.round(100 / (1 + Math.exp((band.difficulty - combatScore) / 42)))));
       const filled = Math.max(1, Math.round(chance / 20));
-      at(112, 580 + row * 47, zone, 0.62);
+      const rowY = 566 + row * 45;
+      at(112, rowY, band.label, 0.62);
       for (let column = 0; column < 5; column += 1) {
         const cellX = paper.x + (294 + column * 48) * scale;
-        const cellY = paper.y + (578 + row * 47) * scale;
+        const cellY = paper.y + (rowY - 2) * scale;
         this.add.rectangle(cellX, cellY, Math.round(42 * scale), Math.round(30 * scale))
           .setOrigin(0, 0)
           .setStrokeStyle(2, PALETTE.ink)
@@ -752,7 +883,7 @@ export class OfficePhase extends PhaseScene {
           .setDepth(depth + 1);
         }
       }
-      at(552, 580 + row * 47, `${chance}%`, 0.62);
+      at(552, rowY, `${chance}%`, 0.62);
     });
 
     const page = this.add.zone(paper.x, paper.y, paper.w, paper.h)
@@ -923,17 +1054,11 @@ export class OfficePhase extends PhaseScene {
         this.redraw();
       },
     });
-    if (stacks.length === 0) {
-      this.text(ix, panel.y + 150, '팔 것도 올릴 것도 없다.', 'dust');
-      this.text(ix, panel.y + 198, '시체를 훼손하면 유품이 들어온다.', 'dust');
-      return;
-    }
-
     const cellW = Math.floor((panel.w - 56) / INVENTORY_COLUMNS);
     const totalRows = Math.ceil(stacks.length / INVENTORY_COLUMNS);
     const maxScrollRow = Math.max(0, totalRows - INVENTORY_VISIBLE_ROWS);
     this.inventoryScrollRow = Math.min(this.inventoryScrollRow, maxScrollRow);
-    const cellTop = panel.y + 144;
+    const cellTop = panel.y + 120;
     const cellHeight = 128;
     const scrollZone = this.add.zone(panel.x, cellTop, panel.w, panel.h - (cellTop - panel.y)).setOrigin(0, 0).setInteractive();
     scrollZone.on('wheel', (_pointer: Phaser.Input.Pointer, _dx: number, dy: number) => this.scrollInventory(Math.sign(dy), maxScrollRow));
@@ -952,6 +1077,28 @@ export class OfficePhase extends PhaseScene {
       });
     }
 
+    // 예시처럼 5×2 그리드를 항상 유지한다. 빈 칸도 기본 프레임을 보여 주므로,
+    // 다음에 들어올 장비의 자리와 현재 소지량을 한눈에 알 수 있다.
+    for (let index = 0; index < INVENTORY_COLUMNS * INVENTORY_VISIBLE_ROWS; index += 1) {
+      const col = index % INVENTORY_COLUMNS;
+      const row = Math.floor(index / INVENTORY_COLUMNS);
+      const cellX = ix + col * cellW;
+      const cellY = cellTop + row * cellHeight;
+      const stack = stacks[this.inventoryScrollRow * INVENTORY_COLUMNS + index];
+      const selected = stack !== undefined && stack.id === this.selectedItemId;
+      // 선택 프레임은 기본 카드 위의 불투명 오버레이가 아니라 카드 자체를 교체한다.
+      // 따라서 선택된 도트가 검은 프레임 중심에 가려지지 않는다.
+      const frameBox = selected
+        ? { x: cellX - 12, y: cellY - 14, w: cellW + 24, h: 134 }
+        : { x: cellX - 2, y: cellY - 5, w: cellW + 4, h: 116 };
+      this.spriteFitObject(frameBox, [selected ? 'ui.inventory.selected' : 'ui.inventory.slot'])?.setDepth(10);
+    }
+
+    if (stacks.length === 0) {
+      this.text(ix, panel.y + 166, '팔 것도 올릴 것도 없다.', 'dust');
+      this.text(ix, panel.y + 208, '시체를 훼손하면 유품이 들어온다.', 'dust');
+    }
+
     stacks.forEach((stack, index) => {
       const def = content.items.find((item) => item.id === stack.id);
       if (def === undefined) return;
@@ -962,12 +1109,27 @@ export class OfficePhase extends PhaseScene {
       const cellX = ix + col * cellW;
       const cellY = cellTop + row * cellHeight;
       const equipped = s.shelf.includes(def.id);
-      const selected = this.selectedItemId === def.id;
-      if (selected) this.sprite(cellX - 2, cellY - 2, 'ui.inventory.selected', 140, 124);
-      const art = this.itemArt(def, { x: cellX + 3, y: cellY + 5, w: cellW - 6, h: 84 });
+      // 도트 원본에는 투명 여백이 있어 이미지 픽셀만으로 선택을 받으면 클릭 지점이
+      // 어긋난다. 카드 전체를 별도 선택 영역으로 두되, 위의 도트 드래그보다 낮게 둔다.
+      const selectZone = this.add.zone(cellX + 5, cellY + 2, cellW - 10, 102)
+        .setOrigin(0, 0)
+        .setDepth(25)
+        .setInteractive({ cursor: 'pointer' });
+      selectZone.on('pointerup', (
+        _pointer: Phaser.Input.Pointer,
+        _localX: number,
+        _localY: number,
+        event: Phaser.Types.Input.EventData,
+      ) => {
+        this.selectedItemId = def.id;
+        event.stopPropagation();
+        this.redraw();
+      });
+      const art = this.itemArt(def, { x: cellX + 13, y: cellY + 10, w: cellW - 26, h: 74 });
       if (art !== null) {
-        // 원화의 도트 무게가 오른쪽으로 치우친 경우를 보정해 칸의 시각적 중앙에 둔다.
-        art.setX(Math.round(cellX + cellW / 2 - 14));
+        // 카드와 함께 위로 옮긴 뒤, 도트만 시각적으로 14px 오른쪽에 둔다.
+        art.setX(Math.round(cellX + cellW / 2));
+        art.setDepth(90);
         if (equipped) art.setAlpha(0.38);
         else {
           this.wireInventoryDrag(art, def, { x: art.x, y: art.y });
@@ -976,8 +1138,7 @@ export class OfficePhase extends PhaseScene {
         }
         this.wireItemHint(art, def, hint, s);
       }
-      this.text(cellX, cellY + 86, this.clip(def.name, Math.floor(cellW / 0.75), 'body'), equipped ? 'wax' : 'bone').setScale(0.75);
-      this.text(cellX, cellY + 112, this.clip(equipped ? '진열 중' : `${this.itemStats(def)}${stack.qty > 1 ? ` ×${stack.qty}` : ''}`, Math.floor(cellW / 0.75), 'body'), 'dust').setScale(0.75);
+      if (stack.qty > 1) this.text(cellX + cellW - 31, cellY + 78, `×${stack.qty}`, 'bone').setScale(0.62).setDepth(91);
     });
   }
 
@@ -1117,6 +1278,7 @@ export class OfficePhase extends PhaseScene {
       if (slot === content.balance.equipment.slotByItem[item.id]) {
         this.selectedItemId = null;
         this.playShelfDrop(item);
+        this.showOfficeDialogue('SHOP_ITEM', item.id);
         this.store.dispatch({ type: 'OFFICE/PLACE', slot, itemId: item.id });
         return;
       }
@@ -1165,6 +1327,7 @@ export class OfficePhase extends PhaseScene {
     if (content.balance.equipment.slotByItem[this.selectedItemId] !== slot) return;
     const item = content.items.find((candidate) => candidate.id === this.selectedItemId);
     if (item !== undefined) this.playShelfDrop(item);
+    if (item !== undefined) this.showOfficeDialogue('SHOP_ITEM', item.id);
     this.store.dispatch({ type: 'OFFICE/PLACE', slot, itemId: this.selectedItemId });
     this.selectedItemId = null;
   }
@@ -1220,54 +1383,19 @@ export class OfficePhase extends PhaseScene {
 
     const waiting = s.visitors[this.contractIndex] ?? s.visitors[0];
     if (!this.inventoryOpen) {
-      // 기본: ①소생실 ②인벤토리 ③돌려보내기 ④계약
+      // 방문 중: ①소생실 ②인벤토리 ③계약. 거절/돌려보내기 경로는 없다.
       actionButton(1, {
         label: '인벤토리', hotkey: '2',
         tip: '장비를 진열하거나 판매할 수 있는 인벤토리 창을 엽니다.',
         onClick: () => this.openInventory(),
       });
       if (s.today !== null) {
-        actionButton(2, {
-          label: '돌려보내기', hotkey: '3', variant: 'danger',
-          enabled: !this.contractedGuestDeparted,
-          tip: this.contractedGuestDeparted
-            ? '용사가 방송 준비를 위해 돌아갔습니다. 왼쪽 TV를 누르세요.'
-            : '계약한 용사를 돌려보내고 TV 방송 준비를 시작합니다.',
-          onClick: () => {
-            this.departGuest(() => {
-              this.contractedGuestDeparted = true;
-              this.redraw();
-            });
-          },
-        });
-        actionButton(3, {
-          label: '계약', hotkey: '4', enabled: false,
-          tip: '계약이 완료되었습니다. 왼쪽 TV를 눌러 방송을 시작하세요.',
-          onClick: () => undefined,
-        });
+        // 계약 뒤에는 용사가 대사를 마치고 자동으로 돌아간다. 방송은 좌측 TV만으로 시작한다.
         return;
       }
-      actionButton(2, {
-        label: '돌려보내기', hotkey: '3', variant: 'danger',
-        enabled: waiting !== undefined,
-        tip: waiting === undefined ? '돌려보낼 지원자가 없습니다.' : '현재 지원자의 계약을 거절하고 다음 지원자를 기다립니다.',
-        onClick: () => {
-          if (waiting === undefined) return;
-          this.departGuest(() => {
-            this.contractReaderOpen = false;
-            this.contractConfirmationOpen = false;
-            this.contractIndex = 0;
-            this.guestTouchCount = 0;
-            // 다음 지원자는 이미 로직에서 준비되지만, 문을 다시 열기 전까지 보여 주지 않는다.
-            this.shopOpened = false;
-            this.waitingForNextVisitorDoor = true;
-            this.store.dispatch({ type: 'OFFICE/CONTRACT_REJECT', starId: waiting.starId });
-          });
-        },
-      });
       const canAccept = waiting !== undefined && s.gold >= waiting.fee;
-      actionButton(3, {
-        label: '계약', hotkey: '4',
+      actionButton(2, {
+        label: '계약', hotkey: '3',
         enabled: canAccept && !this.contractConfirmationOpen,
         tip: waiting === undefined
           ? '계약할 지원자가 없습니다.'
@@ -1310,6 +1438,7 @@ export class OfficePhase extends PhaseScene {
       onClick: () => {
         if (selected === undefined || selectedSlot === undefined || selectedSlotClosed || s.shelf.includes(selected.id)) return;
         playSfx(this, 'sfx.item.drop', 0.6);
+        this.showOfficeDialogue('SHOP_ITEM', selected.id);
         this.store.dispatch({ type: 'OFFICE/PLACE', slot: selectedSlot, itemId: selected.id });
         this.selectedItemId = null;
       },
@@ -1387,7 +1516,8 @@ export class OfficePhase extends PhaseScene {
     const baseTotal = candidates.reduce((sum, { item }) => sum + item.price, 0);
     const haggles = saleHaggleCount(s);
     const box = { x: 610, y: 282, w: 700, h: 500 };
-    const depth = 930;
+    // 인벤토리 모달(1200)보다도 앞에서 가격을 확정해야 한다.
+    const depth = 2000;
 
     this.add.rectangle(L.W / 2, L.H / 2, L.W, L.H, PALETTE.ink, 0.68).setDepth(depth);
     this.add.rectangle(box.x, box.y, box.w, box.h, PALETTE.ink, 1).setOrigin(0, 0).setDepth(depth + 1);
@@ -1400,12 +1530,12 @@ export class OfficePhase extends PhaseScene {
 
     this.title(box.x + 42, box.y + 30, '가격을 어떻게 할까?').setScale(0.92).setDepth(depth + 3);
     this.text(box.x + 44, box.y + 104, `진열 상품 ${candidates.length}개 일괄 · 기준가 ${baseTotal.toLocaleString('en-US')} G`, 'dust').setScale(1.02).setDepth(depth + 3);
-    const priceText = this.label(box.x + 44, box.y + 164, '', 'bone').setScale(1.34).setDepth(depth + 3);
-    const chanceText = this.label(box.x + 44, box.y + 214, '', 'wax').setScale(1.1).setDepth(depth + 3);
+    const priceText = this.label(box.x + 44, box.y + 164, '', 'bone').setScale(1.62).setDepth(depth + 3);
+    const chanceText = this.label(box.x + 44, box.y + 220, '', 'wax').setScale(1.36).setDepth(depth + 3);
     this.text(box.x + 44, box.y + 256, `가격 제안 ${haggles} / ${rules.maxHaggles}`, 'dust').setScale(0.86).setDepth(depth + 3);
 
     const trackX = box.x + 54;
-    const trackY = box.y + 286;
+    const trackY = box.y + 306;
     const trackW = box.w - 108;
     const track = this.add.graphics().setDepth(depth + 3);
     track.fillStyle(PALETTE.dust, 1);
@@ -1428,13 +1558,13 @@ export class OfficePhase extends PhaseScene {
     slider.on('pointermove', (pointer: Phaser.Input.Pointer) => {
       if (pointer.isDown) setFromPointer(pointer);
     });
-    this.text(trackX, trackY + 32, `×${rules.minMultiplier.toFixed(1)}`, 'dust').setScale(0.88).setDepth(depth + 3);
-    this.text(trackX + trackW - 52, trackY + 32, `×${rules.maxMultiplier.toFixed(1)}`, 'dust').setScale(0.88).setDepth(depth + 3);
+    this.text(trackX, trackY + 32, `×${rules.minMultiplier.toFixed(1)}`, 'dust').setScale(1.08).setDepth(depth + 3);
+    this.text(trackX + trackW - 60, trackY + 32, `×${rules.maxMultiplier.toFixed(1)}`, 'dust').setScale(1.08).setDepth(depth + 3);
     renderValue();
 
     new Button(this, {
       x: box.x + 44, y: box.y + box.h - 78, w: 270, h: 52,
-      label: '취소', variant: 'ghost',
+      label: '취소', variant: 'ghost', hover: false,
       tip: '가격 흥정을 닫고 편성실로 돌아갑니다.',
       onClick: () => {
         this.saleDialogOpen = false;
@@ -1443,7 +1573,7 @@ export class OfficePhase extends PhaseScene {
     }).setDepth(depth + 10);
     new Button(this, {
       x: box.x + box.w - 314, y: box.y + box.h - 78, w: 270, h: 52,
-      label: '가격 제안',
+      label: '가격 제안', hover: false,
       enabled: candidates.length > 0 && haggles < rules.maxHaggles,
       tip: `진열 상품 ${candidates.length}개에 같은 가격 배율을 제안합니다. 용사의 반응 후 진열 가격이 갱신됩니다.`,
       onClick: () => {

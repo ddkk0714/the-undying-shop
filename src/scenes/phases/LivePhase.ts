@@ -115,6 +115,8 @@ const COUNTER_MS = 240;
 const COUNTER_BOUNCE = 0.18;
 const COUNTER_SHAKE_MS = 180;
 const COUNTER_SHAKE = 0.004;
+const ENEMY_SPAWN_FADE_MS = 360;
+const ENEMY_DEFEAT_SCATTER_MS = 460;
 
 function bounceAmount(t: number): number {
   const k = t < 0.25 ? t / 0.25 : (1 - (t - 0.25) / 0.75) ** 2;
@@ -130,7 +132,7 @@ function bounceAmount(t: number): number {
  * 꼴이 됐다(사용자 확인 — 싱크 안 맞음). 소리 길이에 맞춰 20ms/프레임(=200ms)으로 당겼다.
  */
 const SWORD_FX_FRAMES = 10;
-const SWORD_FX_FRAME_MS = 20;
+const SWORD_FX_FRAME_MS = 30;
 /** 적 머리 위로 뜨는 피해 숫자 — 떠오르며 옅어진다 */
 const DAMAGE_TOAST_MS = 700;
 const DAMAGE_TOAST_RISE = 40;
@@ -143,7 +145,7 @@ const DAMAGE_TOAST_RISE = 40;
  * `ui.live.fx.shield`(방패모션.gif, 15프레임 · 50ms 간격)를 용사 초상 위에 한 번만 재생한다.
  */
 const SHIELD_FX_FRAMES = 15;
-const SHIELD_FX_FRAME_MS = 50;
+const SHIELD_FX_FRAME_MS = 60;
 
 /**
  * 자동 전투 (사용자 확정) — 평범한 한 수는 씬이 알아서 낸다.
@@ -156,7 +158,7 @@ const SHIELD_FX_FRAME_MS = 50;
  *    가 정한다. 여기 있는 건 「사람 대신 버튼을 누르는 손」이고, 그 손이 어떤 순서로
  *    누르는지가 아래 세 줄이다. core 로 옮기는 편이 낫다고 판단되면 HANDOFF 로 넘긴다.
  */
-const AUTO_TURN_MS = 900;
+const AUTO_TURN_MS = 1500;
 /** 체력이 이 아래로 내려가면 방어로 돌린다 */
 const AUTO_DEFEND_RATIO = 0.4;
 /** 이 위로 여유가 있으면 조우 첫 수는 어필로 번다 */
@@ -180,6 +182,8 @@ const CHOICE_LABEL: Record<CombatChoice, string> = {
 /** 층을 하나 클리어하고 내려갈 때 화면이 이만큼 확대됐다가 돌아온다 */
 const DIVE_ZOOM = 1.08;
 const DIVE_ZOOM_MS = 200;
+/** 적 처치 뒤 다음 층으로 이동하기 전, 잔상과 파편을 보여 주는 짧은 숨 고르기. */
+const DESCENT_PAUSE_MS = 600;
 
 /**
  * 무전 대사 사이의 **최소 간격** (사용자 확정 — 「연출이 충분히 나오도록 빈도를 줄여줘」).
@@ -241,6 +245,13 @@ export class LivePhase extends PhaseScene {
   private potionDeclined = false;
   /** 조우가 끝나는 순간을 잡기 위한 직전 상태 */
   private wasFighting = false;
+  /** 마지막으로 하강 연출을 낸 층. 실제 층이 바뀔 때마다 한 번만 확대한다. */
+  private displayedFloor: number | null = null;
+  /** 처치 연출을 마칠 때까지 다음 LIVE/TICK을 잠시 멈춘다. */
+  private descentPauseUntil = 0;
+  /** 새 조우의 등장음은 한 번만 낸다. */
+  private lastEncounterKey: string | null = null;
+  private enemySpawnAt: number | null = null;
 
   /** 지금 떠 있는 무전 줄 — 다시 그려도 살아남는다 (`stageRadio` 참조) */
   private radioText = '';
@@ -298,6 +309,10 @@ export class LivePhase extends PhaseScene {
     this.lastAuto = null;
     this.potionDeclined = false;
     this.wasFighting = false;
+    this.displayedFloor = null;
+    this.descentPauseUntil = 0;
+    this.lastEncounterKey = null;
+    this.enemySpawnAt = null;
     this.radioText = '';
     this.radioObj = null;
     this.radioAt = 0;
@@ -315,6 +330,10 @@ export class LivePhase extends PhaseScene {
 
     super.create();
     playBgm(this, 'bgm.live');
+    this.playBroadcastNoiseIntro();
+    // 방송 진입 직후에는 조우/무전이 아직 없어서 buildDialogue()가 빈다.
+    // 대사집의 DUN_START를 이 첫 프레임에 직접 무전 배너로 올린다.
+    this.stageOpeningDialogue();
     const stepMs = Math.round((content.balance.dive.floorSeconds * 1000) / speedMul(this.registry));
     this.ticker = this.time.addEvent({ delay: stepMs, loop: true, callback: () => this.step() });
 
@@ -343,6 +362,21 @@ export class LivePhase extends PhaseScene {
     });
   }
 
+  /** TV를 눌러 방송으로 전환되는 순간에만 짧은 신호 잡음을 덮었다가 걷어 낸다. */
+  private playBroadcastNoiseIntro(): void {
+    if (reducedMotion(this.registry)) return;
+    const noise = this.spriteObject(0, 0, 'ui.live.noise', L.W, L.H);
+    const overlay = noise ?? this.add.rectangle(0, 0, L.W, L.H, PALETTE.ink, 0.78).setOrigin(0, 0);
+    overlay.setDepth(5000).setAlpha(0.9);
+    this.tweens.add({
+      targets: overlay,
+      alpha: 0,
+      duration: 360,
+      ease: 'Steps(4)',
+      onComplete: () => overlay.destroy(),
+    });
+  }
+
   /**
    * 전투 중이든 갈림길 대기 중이든 틱은 계속 보낸다 — core 의 `tickLive` 가
    * 그 경우 하강 대신 지체 페널티만 계산한다. 목격 연출 동안만 화면이 멈춘다.
@@ -350,6 +384,7 @@ export class LivePhase extends PhaseScene {
   private step(): void {
     if (this.store.getState().phase !== 'LIVE') return;
     if (this.time.now < this.witnessUntil) return;
+    if (this.time.now < this.descentPauseUntil) return;
     if (this.gatekeeperOpen) return; // 문지기 앞에서는 아무도 내려가지 않는다
     this.store.dispatch({ type: 'LIVE/TICK', dt: content.balance.dive.floorSeconds });
   }
@@ -397,7 +432,7 @@ export class LivePhase extends PhaseScene {
     this.autoAt = now + AUTO_TURN_MS;
     // 어필은 소리를 내지 않는다 — 카메라를 보는 동작이지 부딪는 동작이 아니다
     if (choice === 'ATTACK') playSfx(this, 'sfx.combat.attack', 0.55);
-    else if (choice === 'DEFEND') playSfx(this, 'sfx.combat.guard', 0.5);
+    else if (choice === 'DEFEND') playSfx(this, 'sfx.combat.guardBlock', 0.5);
     this.store.dispatch({ type: 'COMBAT/CHOOSE', choice });
   }
 
@@ -458,6 +493,12 @@ export class LivePhase extends PhaseScene {
     this.noiseArt = null;
     this.enemyBounce = null;
 
+    const currentFloor = s.today?.currentFloor ?? null;
+    if (currentFloor !== null) {
+      if (this.displayedFloor !== null && currentFloor > this.displayedFloor) this.diveTransition();
+      this.displayedFloor = currentFloor;
+    }
+
     /**
      * 적이 반격했는지는 **용사 체력이 줄었는가**로 읽는다.
      *
@@ -470,7 +511,10 @@ export class LivePhase extends PhaseScene {
     const hp = s.today?.hero.hp ?? -1;
     if (this.lastHeroHp >= 0 && hp >= 0 && hp < this.lastHeroHp && s.today?.encounter != null) {
       this.counterAt = this.time.now;
-      playSfx(this, 'sfx.combat.hit', 0.6);
+      if (s.today.encounter.enemyKey === 'enemy.flame') {
+        playSfx(this, 'sfx.combat.flameCast', 0.32);
+        this.time.delayedCall(110, () => playSfx(this, 'sfx.combat.flameHit', 0.6));
+      } else playSfx(this, 'sfx.combat.hit', 0.6);
       if (!this.reduced) this.cameras.main.shake(COUNTER_SHAKE_MS, COUNTER_SHAKE);
     }
     this.lastHeroHp = hp;
@@ -500,8 +544,19 @@ export class LivePhase extends PhaseScene {
 
     // 조우가 끝나는 순간 = **층을 클리어하고 내려간다**. 층은 틱마다 바뀌므로
     // `currentFloor` 로 잡으면 0.35초마다 연출이 터진다 — 조우의 끝으로 잡아야 한 번이다
+    const encounterKey = s.today?.encounter?.enemyKey ?? null;
+    const priorEncounterKey = this.lastEncounterKey;
+    if (encounterKey !== null && priorEncounterKey === null) {
+      this.enemySpawnAt = this.time.now;
+      playSfx(this, 'sfx.combat.monsterSpawn', 0.42);
+    }
     const fighting = s.today?.encounter != null;
-    if (this.wasFighting && !fighting && s.phase === 'LIVE' && hp > 0) this.diveTransition();
+    if (this.wasFighting && !fighting && s.phase === 'LIVE' && hp > 0) {
+      playSfx(this, 'sfx.combat.monsterDeath', 0.56);
+      if (priorEncounterKey !== null) this.scatterEnemyDefeat(priorEncounterKey);
+      this.descentPauseUntil = this.time.now + DESCENT_PAUSE_MS;
+    }
+    this.lastEncounterKey = encounterKey;
     if (!fighting) {
       this.potionDeclined = false;   // 다음 조우에서는 다시 묻는다
       this.lastAuto = null;
@@ -737,7 +792,10 @@ export class LivePhase extends PhaseScene {
       const img = this.spriteFitObject(e, [enc.enemyKey]);
       if (img === null) this.enemyShape(e.x - 32, e.y - 20, 320, 300, enc.enemyKey);
       // 반격 때 여기서 잡아 둔 원래 자리·크기를 기준으로 튕긴다
-      else this.enemyBounce = { img, x: img.x, y: img.y, w: img.displayWidth, h: img.displayHeight };
+      else {
+        if (this.enemySpawnAt !== null) img.setAlpha(Math.max(0, Math.min(1, (this.time.now - this.enemySpawnAt) / ENEMY_SPAWN_FADE_MS)));
+        this.enemyBounce = { img, x: img.x, y: img.y, w: img.displayWidth, h: img.displayHeight };
+      }
 
       // 체력바는 적 스프라이트 **머리 위**, 폭을 줄여 작게 (사용자 확정 — 발밑에
       // 있던 걸 위로 옮기고 크기도 줄였다). 바 하나만 둔다 — 이름·숫자·판까지
@@ -816,6 +874,23 @@ export class LivePhase extends PhaseScene {
       this.frame(v.x, v.y, v.w, v.h, 'bone');
     }
     this.stageRadio(spoken);
+  }
+
+  /** 대사집의 하강 시작 멘트. 이후 조우/갈림길 대사가 같은 배너를 자연스럽게 교체한다. */
+  private stageOpeningDialogue(): void {
+    const s = this.store.getState();
+    const run = s.today;
+    const star = s.stars.find((candidate) => candidate.id === run?.starId);
+    if (run === null || star === undefined) return;
+    const line = pickDialogue(star.id, 'DUN_START', {
+      floor: run.currentFloor,
+      revives: totalRevivals(star.id, star.reviveCount),
+      mental: run.mental,
+      viewers: s.fans,
+      deaths: s.stats.totalDiscarded,
+      generation: s.personas.find((persona) => persona.id === star.personaId)?.generation,
+    }, ((s.day * 13 + run.currentFloor) % 100) / 100);
+    if (line !== null) this.stageRadio({ text: line.text, expression: line.expression, effects: line.effects });
   }
 
   /**
@@ -1238,6 +1313,35 @@ export class LivePhase extends PhaseScene {
       .setPosition(Math.round(b.x - (w - b.w) / 2), Math.round(b.y - (h - b.h)));
   }
 
+  /** 처치된 적이 그 자리에 남지 않도록, 실루엣 크기의 도트 파편으로 흩어진다. */
+  private scatterEnemyDefeat(enemyKey: string): void {
+    if (this.reduced) return;
+    const e = L.live.enemy;
+    const seed = strHash(enemyKey);
+    for (let i = 0; i < 12; i += 1) {
+      const angle = hash2(seed, i) * Math.PI * 2;
+      const distance = 46 + Math.round(hash2(seed ^ 0x9e3779b9, i) * 110);
+      const size = 8 + Math.floor(hash2(seed ^ 0x85ebca6b, i) * 13);
+      const x = e.x + e.w / 2 + Math.round((hash2(seed ^ 0x27d4eb2d, i) - 0.5) * e.w * 0.45);
+      const y = e.y + e.h / 2 + Math.round((hash2(seed ^ 0x165667b1, i) - 0.5) * e.h * 0.45);
+      const fragment = this.add.rectangle(x, y, size, size, i % 3 === 0 ? PALETTE.wax : i % 2 === 0 ? PALETTE.bone : PALETTE.mid).setOrigin(0.5);
+      this.keepAlive(fragment);
+      this.tweens.add({
+        targets: fragment,
+        x: x + Math.round(Math.cos(angle) * distance),
+        y: y + Math.round(Math.sin(angle) * distance),
+        alpha: 0,
+        angle: Math.round((hash2(seed ^ 0xc2b2ae35, i) - 0.5) * 180),
+        duration: ENEMY_DEFEAT_SCATTER_MS,
+        ease: 'Quad.easeOut',
+        onComplete: () => {
+          this.dropAlive(fragment);
+          fragment.destroy();
+        },
+      });
+    }
+  }
+
   /**
    * 용사 흉상 **뒤에 깔리는 방송화면 액자** (사용자 확정).
    *
@@ -1365,7 +1469,6 @@ export class LivePhase extends PhaseScene {
    * 지금 이 방송이 얼마를 벌었는지가 거기 적혀 있다.
    */
   private flySuperchats(queue: readonly ChatMessage[]): void {
-    if (this.reduced) return;
     for (const msg of queue) {
       if (msg.tone !== 'SUPERCHAT' || msg.amount === undefined) continue;
       if (this.flownSuperchats.has(msg.id)) continue;
@@ -1405,6 +1508,7 @@ export class LivePhase extends PhaseScene {
    */
   private superchatPopup(msg: ChatMessage): void {
     const v = L.live.superchat;
+    this.superchatBurst(v, msg.id);
     const plate = this.spriteObject(v.x, v.y, 'ui.live.superchat', v.w, v.h);
     const backing = plate === null ? this.rectObject(v.x, v.y, v.w, v.h, 'ink') : null;
     const border = plate === null ? this.frameObject(v.x, v.y, v.w, v.h, 'bone') : null;
@@ -1425,9 +1529,9 @@ export class LivePhase extends PhaseScene {
     this.tweens.add({
       targets: parts,
       alpha: 1,
-      duration: 140,
+      duration: 120,
       ease: 'Quad.easeOut',
-      hold: 700,
+      hold: 420,
       yoyo: true,
       onComplete: () => {
         for (const o of parts) {
@@ -1436,6 +1540,34 @@ export class LivePhase extends PhaseScene {
         }
       },
     });
+  }
+
+  /** 슈퍼챗이 뜨는 순간, 팝업 중심에서 금빛 도트가 짧게 터진다. */
+  private superchatBurst(v: { x: number; y: number; w: number; h: number }, messageId: string): void {
+    if (this.reduced) return;
+    const seed = strHash(messageId);
+    const cx = v.x + Math.round(v.w / 2);
+    const cy = v.y + Math.round(v.h / 2);
+    for (let i = 0; i < 16; i += 1) {
+      const angle = hash2(seed, i) * Math.PI * 2;
+      const distance = 28 + Math.round(hash2(seed ^ 0x9e3779b9, i) * 68);
+      const size = 5 + Math.floor(hash2(seed ^ 0x85ebca6b, i) * 8);
+      const particle = this.add.rectangle(cx, cy, size, size, i % 3 === 0 ? PALETTE.bone : PALETTE.wax).setOrigin(0.5);
+      this.keepAlive(particle);
+      this.tweens.add({
+        targets: particle,
+        x: cx + Math.round(Math.cos(angle) * distance),
+        y: cy + Math.round(Math.sin(angle) * distance),
+        alpha: { from: 1, to: 0 },
+        angle: (hash2(seed ^ 0x27d4eb2d, i) - 0.5) * 280,
+        duration: 380,
+        ease: 'Quad.easeOut',
+        onComplete: () => {
+          this.dropAlive(particle);
+          particle.destroy();
+        },
+      });
+    }
   }
 
   /** `rect` 와 같지만 알파를 만질 수 있게 오브젝트를 돌려준다 */

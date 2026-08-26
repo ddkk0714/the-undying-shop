@@ -1,9 +1,8 @@
 import Phaser from 'phaser';
 import { SCENES } from '../../config';
 import { content } from '../../core/content';
-import { pickDialogue, totalRevivals } from '../../core/systems/dialogue';
 import { reviveDaysHeld, reviveQuote } from '../../core/systems/economy';
-import { starVoice } from '../../audio/Voice';
+import { pickDialogue, totalRevivals } from '../../core/systems/dialogue';
 import { key, starArt } from '../../render/assets';
 import { L, actionX, ACTION_W } from '../../ui/layout';
 import { Button } from '../../ui/Button';
@@ -40,8 +39,6 @@ export class RevivePhase extends PhaseScene {
   private inheriting = false;
   /** 씌울 대상이 여럿일 때 보고 있는 사람 */
   private heirIndex = 0;
-  /** 시체가 지니고 있던 장비를 펼쳐 놓은 상태 (CCR-006) */
-  private carriedOpen = false;
   /** 빈 소생실에서 한 번만 울리는 편성실 쪽 노크 */
   private emptyKnockTimer: Phaser.Time.TimerEvent | null = null;
   private emptyKnockPlayed = false;
@@ -49,6 +46,12 @@ export class RevivePhase extends PhaseScene {
   private recordOpen = false;
   /** 서류 도장이 찍히는 동안 다시 누르지 못하게 */
   private recordStamping = false;
+  /** 하단 세 번째 버튼이 여는 공용 창고 */
+  private warehouseOpen = false;
+  /** 창고에서 회수 대상으로 고른 시체 소지품 */
+  private selectedCarriedItemId: string | null = null;
+  /** 편성실 인벤토리와 같은 호버 상세 정보 패널 */
+  private warehouseItemDetail: Phaser.GameObjects.GameObject[] = [];
 
   constructor() {
     super(SCENES.PHASE_REVIVE);
@@ -63,11 +66,13 @@ export class RevivePhase extends PhaseScene {
     this.discarding = false;
     this.inheriting = false;
     this.heirIndex = 0;
-    this.carriedOpen = false;
     this.emptyKnockTimer = null;
     this.emptyKnockPlayed = false;
     this.recordOpen = false;
     this.recordStamping = false;
+    this.warehouseOpen = false;
+    this.selectedCarriedItemId = null;
+    this.warehouseItemDetail = [];
     super.create();
     // 소생실은 편성실과 다른 곡을 쓴다 (사운드V4 · 소생실메인브금).
     //
@@ -113,10 +118,9 @@ export class RevivePhase extends PhaseScene {
     if (corpse !== undefined) this.buildDeathRecord();
     this.buildBench(corpse, star);
     this.buildPager(waiting.length);
-    this.buildCarriedButton(corpse);
     this.buildInheritButton(s);
     this.buildActions(s, corpse, star);
-    if (this.carriedOpen && corpse !== undefined) this.buildCarried(corpse);
+    if (this.warehouseOpen && corpse !== undefined) this.buildWarehouse(s, corpse);
     // 확대 리더는 맨 위에 얹는다 — 소지품 창보다도 위여야 도장이 항상 눌린다
     if (this.recordOpen && corpse !== undefined && star !== undefined) this.buildDeathRecordReader(s, corpse, star);
   }
@@ -138,45 +142,21 @@ export class RevivePhase extends PhaseScene {
 
   /* ── 좌 · 소생 수조의 몸 ──────────────────────────────── */
 
-  private buildGuest(s: Readonly<GameState>, star: Star | undefined, count: number): void {
+  private buildGuest(_s: Readonly<GameState>, star: Star | undefined, count: number): void {
     const g = L.guest;
     this.rect(g.x, g.y, g.w, g.h, 'ink');
     // 소생실 전용 배경이 오면 그걸 쓰고, 없으면 상점 방을 그대로 쓴다
     this.spriteCover(g, ['bg.revive.room', 'bg.shop.room']);
     this.frame(g.x, g.y, g.w, g.h, 'dust');
 
-    const d = L.dialogue;
-    this.rect(d.x, d.y, d.w, d.h, 'ink');
-
     if (star === undefined) {
       this.buildRoomLabel(count);
       this.scrimBlock(g.x + L.line, g.y + 184, 560, 56);
       this.text(g.x + L.pad, g.y + 200, '소생 수조가 비어 있다.', 'dust');
-      this.title(d.x + L.pad, d.y + 40, '...오늘은 아무도 없다', 'dust');
       return;
     }
 
-    // 용사 전신 스프라이트는 소생실 좌측 화면에서 지웠다 (사용자 확정) — 배경 + 방 이름 + 대사만 남는다
-    const reviveLine = pickDialogue(star.id, 'REVIVE', {
-      revives: totalRevivals(star.id, star.reviveCount),
-      deaths: s.stats.totalDiscarded,
-    }, (s.day % 10) / 10);
-
     this.buildRoomLabel(count);
-
-    const persona = s.personas.find((p) => p.id === star.personaId);
-    this.title(d.x + L.pad, d.y + 12, this.clip(persona?.displayName ?? '무명', d.w - 96, 'title')).setScale(0.65);
-    if (reviveLine !== null) {
-      new Dialogue(this, {
-        x: d.x + L.pad,
-        y: d.y + 58,
-        w: d.w - 96,
-        line: this.clip(reviveLine.text, d.w - 96, 'title'),
-        scale: 0.68,
-        effects: reviveLine.effects,
-        voice: starVoice(star?.id),
-      });
-    }
   }
 
   /** 좌측 칸 좌상단의 방 이름 — 배경이 밝은 곳에 걸려도 읽히게 판을 깐다 */
@@ -314,7 +294,9 @@ export class RevivePhase extends PhaseScene {
     // 도장은 「소생 확정」이 아니라 「상태 판정 확인」이다 (사용자 확정) — 찍어도
     // REVIVE/PAY 를 부르지 않는다. 실제 소생은 하단 액션 바의 「소생」 버튼이 그대로 맡는다.
     // 한 번 찍히면 그 자리에 그대로 남는다 — 마우스가 벗어나도 다시 흐려지지 않는다.
-    let stamped = false;
+    const recordKey = `reviveRecordStamped:${corpse.starId}:${corpse.diedDay}:${corpse.diedFloor}`;
+    let stamped = s.flags[recordKey] === true;
+    if (stamped) stamp?.setAlpha(1);
     const stampZone = this.add.zone(stampBox.x, stampBox.y, stampBox.w, stampBox.h)
       .setOrigin(0, 0)
       .setDepth(depth + 5)
@@ -334,45 +316,17 @@ export class RevivePhase extends PhaseScene {
           playSfx(this, 'sfx.contract.stamp', 0.2);
           this.recordStamping = false;
           stamped = true;
+          this.store.dispatch({ type: 'REVIVE/RECORD_STAMP', starId: corpse.starId, diedDay: corpse.diedDay, diedFloor: corpse.diedFloor });
         },
       });
     });
   }
 
-  /* ── 우 · 시체가 지니고 있던 것 (CCR-006) ─────────────── */
-
-  /**
-   * 방송이 끝나도 장비는 저절로 돌아오지 않는다. **몸에 남는다.**
-   * 소생실에서 그 몸을 살피고 한 점씩 회수하는 것이 이 버튼이 여는 화면이다.
-   */
-  private buildCarriedButton(corpse: Corpse | undefined): void {
-    if (corpse === undefined || this.carriedOpen) return;
-    const carried = corpse.carried ?? [];
-    if (carried.length === 0) return;
-    const b = L.bench;
-    // 시체 기록(최대 y 631)과 소생 비용 띠(723 부터) 사이의 빈 칸.
-    // 비용 위에 겹치면 금액을 가린다 — 실제로 가렸었다
-    const x = b.x + L.pad * 3;
-    const y = b.y + 500;
-    // 작업대 배경이 고주파 디더라 투명한 버튼 위의 글자가 뭉개진다. 깔고 그린다
-    this.scrimBlock(x - 16, y - 12, 332, 88);
-    new Button(this, {
-      x, y, w: 300, h: 64,
-      label: `소지품 ${carried.length}점`, hotkey: '5',
-      tip: '죽을 때 지니고 내려간 장비입니다. 눌러서 꺼내 보고, 한 점씩 회수할 수 있습니다.',
-      onClick: () => {
-        this.carriedOpen = true;
-        this.redraw();
-      },
-    });
-  }
-
-  /** 편성실 인벤토리 창과 같은 그림·같은 칸 규격을 쓴다 — 플레이어가 두 번 배우지 않게. */
-  private buildCarried(corpse: Corpse): void {
-    const b = L.bench;
+  /** 편성실 인벤토리와 같은 칸으로, 시체 소지품을 고른 뒤 하단 「회수」로 옮긴다. */
+  private buildWarehouse(s: Readonly<GameState>, corpse: Corpse): void {
     const panel = {
-      x: b.x + Math.round((b.w - CARRIED_PANEL.w) / 2),
-      y: b.y + b.h - CARRIED_PANEL.h,
+      x: L.bench.x + Math.round((L.bench.w - CARRIED_PANEL.w) / 2),
+      y: L.bench.y + L.bench.h - CARRIED_PANEL.h,
       w: CARRIED_PANEL.w,
       h: CARRIED_PANEL.h,
     };
@@ -381,46 +335,86 @@ export class RevivePhase extends PhaseScene {
       this.rect(panel.x, panel.y, panel.w, panel.h, 'ink');
       this.frame(panel.x, panel.y, panel.w, panel.h, 'bone');
     }
-
     const carried = corpse.carried ?? [];
-    this.text(ix, panel.y + 16, `소지품  ${carried.length}점`, 'ink');
-    this.label(ix, panel.y + 70, '장비를 눌러 회수합니다. 두고 가도 몸과 함께 돌아옵니다.', 'dust').setScale(1.3);
+    if (this.selectedCarriedItemId !== null && !carried.includes(this.selectedCarriedItemId)) this.selectedCarriedItemId = null;
+    const storedKinds = s.inventory.filter((stack) => stack.qty > 0).length;
+    this.text(ix, panel.y + 16, `창고  ${storedKinds}종 · 소지품 ${carried.length}점`, 'ink');
+    this.label(ix, panel.y + 70, '시체 소지품을 고른 뒤, 하단의 「회수」를 누르면 창고에 들어옵니다.', 'dust').setScale(1.3);
     new Button(this, {
       x: panel.x + panel.w + 12, y: panel.y + 8, w: 128, h: 52,
       label: '닫기',
-      tip: '소지품 창을 닫습니다. 회수하지 않은 장비는 몸에 그대로 남습니다.',
       onClick: () => {
-        this.carriedOpen = false;
+        this.warehouseOpen = false;
+        this.selectedCarriedItemId = null;
+        this.hideWarehouseItemDetail();
         this.redraw();
       },
     });
-
     if (carried.length === 0) {
-      this.text(ix, panel.y + 150, '맨몸으로 내려갔다.', 'dust');
+      this.text(ix, panel.y + 166, '회수할 소지품이 없습니다.', 'dust');
       return;
     }
-
     const cellW = Math.floor((panel.w - 56) / CARRIED_COLUMNS);
-    const cellTop = panel.y + 144;
     carried.forEach((itemId, index) => {
       const def = content.items.find((item) => item.id === itemId);
       if (def === undefined) return;
       const cellX = ix + (index % CARRIED_COLUMNS) * cellW;
-      const cellY = cellTop + Math.floor(index / CARRIED_COLUMNS) * 128;
-      const art = this.itemArt(def, { x: cellX + 3, y: cellY + 5, w: cellW - 6, h: 84 });
-      if (art !== null) {
-        // 원화의 도트 무게 보정 — 편성실 인벤토리와 같은 값이라야 두 창이 같아 보인다
-        art.setX(Math.round(cellX + cellW / 2 - 14));
-        art.setInteractive({ cursor: 'pointer' });
-        art.on('pointerup', () => this.store.dispatch({ type: 'REVIVE/LOOT', starId: corpse.starId, itemId }));
-      }
-      const textPx = Math.floor((cellW - 20) / 0.75);
-      this.text(cellX, cellY + 86, this.clip(def.name, textPx, 'body'), 'bone').setScale(0.75);
-      this.text(cellX, cellY + 112, this.clip(this.itemStats(def), textPx, 'body'), 'dust').setScale(0.75);
+      const cellY = panel.y + 144 + Math.floor(index / CARRIED_COLUMNS) * 128;
+      const selected = itemId === this.selectedCarriedItemId;
+      this.spriteFitObject(
+        { x: cellX - 2, y: cellY - 5, w: cellW + 4, h: 116 },
+        [selected ? 'ui.inventory.selected' : 'ui.inventory.slot'],
+      )?.setDepth(10);
+      const zone = this.add.zone(cellX + 4, cellY, cellW - 8, 108).setOrigin(0, 0).setDepth(25).setInteractive({ cursor: 'pointer' });
+      zone.on('pointerup', () => {
+        this.selectedCarriedItemId = itemId;
+        this.hideWarehouseItemDetail();
+        this.redraw();
+      });
+      zone.on('pointerover', (pointer: Phaser.Input.Pointer) => this.showWarehouseItemDetail(def, pointer));
+      zone.on('pointerout', () => this.hideWarehouseItemDetail());
+      this.itemArt(def, { x: cellX + 3, y: cellY + 5, w: cellW - 6, h: 84 })?.setX(Math.round(cellX + cellW / 2 - 14)).setDepth(20);
     });
   }
 
-  /** 편성실과 같은 규칙 — 원본 비율을 지켜 칸 안에 넣는다. */
+  /** 편성실 인벤토리와 같은 위치·원본 정보창으로 장비 정보를 보인다. */
+  private showWarehouseItemDetail(item: ItemDef, pointer: Phaser.Input.Pointer): void {
+    this.hideWarehouseItemDetail();
+    const w = 450;
+    const h = 948;
+    const x = Math.max(8, Math.min(L.W - w - 8, pointer.x + 24 <= L.W - w - 8 ? pointer.x + 24 : pointer.x - w - 24));
+    const y = Math.max(72, Math.min(L.H - h - 8, pointer.y - h - 56));
+    const depth = 5000;
+    const add = <T extends Phaser.GameObjects.GameObject>(object: T): T => {
+      this.warehouseItemDetail.push(object);
+      return object;
+    };
+    if (this.hasArt('ui.inventory.info')) add(this.add.image(x, y, key('ui.inventory.info')).setOrigin(0, 0).setDisplaySize(w, h).setDepth(depth));
+    else add(this.add.rectangle(x, y, w, h, 0x07110b, 0.96).setOrigin(0, 0).setDepth(depth));
+    const body = (dx: number, dy: number, text: string, color: 'bone' | 'dust' | 'wax' = 'bone', scale = 0.9) =>
+      add(this.text(x + dx, y + dy, text, color).setScale(scale).setDepth(depth + 1));
+    const label = (dx: number, dy: number, text: string) => add(this.label(x + dx, y + dy, text, 'dust').setScale(1.3).setDepth(depth + 1));
+    const slot = content.balance.equipment.slotByItem[item.id];
+    const slotName = slot === 0 ? 'WEAPON' : slot === 1 ? 'ARMOR' : 'UTILITY';
+    const signed = (value: number) => `${value >= 0 ? '+' : ''}${value}`;
+    body(29, 28, this.clip(item.name, 286, 'body'), item.isRelic ? 'wax' : 'bone', 1.1);
+    body(344, 31, item.tier, item.isRelic ? 'wax' : 'bone', 1.1);
+    const icon = this.itemArt(item, { x: x + 50, y: y + 130, w: 112, h: 112 });
+    if (icon !== null) add(icon.setDepth(depth + 2));
+    body(205, 138, item.kind === 'POTION' ? 'POTION' : item.isRelic ? 'RELIC' : slotName, 'bone', 1.0);
+    body(205, 185, `${item.price.toLocaleString('en-US')} G`, 'bone', 1.25);
+    body(38, 286, item.kind === 'POTION' ? `HEAL  +${item.healing}` : `HP    ${signed(item.hp)}\nATK   ${signed(item.atk)}\nDEF   ${signed(item.def)}`, 'bone', 0.95);
+    label(38, 445, '특성');
+    body(38, 485, item.kind === 'POTION' ? '<HEAL>' : `<${slotName}>`, item.isRelic ? 'wax' : 'bone', 1.0);
+    label(38, 644, '회수');
+    body(38, 684, '선택한 뒤 하단 「회수」를 누르면\n공용 인벤토리에 들어갑니다.', 'dust', 0.9);
+  }
+
+  private hideWarehouseItemDetail(): void {
+    this.warehouseItemDetail.forEach((object) => object.destroy());
+    this.warehouseItemDetail = [];
+  }
+
   private itemArt(item: ItemDef, box: { x: number; y: number; w: number; h: number }): Phaser.GameObjects.Image | null {
     if (!this.hasArt(item.iconKey)) return null;
     const texture = key(item.iconKey);
@@ -428,10 +422,6 @@ export class RevivePhase extends PhaseScene {
     const scale = Math.min(box.w / source.width, box.h / source.height);
     return this.add.image(Math.round(box.x + box.w / 2), Math.round(box.y + box.h / 2), texture)
       .setDisplaySize(Math.max(1, Math.round(source.width * scale)), Math.max(1, Math.round(source.height * scale)));
-  }
-
-  private itemStats(item: ItemDef): string {
-    return item.kind === 'POTION' ? `회복 +${item.healing}` : `HP+${item.hp} 공+${item.atk} 방+${item.def}`;
   }
 
   /* ── 페르소나 승계 (M03) ─────────────────────────────── */
@@ -653,39 +643,82 @@ export class RevivePhase extends PhaseScene {
           : `자금이 ${fmtGold(quote.cost - s.gold)}G 모자랍니다. 장비를 팔거나 시체를 폐기해 마련하세요.`,
       onClick: () => {
         if (corpse === undefined) return;
+        const revivedStar = star;
         playSfx(this, 'sfx.revive', 0.8);
         this.store.dispatch({ type: 'REVIVE/PAY', starId: corpse.starId });
+        // reducer가 화면을 새 상태로 다시 그린 뒤, 소생 완료 대사를 한 번 얹는다.
+        // REVIVE 조건은 이번 소생까지 포함해야 하므로 직전 횟수에 1을 더한다.
+        if (revivedStar !== undefined) {
+          const profile = content.starProfiles[revivedStar.id];
+          const line = pickDialogue(revivedStar.id, 'REVIVE', {
+            floor: profile?.targetFloor,
+            revives: totalRevivals(revivedStar.id, revivedStar.reviveCount + 1),
+            viewers: profile?.fans,
+            deaths: this.store.getState().stats.totalDiscarded,
+            generation: this.store.getState().personas.find((persona) => persona.id === revivedStar.personaId)?.generation,
+          }, (this.store.getState().day % 10) / 10);
+          if (line !== null) this.time.delayedCall(0, () => this.showReviveDialogue(line.text, line.effects));
+        }
       },
     });
+    const selectedCarried = corpse?.carried?.includes(this.selectedCarriedItemId ?? '') === true
+      ? this.selectedCarriedItemId
+      : null;
     new Button(this, {
       x: actionX(1), y, w: ACTION_W, h,
-      label: '그대로', hotkey: '2',
-      enabled: corpse !== undefined,
-      tip: corpse === undefined
-        ? '보관할 시체가 없습니다.'
-        : `오늘은 두고 넘어갑니다. 시체는 남지만, 하루 미룰 때마다 소생 비용이 ${Math.round((content.balance.revive.decayPerDay - 1) * 100)}% 씩 오릅니다.`,
+      label: this.warehouseOpen ? '회수' : '폐기', hotkey: '2', variant: this.warehouseOpen ? 'ghost' : 'danger',
+      enabled: this.warehouseOpen ? selectedCarried !== null : corpse !== undefined && !this.discarding,
+      tip: this.warehouseOpen
+        ? selectedCarried === null
+          ? '창고의 소지품에서 회수할 장비를 먼저 고르세요.'
+          : '선택한 장비를 시체에서 꺼내 공용 창고로 옮깁니다.'
+        : corpse === undefined
+          ? '폐기할 시체가 없습니다.'
+          : `몸이 사라집니다. 되돌릴 수 없습니다. 대신 유품 ${content.balance.revive.discardLoot}점과 회수하지 않은 소지품은 창고로 들어옵니다.`,
       onClick: () => {
-        if (corpse === undefined) return;
-        this.store.dispatch({ type: 'REVIVE/SKIP', starId: corpse.starId });
-        this.index += 1; // 보관하고 다음 시체를 본다. 미루면 내일 비용이 오른다.
-        this.redraw();
+        if (this.warehouseOpen) {
+          if (corpse === undefined || selectedCarried === null) return;
+          this.selectedCarriedItemId = null;
+          this.store.dispatch({ type: 'REVIVE/LOOT', starId: corpse.starId, itemId: selectedCarried });
+          return;
+        }
+        if (corpse !== undefined) this.discard(corpse.starId);
       },
     });
-    // 廢棄 — 몸이 사라지고 유품이 남는다. 되돌릴 수 없다 (M04 §결과표)
     new Button(this, {
       x: actionX(2), y, w: ACTION_W, h,
-      label: '폐기', hotkey: '3', variant: 'danger',
-      enabled: corpse !== undefined && !this.discarding,
-      tip: corpse === undefined
-        ? '폐기할 시체가 없습니다.'
-        : `몸이 사라집니다. 되돌릴 수 없습니다. 대신 유품 ${content.balance.revive.discardLoot}점과 회수하지 않은 소지품이 인벤토리로 들어옵니다.`,
-      onClick: () => corpse && this.discard(corpse.starId),
+      label: this.warehouseOpen ? '창고 닫기' : '창고', hotkey: '3',
+      tip: this.warehouseOpen
+        ? '창고를 닫고 폐기 동작으로 돌아갑니다.'
+        : '편성실 인벤토리와 같은 칸에서 시체 소지품을 고르고 회수합니다.',
+      onClick: () => {
+        this.warehouseOpen = !this.warehouseOpen;
+        this.selectedCarriedItemId = null;
+        this.hideWarehouseItemDetail();
+        this.redraw();
+      },
     });
     new Button(this, {
       x: actionX(3), y, w: ACTION_W, h,
       label: '편성실', hotkey: '4',
       tip: '오늘 방송할 출연자를 고르러 갑니다. 편성실 하단의 「소생」으로 언제든 돌아올 수 있습니다.',
       onClick: () => this.store.dispatch({ type: 'PHASE/ADVANCE' }),
+    });
+  }
+
+  /** 소생 직후에만 쓰는 짧은 대사창. 다음 조작/화면 갱신에서 자연스럽게 사라진다. */
+  private showReviveDialogue(line: string, effects: readonly string[]): void {
+    const d = L.dialogue;
+    this.rect(d.x, d.y, d.w, d.h, 'ink');
+    this.frame(d.x, d.y, d.w, d.h, 'bone');
+    new Dialogue(this, {
+      x: d.x + L.pad,
+      y: d.y + 28,
+      w: d.w - L.pad * 2,
+      line,
+      size: 'body',
+      effects,
+      voice: undefined,
     });
   }
 }

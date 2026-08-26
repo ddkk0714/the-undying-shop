@@ -21,6 +21,8 @@ export interface ButtonOpts {
   enabled?: boolean;
   /** 기본 클릭음을 바꾸거나 끈다. 생략하면 `sfx.click`, false 면 무음이다. */
   sound?: string | false;
+  /** 팝업의 확정/취소처럼 마우스를 올려도 판을 바꾸지 않을 때 사용한다. */
+  hover?: boolean;
   /**
    * 마우스를 올렸을 때 커서 우측 위에 뜨는 한 줄 설명 (사용자 확정).
    * 씬이 `createTooltip(this)` 를 해 두지 않았으면 조용히 무시된다.
@@ -88,11 +90,11 @@ export class Button extends Phaser.GameObjects.Container {
         Phaser.Geom.Rectangle.Contains,
       );
       this.on('pointerover', (p: Phaser.Input.Pointer) => {
-        if (this.visual !== 'disabled') this.setVisualState('hover');
+        if (this.visual !== 'disabled' && opts.hover !== false) this.setVisualState('hover');
         if (opts.tip !== undefined) tooltipOf(scene)?.show(opts.tip, p.x, p.y);
       });
       this.on('pointerout', () => {
-        if (this.visual !== 'disabled') this.setVisualState('idle');
+        if (this.visual !== 'disabled' && opts.hover !== false) this.setVisualState('idle');
         if (opts.tip !== undefined) tooltipOf(scene)?.hide();
       });
       this.on('pointerdown', () => {
@@ -100,7 +102,7 @@ export class Button extends Phaser.GameObjects.Container {
       });
       this.on('pointerup', () => {
         if (this.visual === 'disabled') return;
-        this.setVisualState('hover');
+        this.setVisualState(opts.hover === false ? 'idle' : 'hover');
         this.playClickSound();
         opts.onClick();
       });
