@@ -65,9 +65,16 @@ const WINDOW_LEAD = 4;
 /** M06 §8 사망 타임라인 (ms) */
 const DEATH_HITSTOP = 150;
 const DEATH_SCANLINE = 350;
-const DEATH_NOISE_END = 1200;
-/** DayScene 이 ④ 사망 단계로 넘어가는 것을 이만큼 늦춰 준다 */
-export const DEATH_CURTAIN_MS = 1800;
+/**
+ * 잡음이 멎고 화면이 까매지는 시각. **3초쯤 지지직거리다 넘어간다** (사용자 확정) —
+ * 1200ms 는 「어? 죽었나」 하는 사이에 지나가 버렸다.
+ */
+const DEATH_NOISE_END = 2600;
+/**
+ * DayScene 이 ④ 사망 단계로 넘어가는 것을 이만큼 늦춰 준다.
+ * 잡음이 멎은 뒤 암전 0.4초를 두고 넘긴다 — 뚝 끊기는 것보다 한 박자 있는 편이 낫다
+ */
+export const DEATH_CURTAIN_MS = 3000;
 
 /**
  * 채팅을 얼마나 자주 청하는가. **밸런스가 아니라 표시 박자다** —
@@ -453,6 +460,12 @@ export class LivePhase extends PhaseScene {
       const c = L.live.combat;
       this.noiseArt = this.spriteObject(c.x, c.y, 'ui.live.noise', c.w, c.h);
       this.noiseLayer = this.add.graphics();
+
+      // ★ 살려 둔 것들(`keepAlive`)은 `redraw()` 가 **맨 위에** 다시 얹는다.
+      //   그래서 채팅과 무전 줄이 잡음 위로 떠올라, 화면이 바뀔 때까지 남아 있었다
+      //   (「전환 때 채팅창이 조금 늦게 꺼진다」의 정체). 방송이 끊겼으면 먼저 내린다
+      this.chat.hideAll();
+      this.clearRadio();
     }
   }
 
