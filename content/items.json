@@ -166,5 +166,15 @@
     "kind": "POTION",
     "healing": 42,
     "isRelic": false
-  }
+  },
+  { "id": "lantern_old_inherited", "name": "승계된 낡은 랜턴", "hp": 6, "atk": 0, "def": 2, "price": 420, "tier": "C", "isRelic": false, "kind": "GEAR", "healing": 0 },
+  { "id": "dagger_crack_inherited", "name": "승계된 균열난 단검", "hp": 0, "atk": 8, "def": 1, "price": 930, "tier": "A", "isRelic": false, "kind": "GEAR", "healing": 0 },
+  { "id": "rope_hemp_inherited", "name": "승계된 삼줄", "hp": 9, "atk": 0, "def": 4, "price": 620, "tier": "B", "isRelic": false, "kind": "GEAR", "healing": 0 },
+  { "id": "cloak_ash_inherited", "name": "승계된 재의 망토", "hp": 16, "atk": 0, "def": 10, "price": 2010, "tier": "S", "isRelic": false, "kind": "GEAR", "healing": 0 },
+  { "id": "blade_tallow_inherited", "name": "승계된 촛농검", "hp": 0, "atk": 17, "def": 2, "price": 3270, "tier": "S", "isRelic": false, "kind": "GEAR", "healing": 0 },
+  { "id": "charm_seal_inherited", "name": "승계된 봉랍 부적", "hp": 11, "atk": 4, "def": 4, "price": 1350, "tier": "A", "isRelic": false, "kind": "GEAR", "healing": 0 },
+  { "id": "boots_quiet_inherited", "name": "승계된 죽은 자의 신발", "hp": 7, "atk": 3, "def": 5, "price": 1580, "tier": "A", "isRelic": false, "kind": "GEAR", "healing": 0 },
+  { "id": "mask_bone_inherited", "name": "승계된 뼈가면", "hp": 13, "atk": 8, "def": 7, "price": 2640, "tier": "S", "isRelic": false, "kind": "GEAR", "healing": 0 },
+  { "id": "tooth_gate_inherited", "name": "승계된 문지기의 이빨", "hp": 8, "atk": 23, "def": 3, "price": 4650, "tier": "S", "isRelic": false, "kind": "GEAR", "healing": 0 },
+  { "id": "ring_rust_inherited", "name": "승계된 녹슨 반지", "hp": 3, "atk": 2, "def": 1, "price": 260, "tier": "C", "isRelic": false, "kind": "GEAR", "healing": 0 }
 ]

@@ -33,6 +33,53 @@ function addLootToInventory(state: GameState, loot: string[]): GameState['invent
 }
 
 /**
+ * 첫 방송 사이클 뒤부터, 방송 중 팔려 나간 장비는 시체에 "승계본"을 남길 수 있다.
+ * 원본과 별도 ID를 쓰므로 계약(ItemStack=id+qty)을 바꾸지 않으면서도 강화된 한 점을 보존한다.
+ */
+export function addInheritedSaleLoot(state: GameState, soldItemIds: readonly string[]): [string[], GameState] {
+  const rules = content.balance.inheritanceLoot;
+  // 사망 당일에는 아직 소생실이 열리지 않는다. Day 1 방송 사망분을 Day 2 소생실에서
+  // 바로 찾을 수 있도록, 여기의 startDay는 "회수하는 날" 기준이다.
+  if (state.day + 1 < rules.startDay || soldItemIds.length === 0) return [[], state];
+  const loot: string[] = [];
+  let next = state;
+  for (const itemId of soldItemIds) {
+    const inheritedId = `${itemId}_inherited`;
+    const inherited = content.items.find((item) => item.id === inheritedId);
+    if (inherited?.kind !== 'GEAR') continue;
+    const [roll, afterRoll] = draw(next);
+    next = afterRoll;
+    if (roll < rules.chance) loot.push(inheritedId);
+  }
+  return [loot, next];
+}
+
+/** 소생실 수색용 일반 장비 드랍. 승계본은 판매 이력 전용이므로 이 풀에서는 제외한다. */
+export function addCorpseGearLoot(state: GameState): [string[], GameState] {
+  const rules = content.balance.corpseGearLoot;
+  if (state.day + 1 < rules.startDay) return [[], state];
+  const available = content.items
+    .filter((item) => item.kind === 'GEAR' && !item.id.endsWith('_inherited'))
+    .map((item) => item.id);
+  if (available.length === 0) return [[], state];
+
+  const [chanceRoll, afterChance] = draw(state);
+  if (chanceRoll >= rules.chance) return [[], afterChance];
+  const [countRoll, afterCount] = draw(afterChance);
+  const count = Math.min(available.length, rules.min + Math.floor(countRoll * (rules.max - rules.min + 1)));
+  const loot: string[] = [];
+  let next = afterCount;
+  for (let index = 0; index < count; index += 1) {
+    const [itemRoll, afterItem] = draw(next);
+    const itemIndex = Math.floor(itemRoll * available.length);
+    const [itemId] = available.splice(itemIndex, 1);
+    if (itemId !== undefined) loot.push(itemId);
+    next = afterItem;
+  }
+  return [loot, next];
+}
+
+/**
  * 방송이 끝나 몸이 돌아왔을 때 — **진열대에 올려 들려 보낸 장비가 시체에 남는다** (CCR-006).
  * 인벤토리에서는 그만큼 빠진다. 소생실에서 회수하기 전까지는 다시 진열할 수 없다.
  */

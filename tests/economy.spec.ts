@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { content } from '../src/core/content';
 import { reducer } from '../src/core/reducer';
 import { createInitialState } from '../src/core/state';
-import { discardReviveCorpse, reviveCost, reviveQuote } from '../src/core/systems/economy';
+import { addCorpseGearLoot, addInheritedSaleLoot, discardReviveCorpse, reviveCost, reviveQuote } from '../src/core/systems/economy';
 import type { Corpse, Star } from '../src/core/types';
 
 function corpse(diedFloor: number, grade: Corpse['grade']): Corpse {
@@ -74,5 +74,81 @@ describe('revive economy', () => {
     expect(discarded.inventory.reduce((total, stack) => total + stack.qty, 0)).toBe(initial.inventory.reduce((total, stack) => total + stack.qty, 0) + loot.length);
     expect(discarded.rngCursor).toBe(initial.rngCursor + loot.length);
     expect(discardReviveCorpse(initial, body.starId)).toEqual(discarded);
+  });
+
+  it('unlocks high-chance inherited copies of sold gear after the first cycle', () => {
+    const beforeFirstCycle = { ...createInitialState(104), day: content.balance.inheritanceLoot.startDay - 2 };
+    expect(addInheritedSaleLoot(beforeFirstCycle, ['dagger_crack'])).toEqual([[], beforeFirstCycle]);
+
+    let drops = 0;
+    for (let seed = 1; seed <= 100; seed += 1) {
+      const state = { ...createInitialState(seed), day: content.balance.inheritanceLoot.startDay - 1 };
+      const [loot, next] = addInheritedSaleLoot(state, ['dagger_crack']);
+      expect(loot.every((id) => id === 'dagger_crack_inherited')).toBe(true);
+      expect(next.rngCursor).toBe(state.rngCursor + 1);
+      drops += loot.length;
+    }
+    expect(drops).toBeGreaterThanOrEqual(80);
+    expect(content.items.find((item) => item.id === 'dagger_crack_inherited')?.atk)
+      .toBeGreaterThan(content.items.find((item) => item.id === 'dagger_crack')!.atk);
+  });
+
+  it('lets the revive-room loot action recover an inherited equipment copy', () => {
+    const body = { ...corpse(24, 'INTACT'), carried: ['dagger_crack_inherited'] };
+    const base = createInitialState(105);
+    const initial = {
+      ...base,
+      phase: 'REVIVE' as const,
+      stars: base.stars.map((star) => star.id === body.starId ? { ...star, status: 'DEAD' as const } : star),
+      corpses: [body],
+    };
+    const looted = reducer(initial, { type: 'REVIVE/LOOT', starId: body.starId, itemId: 'dagger_crack_inherited' });
+    expect(looted.corpses[0]?.carried).toEqual([]);
+    expect(looted.inventory).toContainEqual({ id: 'dagger_crack_inherited', qty: 1 });
+  });
+
+  it('draws one or two varied non-inherited gear items from corpses after the first cycle', () => {
+    const beforeFirstCycle = { ...createInitialState(106), day: content.balance.corpseGearLoot.startDay - 2 };
+    expect(addCorpseGearLoot(beforeFirstCycle)).toEqual([[], beforeFirstCycle]);
+
+    let successfulSearches = 0;
+    const seen = new Set<string>();
+    for (let seed = 1; seed <= 100; seed += 1) {
+      const state = { ...createInitialState(seed), day: content.balance.corpseGearLoot.startDay - 1 };
+      const [loot] = addCorpseGearLoot(state);
+      if (loot.length > 0) successfulSearches += 1;
+      expect(loot.length === 0 || (loot.length >= content.balance.corpseGearLoot.min && loot.length <= content.balance.corpseGearLoot.max)).toBe(true);
+      expect(new Set(loot).size).toBe(loot.length);
+      for (const itemId of loot) {
+        const item = content.items.find((candidate) => candidate.id === itemId);
+        expect(item?.kind).toBe('GEAR');
+        expect(itemId.endsWith('_inherited')).toBe(false);
+        seen.add(itemId);
+      }
+    }
+    expect(successfulSearches).toBeGreaterThanOrEqual(70);
+    expect(seen.size).toBeGreaterThanOrEqual(8);
+  });
+
+  it('keeps sold run equipment on the corpse and adds its inherited copy after one cycle', () => {
+    let inheritedDrops = 0;
+    for (let seed = 1; seed <= 100; seed += 1) {
+      const base = createInitialState(seed);
+      const starId = 'body_karin';
+      const runEquipment = `runEquipment:${content.balance.inheritanceLoot.startDay - 1}:${starId}:0:dagger_crack`;
+      let state = reducer({
+        ...base,
+        day: content.balance.inheritanceLoot.startDay - 1,
+        phase: 'OFFICE' as const,
+        inventory: [],
+        flags: { ...base.flags, [runEquipment]: true },
+      }, { type: 'OFFICE/PICK_STAR', starId });
+      state = reducer(state, { type: 'OFFICE/CONFIRM' });
+      const dead = reducer(state, { type: 'PHASE/ADVANCE' });
+      const carried = dead.corpses[0]?.carried ?? [];
+      expect(carried).toContain('dagger_crack');
+      inheritedDrops += carried.filter((id) => id === 'dagger_crack_inherited').length;
+    }
+    expect(inheritedDrops).toBeGreaterThanOrEqual(80);
   });
 });

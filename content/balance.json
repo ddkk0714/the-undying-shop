@@ -70,15 +70,25 @@
     "utilitySlot": 2,
     "slotByItem": {
       "dagger_crack": 0,
+      "dagger_crack_inherited": 0,
       "blade_tallow": 0,
+      "blade_tallow_inherited": 0,
       "tooth_gate": 0,
+      "tooth_gate_inherited": 0,
       "rope_hemp": 1,
+      "rope_hemp_inherited": 1,
       "cloak_ash": 1,
+      "cloak_ash_inherited": 1,
       "boots_quiet": 1,
+      "boots_quiet_inherited": 1,
       "lantern_old": 2,
+      "lantern_old_inherited": 2,
       "charm_seal": 2,
+      "charm_seal_inherited": 2,
       "mask_bone": 2,
+      "mask_bone_inherited": 2,
       "ring_rust": 2,
+      "ring_rust_inherited": 2,
       "potion_crimson": 2,
       "potion_moon": 2,
       "soil_deep": 2,
@@ -190,6 +200,16 @@
     "lootMax": 3,
     "truthRelicMinFloor": 28,
     "truthRelicIds": ["soil_deep", "page_torn"]
+  },
+  "inheritanceLoot": {
+    "startDay": 2,
+    "chance": 0.9
+  },
+  "corpseGearLoot": {
+    "startDay": 2,
+    "chance": 0.85,
+    "min": 1,
+    "max": 2
   },
   "roster": { "inheritFandomLoss": 0.15, "inheritSuspicion": 35 }
 }

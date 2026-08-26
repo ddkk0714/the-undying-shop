@@ -1,7 +1,8 @@
 import { content } from './content';
 import { createInitialState } from './state';
 import { answerRadio, chooseCombat, startLive, tickLive, useCombatItem } from './systems/dive';
-import { damageAutopsyCorpse, detachCarried, discardReviveCorpse, reclaimCorpseCarried, reviveQuote, takeCorpseCarried } from './systems/economy';
+import { addCorpseGearLoot, addInheritedSaleLoot, damageAutopsyCorpse, detachCarried, discardReviveCorpse, reclaimCorpseCarried, reviveQuote, takeCorpseCarried } from './systems/economy';
+import { equippedItemIds } from './systems/forecast';
 import { acceptContract, confirmOffice, haggleContract, pickStar, placeOfficeItem, populateVisitors, rejectContract, sellOfficeBatch, setShopSalePrice } from './systems/office';
 import { rollCorpseParts } from './systems/corpse';
 import { inherit } from './systems/roster';
@@ -56,22 +57,30 @@ function concludeRun(state: GameState): GameState {
   const fansDelta = Math.floor(rules.base * (1 + (diedFloor - rules.depthPivot) * rules.depthMul) * drama * (1 - state.viewerFatigue / 100));
   const goodsIncome = Math.floor(state.fans * content.balance.income.goodsPerFan);
   // 들고 내려간 장비는 저절로 돌아오지 않는다 — 몸에 남고, 소생실에서 회수한다 (CCR-006)
-  const { carried, inventory } = detachCarried(state, state.shelf);
+  const equipped = equippedItemIds(state, star.id);
+  const { carried, inventory } = detachCarried(state, equipped);
+  const soldEquipmentIds = equipped.flatMap((itemId, slot) => {
+    if (itemId === null) return [];
+    const key = `runEquipment:${state.day}:${star.id}:${slot}:${itemId}`;
+    return state.flags[key] === true ? [itemId] : [];
+  });
+  const [inheritedLoot, withInheritanceRng] = addInheritedSaleLoot({ ...state, inventory }, soldEquipmentIds);
+  const [gearLoot, withLootRng] = addCorpseGearLoot(withInheritanceRng);
   // 몸의 실제 상태(부위별 손상)는 여기서 정해져 시체에 남는다 — 검시 판정(grade)과는 다른 것이다 (HO-029)
   const parts = rollCorpseParts(state.seed, star.id, state.day, diedFloor);
-  const corpse: Corpse = { starId: star.id, diedFloor, diedDay: state.day, grade: 'INTACT', announced: null, loot: [], carried, parts };
-  const stars = state.stars.map((candidate) => candidate.id === star.id ? { ...candidate, status: 'DEAD' as const } : candidate);
+  const corpse: Corpse = { starId: star.id, diedFloor, diedDay: state.day, grade: 'INTACT', announced: null, loot: [], carried: [...carried, ...inheritedLoot, ...gearLoot], parts };
+  const stars = withLootRng.stars.map((candidate) => candidate.id === star.id ? { ...candidate, status: 'DEAD' as const } : candidate);
   const maxFloor = Math.max(state.maxFloor, diedFloor);
   const settled: GameState = {
-    ...state, phase: 'DEATH', stars, corpses: [...state.corpses, corpse], inventory, gold: state.gold + goodsIncome,
-    fans: Math.max(0, state.fans + fansDelta),
+    ...withLootRng, phase: 'DEATH', stars, corpses: [...withLootRng.corpses, corpse], gold: withLootRng.gold + goodsIncome,
+    fans: Math.max(0, withLootRng.fans + fansDelta),
     today: {
-      ...state.today, currentFloor: diedFloor, diedFloor,
-      deathCause: state.today.deathCause ?? '하강 중 사망', fansDelta,
-      income: { ...state.today.income, goods: state.today.income.goods + goodsIncome },
+      ...withLootRng.today!, currentFloor: diedFloor, diedFloor,
+      deathCause: withLootRng.today!.deathCause ?? '하강 중 사망', fansDelta,
+      income: { ...withLootRng.today!.income, goods: withLootRng.today!.income.goods + goodsIncome },
     }, maxFloor,
-    pendingFx: [...state.pendingFx, ...(isRecord ? [{ kind: 'RECORD_BREAK' as const }] : [])],
-    stats: { ...state.stats, goldEarned: state.stats.goldEarned + goodsIncome, deepestFloor: Math.max(state.stats.deepestFloor, diedFloor) },
+    pendingFx: [...withLootRng.pendingFx, ...(isRecord ? [{ kind: 'RECORD_BREAK' as const }] : [])],
+    stats: { ...withLootRng.stats, goldEarned: withLootRng.stats.goldEarned + goodsIncome, deepestFloor: Math.max(withLootRng.stats.deepestFloor, diedFloor) },
   };
   const withDeathSuperchat = awardSuperchat(settled, 'death');
   return isRecord ? awardSuperchat(withDeathSuperchat, 'record') : withDeathSuperchat;

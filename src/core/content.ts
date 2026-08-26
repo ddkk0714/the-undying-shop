@@ -117,6 +117,8 @@ export interface Balance {
   /** 부위별 손상 판정 (HO-029). 화면이 아니라 core 가 정한다 */
   corpseParts: { baseChance: number; perFloor: number; maxChance: number; lostChance: number; neverLost: string[] };
   autopsy: { lootMin: number; lootMax: number; truthRelicMinFloor: number; truthRelicIds: string[] };
+  inheritanceLoot: { startDay: number; chance: number };
+  corpseGearLoot: { startDay: number; chance: number; min: number; max: number };
   roster: { inheritFandomLoss: number; inheritSuspicion: number };
 }
 
@@ -426,7 +428,7 @@ export function loadContent(): Content {
   assertNumber(balanceJson.reputation.onSuccessAnnounce, 'balance.reputation.onSuccessAnnounce');
   assertNumber(balanceJson.reputation.onFailureAnnounce, 'balance.reputation.onFailureAnnounce');
   assertShape(balanceJson.reputation.grades.every((grade) => Array.isArray(grade) && grade.length === 2 && typeof grade[0] === 'number' && typeof grade[1] === 'string'), 'balance.reputation.grades invalid');
-  assertShape(isRecord(balanceJson.recruit) && isRecord(balanceJson.roster) && isRecord(balanceJson.contract) && isRecord(balanceJson.shopSale) && isRecord(balanceJson.autopsy) && isRecord(balanceJson.corpseParts), 'balance.recruit/roster/contract/shopSale/autopsy/corpseParts missing');
+  assertShape(isRecord(balanceJson.recruit) && isRecord(balanceJson.roster) && isRecord(balanceJson.contract) && isRecord(balanceJson.shopSale) && isRecord(balanceJson.autopsy) && isRecord(balanceJson.corpseParts) && isRecord(balanceJson.inheritanceLoot) && isRecord(balanceJson.corpseGearLoot), 'balance.recruit/roster/contract/shopSale/autopsy/corpseParts/inheritanceLoot/corpseGearLoot missing');
   for (const key of ['baseSlots', 'lossPerFailures'] as const) assertNumber(balanceJson.recruit[key], `balance.recruit.${key}`);
   for (const key of ['inheritFandomLoss', 'inheritSuspicion'] as const) assertNumber(balanceJson.roster[key], `balance.roster.${key}`);
   for (const key of ['visitorsPerDay', 'feeBase', 'feePerFandomK', 'feeHonestyBias', 'haggleFeeMultiplier', 'honestyMin', 'honestyMax', 'fandomBase', 'fandomPerCharisma'] as const) assertNumber(balanceJson.contract[key], `balance.contract.${key}`);
@@ -446,6 +448,13 @@ export function loadContent(): Content {
   assertShape(balanceJson.autopsy.lootMin > 0 && balanceJson.autopsy.lootMin <= balanceJson.autopsy.lootMax, 'balance.autopsy loot range invalid');
   assertShape(Array.isArray(balanceJson.autopsy.truthRelicIds) && balanceJson.autopsy.truthRelicIds.length === 2 && balanceJson.autopsy.truthRelicIds.every((id) => typeof id === 'string'), 'balance.autopsy truth relic ids invalid');
   assertShape(balanceJson.autopsy.truthRelicIds.every((id) => items.some((item) => item.id === id && item.isRelic)), 'balance.autopsy truth relic ids must be relic items');
+  for (const key of ['startDay', 'chance'] as const) assertNumber(balanceJson.inheritanceLoot[key], `balance.inheritanceLoot.${key}`);
+  assertShape(Number.isInteger(balanceJson.inheritanceLoot.startDay) && balanceJson.inheritanceLoot.startDay >= 2, 'balance.inheritanceLoot.startDay must be day 2 or later');
+  assertShape(balanceJson.inheritanceLoot.chance >= 0 && balanceJson.inheritanceLoot.chance <= 1, 'balance.inheritanceLoot.chance out of range');
+  for (const key of ['startDay', 'chance', 'min', 'max'] as const) assertNumber(balanceJson.corpseGearLoot[key], `balance.corpseGearLoot.${key}`);
+  assertShape(Number.isInteger(balanceJson.corpseGearLoot.startDay) && balanceJson.corpseGearLoot.startDay >= 2, 'balance.corpseGearLoot.startDay must be day 2 or later');
+  assertShape(balanceJson.corpseGearLoot.chance >= 0 && balanceJson.corpseGearLoot.chance <= 1, 'balance.corpseGearLoot.chance out of range');
+  assertShape(Number.isInteger(balanceJson.corpseGearLoot.min) && Number.isInteger(balanceJson.corpseGearLoot.max) && balanceJson.corpseGearLoot.min > 0 && balanceJson.corpseGearLoot.min <= balanceJson.corpseGearLoot.max, 'balance.corpseGearLoot count invalid');
   for (const key of ['baseChance', 'perFloor', 'maxChance', 'lostChance'] as const) assertNumber(balanceJson.corpseParts[key], `balance.corpseParts.${key}`);
   assertShape(balanceJson.corpseParts.baseChance >= 0 && balanceJson.corpseParts.maxChance <= 1 && balanceJson.corpseParts.baseChance <= balanceJson.corpseParts.maxChance, 'balance.corpseParts chance range invalid');
   assertShape(balanceJson.corpseParts.lostChance >= 0 && balanceJson.corpseParts.lostChance <= 1, 'balance.corpseParts.lostChance out of range');
