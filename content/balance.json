@@ -1,6 +1,6 @@
 {
   "start": {
-    "gold": 12840,
+    "gold": 1000,
     "fans": 84200,
     "reputation": 62,
     "maxFloor": 26,
@@ -9,7 +9,7 @@
     "inventory": ["dagger_crack", "rope_hemp", "potion_crimson", "lantern_old"]
   },
   "revive": {
-    "base": 400,
+    "base": 200,
     "floorExp": 1.055,
     "gradeMul": { "INTACT": 1.0, "DAMAGED": 1.5 },
     "degradeExp": 1.4,
@@ -26,6 +26,18 @@
     "delayGraceSeconds": 3,
     "delayFanLossPerSec": 0.0015,
     "delayFanLossCap": 0.08
+  },
+  "forecast": {
+    "hpWeight": 0.55,
+    "atkWeight": 4,
+    "defWeight": 3,
+    "curveScale": 42,
+    "bands": [
+      { "from": 1, "to": 10, "difficulty": 70 },
+      { "from": 11, "to": 20, "difficulty": 150 },
+      { "from": 21, "to": 30, "difficulty": 230 },
+      { "from": 31, "to": 40, "difficulty": 310 }
+    ]
   },
   "combat": {
     "hero": { "hpBase": 40, "hpPerGrit": 6, "atkBase": 6, "atkPerGrit": 1, "defBase": 2 },
@@ -142,9 +154,9 @@
   "recruit": { "baseSlots": 2, "lossPerFailures": 2 },
   "contract": {
     "visitorsPerDay": 1,
-    "feeBase": 400,
-    "feePerFandomK": 60,
-    "feeHonestyBias": -300,
+    "feeBase": 100,
+    "feePerFandomK": 10,
+    "feeHonestyBias": -60,
     "haggleFeeMultiplier": 0.8,
     "honestyMin": 0.6,
     "honestyMax": 1.3,
@@ -165,6 +177,13 @@
     "minPurchaseChance": 0.1,
     "maxPurchaseChance": 0.95,
     "maxHaggles": 3
+  },
+  "corpseParts": {
+    "baseChance": 0.08,
+    "perFloor": 0.014,
+    "maxChance": 0.62,
+    "lostChance": 0.28,
+    "neverLost": ["HEAD", "CHEST"]
   },
   "autopsy": {
     "lootMin": 2,

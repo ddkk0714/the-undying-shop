@@ -2,15 +2,9 @@ import { content } from '../content';
 import { draw } from '../rng';
 import { combatLine, createEncounter, createHero, isEncounterFloor, resolveCombatChoice, type CombatLineTone } from './combat';
 import { pickDialogue, totalRevivals } from './dialogue';
+import { equippedItemsForRun, firstPlayableForecastFloor } from './forecast';
 import { addAppealChat, awardSuperchat } from './opinion';
-import type { CombatChoice, Combatant, GameState, ItemDef, ItemId, Star } from '../types';
-
-function equippedItems(state: GameState): ItemDef[] {
-  return state.shelf.flatMap((id) => {
-    const item = content.items.find((candidate) => candidate.id === id);
-    return item?.kind === 'GEAR' ? [item] : [];
-  });
-}
+import type { CombatChoice, Combatant, GameState, ItemId, Star } from '../types';
 
 function degradationMultiplier(star: Star): number {
   const multipliers = content.balance.degrade.statMul;
@@ -97,12 +91,14 @@ export function startLive(state: GameState): GameState {
   const star = state.stars.find((candidate) => candidate.id === state.today?.starId);
   if (star === undefined) return state;
   const callbackKey = lieCallbackKey(star.id);
+  const firstFloor = firstPlayableForecastFloor(state, star.id);
+  const initialFloor = Math.max(1, firstFloor - 1);
   if (state.flags[callbackKey] !== true) {
     return {
       ...state,
       phase: 'LIVE',
       waitingSince: null,
-      today: { ...state.today, hero: createHero(star, equippedItems(state), degradationMultiplier(star)), encounter: null, mental: content.balance.mental.max },
+      today: { ...state.today, currentFloor: initialFloor, hero: createHero(star, equippedItemsForRun(state, star.id), degradationMultiplier(star)), encounter: null, mental: content.balance.mental.max },
     };
   }
   const [roll, nextState] = draw(state);
@@ -115,7 +111,7 @@ export function startLive(state: GameState): GameState {
     phase: 'LIVE',
     waitingSince: null,
     flags,
-    today: { ...state.today, hero: createHero(star, equippedItems(state), degradationMultiplier(star)), encounter: null, mental: content.balance.mental.max },
+    today: { ...state.today, currentFloor: initialFloor, hero: createHero(star, equippedItemsForRun(state, star.id), degradationMultiplier(star)), encounter: null, mental: content.balance.mental.max },
     pendingFx: [...nextState.pendingFx, { kind: 'TRUTH_WHISPER', payload: { starId: star.id, line } }],
   };
 }

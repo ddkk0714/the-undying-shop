@@ -3,6 +3,7 @@ import { reducer } from '../src/core/reducer';
 import { createInitialState } from '../src/core/state';
 import { content } from '../src/core/content';
 import { randomPolicy } from '../src/core/sim';
+import { equippedItemIds } from '../src/core/systems/forecast';
 import { populateVisitors, saleHaggleCount, saleOfferTried, salePriceMultiplier, salePurchaseChance, saleSlotSold } from '../src/core/systems/office';
 import type { Contract, GameState, Star } from '../src/core/types';
 
@@ -178,6 +179,23 @@ describe('office', () => {
     const displayedAgain = reducer(state, { type: 'OFFICE/PLACE', slot: utilitySlot, itemId: 'lantern_old' });
     expect(displayedAgain).toEqual(state);
     expect(displayedAgain.shelf[utilitySlot]).toBeNull();
+  });
+
+  it('keeps sold display equipment assigned to the contracted hero', () => {
+    const weaponSlot = content.balance.equipment.weaponSlot;
+    let state = {
+      ...officeState(7),
+      inventory: [{ id: 'dagger_crack', qty: 1 }],
+    };
+    state = reducer(state, { type: 'OFFICE/PLACE', slot: weaponSlot, itemId: 'dagger_crack' });
+    state = reducer(state, { type: 'OFFICE/PICK_STAR', starId: 'body_karin' });
+    state = reducer(state, { type: 'OFFICE/SALE_PRICE_SET', multiplier: 0.5 });
+    state = reducer(state, { type: 'OFFICE/SELL_BATCH' });
+
+    expect(state.shelf[weaponSlot]).toBeNull();
+    expect(equippedItemIds(state, 'body_karin')[weaponSlot]).toBe('dagger_crack');
+    state = reducer(state, { type: 'OFFICE/CONFIRM' });
+    expect(state.today?.hero.atk).toBeGreaterThan(content.starProfiles.body_karin!.atk * content.balance.combat.profileScale.atk);
   });
 
   it('applies one seeded result to the whole shelf and allows at most three new price proposals', () => {

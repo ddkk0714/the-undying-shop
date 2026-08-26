@@ -2,6 +2,7 @@ import { SCENES } from '../../config';
 import Phaser from 'phaser';
 import { content, type DialogueSituation } from '../../core/content';
 import { pickDialogue, totalRevivals } from '../../core/systems/dialogue';
+import { descentForecast, equippedItemIds } from '../../core/systems/forecast';
 import { saleHaggleCount, saleOfferTried, salePriceMultiplier, salePurchaseChance, saleSlotSold } from '../../core/systems/office';
 import { key, starArt, starExpression } from '../../render/assets';
 import { PALETTE } from '../../render/palette';
@@ -45,12 +46,6 @@ const SHELF_SLOTS = [
  * 들어오면 그 아이템 도트로 교체한다.
  */
 const BASE_EQUIPMENT_ICON_IDS = ['blade_tallow', 'cloak_ash', 'charm_seal'] as const;
-const DESCENT_BANDS = [
-  { label: '1–10F', difficulty: 70 },
-  { label: '11–20F', difficulty: 150 },
-  { label: '21–30F', difficulty: 230 },
-  { label: '31–40F', difficulty: 310 },
-] as const;
 
 /** 한글은 공백 없이 길어질 수 있어, 편성실 대사창 폭에 맞춰 명시적으로 줄을 나눈다. */
 function wrapOfficeDialogue(line: string, maxUnits = 64): string {
@@ -90,6 +85,10 @@ export class OfficePhase extends PhaseScene {
   private contractReaderOpen = false;
   /** 용사가 함께 제출한 하강 예상·스탯 서류의 확대 상태. */
   private statsReaderOpen = false;
+  /** 접힌 계약서와 펼친 계약서가 공유하는 작업대 위 이동량. */
+  private contractSheetOffset = { x: 0, y: 0 };
+  /** 접힌 스탯 서류와 펼친 스탯 서류가 공유하는 작업대 위 이동량. */
+  private statsSheetOffset = { x: 0, y: 0 };
   /** 하단 계약 버튼의 첫 클릭은 서류 확인만 열고, 두 번째 클릭에서만 수락한다. */
   private contractConfirmationOpen = false;
   /** 계약서에 도장을 내리치는 중에는 중복 입력을 막는다. */
@@ -119,6 +118,8 @@ export class OfficePhase extends PhaseScene {
   private guestSprite: Phaser.GameObjects.Image | null = null;
   /** 문을 연 직후 한 번만 우하단에서 등장시킨다. */
   private guestEntryPending = false;
+  /** 손님 입장 직후, 제출 서류 두 장을 순서대로 꺼내 보일지 여부. */
+  private submittedPaperEntryPending = false;
   /** 퇴장 트윈이 끝나기 전 중복 클릭을 막는다. */
   private guestExitInProgress = false;
   /** 진열 상품의 가격을 정하는 흥정 팝업. */
@@ -162,8 +163,12 @@ export class OfficePhase extends PhaseScene {
     this.inventoryScrollRow = 0;
     this.itemDetail = [];
     this.draggingInventoryItem = false;
+    // 클릭과 드래그를 분리한다. Phaser 기본 0px 임계값에서는 단순 클릭도 dragstart가 된다.
+    this.input.dragDistanceThreshold = 12;
     this.contractReaderOpen = false;
     this.statsReaderOpen = false;
+    this.contractSheetOffset = { x: 0, y: 0 };
+    this.statsSheetOffset = { x: 0, y: 0 };
     this.contractConfirmationOpen = false;
     this.contractStamping = false;
     this.contractedGuestDeparted = false;
@@ -176,6 +181,7 @@ export class OfficePhase extends PhaseScene {
     this.guestDialogueTarget = null;
     this.guestSprite = null;
     this.guestEntryPending = false;
+    this.submittedPaperEntryPending = false;
     this.guestExitInProgress = false;
     this.saleDialogOpen = false;
     this.saleMultiplier = 1;
@@ -215,10 +221,11 @@ export class OfficePhase extends PhaseScene {
     this.buildGuest(s);
     this.buildBenchBackdrop();
     this.buildShelf(s);
+    // 펼친 서류 자신의 축소본만 숨기고, 다른 한 장은 계속 작업대에 남긴다.
     if (s.today === null) this.buildSubmittedContracts(s);
     // 확대는 별도 장면이 아니라, 이미 그린 작업대 위에 원본 종이를 얹는다.
     if (this.contractReaderOpen) this.buildContract(s);
-    else if (this.statsReaderOpen) this.buildStatsSheet(s);
+    if (this.statsReaderOpen) this.buildStatsSheet(s);
     if (this.inventoryOpen) {
       // 인벤토리는 어떤 서류를 열었을 때도 최상단 모달이다. buildInventory()가 만든
       // 모든 입력 영역까지 함께 올려서, 서류가 인벤토리의 클릭을 가로채지 않게 한다.
@@ -254,6 +261,7 @@ export class OfficePhase extends PhaseScene {
     handle.on('pointerup', () => {
       this.shopOpened = true;
       this.guestEntryPending = true;
+      this.submittedPaperEntryPending = true;
       this.waitingForNextVisitorDoor = false;
       this.cancelOfficeKnock();
       playSfx(this, 'sfx.title.door', 0.28);
@@ -688,7 +696,14 @@ export class OfficePhase extends PhaseScene {
     const profile = content.starProfiles[visitor.starId];
     // 원본 비율(700×914)을 유지한 채 기존 펼침의 1/1.3 크기로 줄였다.
     // 본문 좌표·폰트는 아래 scale/textScale을 함께 써서 종이 안의 상대 위치를 보존한다.
-    const paper = { x: 992, y: 100, w: 616, h: 804 };
+    // 펼친 종이의 중심은 접힌 계약서가 놓인 현재 위치와 같다.
+    // 그래서 펼침·접기·드래그 뒤에도 종이가 한 곳에서만 열리고 닫힌다.
+    const foldedCenter = {
+      x: L.bench.x + 168 + this.contractSheetOffset.x,
+      y: L.bench.y + L.bench.h - 138 + this.contractSheetOffset.y,
+    };
+    const paper = { x: foldedCenter.x - 308, y: foldedCenter.y - 402, w: 616, h: 804 };
+    const documentStart = this.children.list.length;
     const asset = this.contractSheetAsset();
     if (asset === null) return;
     const paperDepth = 800;
@@ -712,12 +727,18 @@ export class OfficePhase extends PhaseScene {
       .setOrigin(0, 0)
       .setDepth(paperDepth + 1)
       .setInteractive({ cursor: 'pointer' });
-    page.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-      if (!pointer.leftButtonDown()) return;
+    let draggedPaper = false;
+    page.on('pointerup', (pointer: Phaser.Input.Pointer) => {
+      if (draggedPaper) return;
+      if (pointer.button !== 0) return;
       if (this.contractConfirmationOpen
         && pointer.x >= stampBox.x && pointer.x <= stampBox.x + stampBox.w
         && pointer.y >= stampBox.y && pointer.y <= stampBox.y + stampBox.h) return;
       page.disableInteractive();
+      this.contractSheetOffset = {
+        x: Math.round(paper.x + paper.w / 2 - (L.bench.x + 168)),
+        y: Math.round(paper.y + paper.h / 2 - (L.bench.y + L.bench.h - 138)),
+      };
       this.contractReaderOpen = false;
       this.contractConfirmationOpen = false;
       this.redraw();
@@ -783,6 +804,10 @@ export class OfficePhase extends PhaseScene {
     }
     const rates = visitor.claimedTiers.map((tier) => `${tier.floor}F ${Math.round(tier.rate * 100)}%`).join(' · ');
     at(90, 694, this.clip(rates, 500, 'body'), 0.46);
+    const documentObjects = this.children.list.slice(documentStart);
+    this.wirePaperDrag(page, documentObjects, this.contractSheetOffset, () => {
+      draggedPaper = true;
+    });
     this.label(paper.x + 72, paper.y + paper.h - 62, this.contractConfirmationOpen ? '좌측 하단 도장을 눌러 계약 확정' : '종이를 누르면 접기', 'ink').setScale(0.62 * textScale).setDepth(paperDepth + 2);
   }
 
@@ -797,8 +822,15 @@ export class OfficePhase extends PhaseScene {
       return;
     }
     const profile = content.starProfiles[visitor.starId];
-    const paper = { x: 992, y: 100, w: 616, h: 779 };
-    const depth = 800;
+    // 하강 예상서도 접힌 서류의 현재 중심에서 그대로 펼친다.
+    const foldedCenter = {
+      x: L.bench.x + 412 + this.statsSheetOffset.x,
+      y: L.bench.y + L.bench.h - 130 + this.statsSheetOffset.y,
+    };
+    const paper = { x: foldedCenter.x - 308, y: foldedCenter.y - 390, w: 616, h: 779 };
+    const documentStart = this.children.list.length;
+    // 두 장이 겹치면 개인정보가 적힌 계약서보다 스탯 검수표를 항상 위에 둔다.
+    const depth = this.contractReaderOpen ? 950 : 800;
     const scale = paper.w / 705;
     const at = (x: number, y: number, value: string, textScale = 0.64) =>
       this.text(paper.x + x * scale, paper.y + y * scale, value, 'ink')
@@ -807,12 +839,13 @@ export class OfficePhase extends PhaseScene {
     this.add.image(paper.x, paper.y, key(asset)).setOrigin(0, 0).setDisplaySize(paper.w, paper.h).setDepth(depth);
 
     // 캐릭터스탯.xlsm의 개인 시트에 적힌 원래 착용 장비와 기본 스탯.
-    // 진열대는 판매할 상품이므로 용사의 착용 장비로 취급하지 않는다.
     const originalEquipment = profile?.equipment ?? [];
     const hp = profile?.hp ?? 0;
     const atk = profile?.atk ?? 0;
     const def = profile?.def ?? 0;
-    const displayedEquipment = s.shelf.map((itemId, slot) => {
+    // 판매 뒤 진열대가 비어도, 이번 방송에 착용한 장비는 runEquipment 플래그로 이어진다.
+    const activeEquipment = equippedItemIds(s, visitor.starId);
+    const displayedEquipment = activeEquipment.map((itemId, slot) => {
       const item = itemId === null ? undefined : content.items.find((candidate) => candidate.id === itemId);
       const baseIcon = content.items.find((candidate) => candidate.id === BASE_EQUIPMENT_ICON_IDS[slot]);
       return {
@@ -862,14 +895,12 @@ export class OfficePhase extends PhaseScene {
     });
 
     at(96, 516, '구간별 하강 확률', 0.88);
-    // 체력은 버티는 시간, 공격/방어는 전투 손실을 줄이는 정도로 환산한다.
-    // 난도와 점수 차이는 시그모이드로 변환해 장비 보정이 각 구간에서 부드럽게 반영된다.
-    const combatScore = effective.hp * 0.55 + effective.atk * 4 + effective.def * 3;
-    DESCENT_BANDS.forEach((band, row) => {
-      const chance = Math.max(1, Math.min(99, Math.round(100 / (1 + Math.exp((band.difficulty - combatScore) / 42)))));
+    // 방송 시작 시 자동 통과 여부에도 쓰는 공용 예측식으로 표시한다.
+    descentForecast(s, visitor.starId).forEach((band, row) => {
+      const chance = band.chance;
       const filled = Math.max(1, Math.round(chance / 20));
       const rowY = 566 + row * 45;
-      at(112, rowY, band.label, 0.62);
+      at(112, rowY, `${band.from}-${band.to}F`, 0.62);
       for (let column = 0; column < 5; column += 1) {
         const cellX = paper.x + (294 + column * 48) * scale;
         const cellY = paper.y + (rowY - 2) * scale;
@@ -890,13 +921,22 @@ export class OfficePhase extends PhaseScene {
       .setOrigin(0, 0)
       .setDepth(depth + 3)
       .setInteractive({ cursor: 'pointer' });
-    page.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-      if (!pointer.leftButtonDown()) return;
+    let draggedPaper = false;
+    page.on('pointerup', (pointer: Phaser.Input.Pointer) => {
+      if (draggedPaper) return;
+      if (pointer.button !== 0) return;
       page.disableInteractive();
+      this.statsSheetOffset = {
+        x: Math.round(paper.x + paper.w / 2 - (L.bench.x + 412)),
+        y: Math.round(paper.y + paper.h / 2 - (L.bench.y + L.bench.h - 130)),
+      };
       this.statsReaderOpen = false;
       this.redraw();
     });
     this.label(paper.x + 70, paper.y + paper.h - 54, '종이를 누르면 접기', 'ink').setScale(0.56).setDepth(depth + 2);
+    this.wirePaperDrag(page, this.children.list.slice(documentStart), this.statsSheetOffset, () => {
+      draggedPaper = true;
+    });
   }
 
   private buildShelf(s: Readonly<GameState>): void {
@@ -982,46 +1022,145 @@ export class OfficePhase extends PhaseScene {
     const paper = { w: 180, h: 235 };
     const visitor = s.visitors[0];
     if (visitor === undefined) return;
-    const home = { x: b.x + b.w - 128, y: b.y + b.h - 138 };
+    // 서류는 손님 쪽 작업대의 좌측 하단부터 중간까지 놓인다. 우측의 진열대·버튼을 가리지 않는다.
+    const home = { x: b.x + 168 + this.contractSheetOffset.x, y: b.y + b.h - 138 + this.contractSheetOffset.y };
     const index = 0;
     const sheet = this.add.image(home.x, home.y, key(asset))
       .setOrigin(0.5, 0.5)
       .setDisplaySize(paper.w, paper.h)
-      .setDepth(20)
+      // 한 장을 읽는 중에도 남은 축소본을 눌러 두 장을 함께 펼칠 수 있다.
+      .setDepth(this.contractReaderOpen || this.statsReaderOpen ? 900 : 20)
       .setInteractive({ cursor: 'pointer' });
+    if (this.contractReaderOpen) sheet.setVisible(false).disableInteractive();
     // 접힌 상태는 글자 없이 계약서 원화만 남긴다. 세부 내용은 펼친 상태에서만 읽는다.
     // 축소본은 이동할 수 없다. 좌클릭 한 번만 확대라는 유일한 입력으로 쓴다.
-    sheet.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-      if (!pointer.leftButtonDown()) return;
-      this.contractIndex = index;
-      this.contractReaderOpen = true;
-      this.statsReaderOpen = false;
-      // 하단 계약서로 펼쳐도 계약 버튼으로 연 것과 같은 도장 확정 모드가 된다.
-      // 단, 계약금이 부족하면 열람만 가능하고 도장으로 우회 확정할 수는 없다.
-      this.contractConfirmationOpen = s.gold >= visitor.fee;
-      this.contractStamping = false;
-      this.redraw();
-    });
+    if (!this.contractReaderOpen) {
+      this.wireFoldedPaperDrag(sheet, home, this.contractSheetOffset, () => {
+        this.contractIndex = index;
+        this.contractReaderOpen = true;
+        // 하단 계약서로 펼쳐도 계약 버튼으로 연 것과 같은 도장 확정 모드가 된다.
+        // 단, 계약금이 부족하면 열람만 가능하고 도장으로 우회 확정할 수는 없다.
+        this.contractConfirmationOpen = s.gold >= visitor.fee;
+        this.contractStamping = false;
+        this.redraw();
+      });
+    }
 
     const statsAsset = this.statsSheetAsset();
     if (statsAsset === null) return;
-    const statsHome = { x: b.x + b.w - 338, y: b.y + b.h - 130 };
+    const statsHome = { x: b.x + 412 + this.statsSheetOffset.x, y: b.y + b.h - 130 + this.statsSheetOffset.y };
     const statsSheet = this.add.image(statsHome.x, statsHome.y, key(statsAsset))
       .setOrigin(0.5, 0.5)
       .setDisplaySize(154, 190)
-      .setDepth(20)
+      .setDepth(this.contractReaderOpen || this.statsReaderOpen ? 900 : 20)
       .setInteractive({ cursor: 'pointer' });
-    statsSheet.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-      if (!pointer.leftButtonDown()) return;
-      this.contractIndex = index;
-      this.contractReaderOpen = false;
-      this.contractConfirmationOpen = false;
-      this.statsReaderOpen = true;
+    if (this.statsReaderOpen) statsSheet.setVisible(false).disableInteractive();
+    if (!this.statsReaderOpen) {
+      this.wireFoldedPaperDrag(statsSheet, statsHome, this.statsSheetOffset, () => {
+        this.contractIndex = index;
+        this.contractConfirmationOpen = false;
+        this.statsReaderOpen = true;
+        this.redraw();
+      });
+    }
+
+    // 문을 열어 처음 손님을 맞이한 때만, 두 장을 약간의 시간차로 제출한다.
+    // 이후 redraw(서류 열기/닫기, 드래그 등)에서는 이미 놓인 위치를 즉시 다시 그린다.
+    if (!this.submittedPaperEntryPending) return;
+    this.submittedPaperEntryPending = false;
+    if (reducedMotion(this.registry)) return;
+
+    const reveal = (paperImage: Phaser.GameObjects.Image, target: { x: number; y: number }, delay: number) => {
+      paperImage
+        .setPosition(target.x - 18, target.y + 12)
+        .setAlpha(0)
+        .disableInteractive();
+      this.tweens.add({
+        targets: paperImage,
+        x: target.x,
+        y: target.y,
+        alpha: 1,
+        delay,
+        duration: 240,
+        ease: 'Sine.Out',
+        onComplete: () => {
+          paperImage.setInteractive({ cursor: 'pointer' });
+          // disableInteractive()가 입력 컴포넌트를 제거하므로, 페이드 후 드래그도 다시 등록한다.
+          this.input.setDraggable(paperImage);
+        },
+      });
+    };
+    reveal(sheet, home, 140);
+    reveal(statsSheet, statsHome, 470);
+  }
+
+  /** 새 계약서 텍스처는 HMR 중 아직 프리로드되지 않을 수 있다. 그때도 기존 장부로 종이를 유지한다. */
+  private wireFoldedPaperDrag(
+    image: Phaser.GameObjects.Image,
+    home: { x: number; y: number },
+    offset: { x: number; y: number },
+    onClick: () => void,
+  ): void {
+    let dragged = false;
+    this.input.setDraggable(image);
+    image.on('dragstart', () => {
+      dragged = true;
+      image.setDepth(1000);
+    });
+    image.on('drag', (_pointer: Phaser.Input.Pointer, dragX: number, dragY: number) => {
+      image.setPosition(Math.round(dragX), Math.round(dragY));
+    });
+    image.on('dragend', () => {
+      offset.x += Math.round(image.x - home.x);
+      offset.y += Math.round(image.y - home.y);
+      this.redraw();
+    });
+    image.on('pointerup', (
+      pointer: Phaser.Input.Pointer,
+      _localX: number,
+      _localY: number,
+      event: Phaser.Types.Input.EventData,
+    ) => {
+      event.stopPropagation();
+      if (dragged || pointer.button !== 0) return;
+      onClick();
+    });
+  }
+
+  private wirePaperDrag(
+    page: Phaser.GameObjects.Zone,
+    objects: Phaser.GameObjects.GameObject[],
+    offset: { x: number; y: number },
+    onDragStart: () => void,
+  ): void {
+    let startX = page.x;
+    let startY = page.y;
+    this.input.setDraggable(page);
+    page.on('dragstart', () => {
+      startX = page.x;
+      startY = page.y;
+      onDragStart();
+    });
+    page.on('drag', (_pointer: Phaser.Input.Pointer, dragX: number, dragY: number) => {
+      const dx = Math.round(dragX - page.x);
+      const dy = Math.round(dragY - page.y);
+      for (const object of objects) {
+        const movable = object as Phaser.GameObjects.GameObject & {
+          x?: number;
+          y?: number;
+          setPosition?: (x: number, y: number) => Phaser.GameObjects.GameObject;
+        };
+        if (movable.x === undefined || movable.y === undefined || movable.setPosition === undefined) continue;
+        movable.setPosition(movable.x + dx, movable.y + dy);
+      }
+    });
+    page.on('dragend', () => {
+      offset.x += Math.round(page.x - startX);
+      offset.y += Math.round(page.y - startY);
       this.redraw();
     });
   }
 
-  /** 새 계약서 텍스처는 HMR 중 아직 프리로드되지 않을 수 있다. 그때도 기존 장부로 종이를 유지한다. */
   private contractSheetAsset(): string | null {
     if (this.hasArt('ui.contract.sheet')) return 'ui.contract.sheet';
     if (this.hasArt('prop.ledger')) return 'prop.ledger';
@@ -1408,7 +1547,6 @@ export class OfficePhase extends PhaseScene {
           if (waiting === undefined) return;
           if (!this.contractConfirmationOpen) {
             this.contractReaderOpen = true;
-            this.statsReaderOpen = false;
             this.contractConfirmationOpen = true;
             this.contractStamping = false;
             this.redraw();

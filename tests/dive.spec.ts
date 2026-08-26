@@ -3,6 +3,7 @@ import { reducer } from '../src/core/reducer';
 import { createInitialState } from '../src/core/state';
 import { createEncounter } from '../src/core/systems/combat';
 import { content } from '../src/core/content';
+import { descentForecast, firstPlayableForecastFloor } from '../src/core/systems/forecast';
 import type { GameState } from '../src/core/types';
 
 function liveState(seed: number, currentFloor: number, claimedCeiling = 40): GameState {
@@ -20,13 +21,26 @@ function liveState(seed: number, currentFloor: number, claimedCeiling = 40): Gam
 }
 
 describe('live dive', () => {
-  it('starts an encounter on every third floor and waits for combat input', () => {
+  it('skips only the leading forecast bands that are guaranteed at 100%', () => {
+    const initial = createInitialState(9);
+    const state = { ...initial, shelf: ['cloak_ash', null, null] };
+    const forecast = descentForecast(state, 'body_karin');
+    expect(forecast[0]?.chance).toBe(100);
+    expect(forecast[1]?.chance).toBeLessThan(100);
+    expect(firstPlayableForecastFloor(state, 'body_karin')).toBe(11);
+
+    const entered = reducer({ ...state, phase: 'OFFICE' }, { type: 'OFFICE/PICK_STAR', starId: 'body_karin' });
+    const live = reducer(entered, { type: 'OFFICE/CONFIRM' });
+    expect(live.today?.currentFloor).toBe(10);
+  });
+
+  it('starts an encounter on every floor and waits for combat input', () => {
     let state = createInitialState(12);
-    state = { ...state, phase: 'OFFICE', shelf: ['cloak_ash', null, null] };
+    state = { ...state, phase: 'OFFICE', shelf: [null, null, null] };
     state = reducer(state, { type: 'OFFICE/PICK_STAR', starId: 'body_karin' });
     state = reducer(state, { type: 'OFFICE/CONFIRM' });
     state = reducer(state, { type: 'LIVE/TICK', dt: 1 });
-    expect(state.today?.currentFloor).toBe(3);
+    expect(state.today?.currentFloor).toBe(2);
     expect(state.today?.hero.maxHp).toBeGreaterThan(80);
     expect(state.today?.encounter).not.toBeNull();
     expect(state.today?.encounter?.line).not.toBe('');
@@ -80,7 +94,7 @@ describe('live dive', () => {
     state = reducer(state, { type: 'LIVE/TICK', dt: 1 });
     const fansBefore = state.fans;
     state = reducer(state, { type: 'LIVE/TICK', dt: 10 });
-    expect(state.today?.currentFloor).toBe(3);
+    expect(state.today?.currentFloor).toBe(2);
     expect(state.fans).toBeLessThan(fansBefore);
   });
 

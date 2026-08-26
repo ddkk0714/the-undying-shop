@@ -1,7 +1,8 @@
 import { content } from '../content';
 import { draw } from '../rng';
 import { createHero } from './combat';
-import type { Combatant, Contract, GameState, ItemDef, Star, TodayRun } from '../types';
+import { equippedItemsForRun, runEquipmentFlagKey } from './forecast';
+import type { Combatant, Contract, GameState, Star, TodayRun } from '../types';
 
 function signedContractKey(starId: string): string {
   return `contractSigned:${starId}`;
@@ -141,13 +142,6 @@ export function populateVisitors(state: GameState): GameState {
   return { ...next, visitors: [visitor] };
 }
 
-function equippedItems(state: GameState): ItemDef[] {
-  return state.shelf.flatMap((id) => {
-    const item = content.items.find((candidate) => candidate.id === id);
-    return item?.kind === 'GEAR' ? [item] : [];
-  });
-}
-
 function removeInventoryItem(inventory: GameState['inventory'], itemId: string): GameState['inventory'] {
   return inventory.flatMap((stack) => {
     if (stack.id !== itemId) return [stack];
@@ -193,6 +187,7 @@ export function sellOfficeBatch(state: GameState): GameState {
     shelf[slot] = null;
     inventory = removeInventoryItem(inventory, item.id);
     flags[saleSoldKey(state.day, slot)] = true;
+    if (state.today !== null) flags[runEquipmentFlagKey(state.day, state.today.starId, slot, item.id)] = true;
   }
   return {
     ...afterRoll,
@@ -219,7 +214,7 @@ function claimedCeiling(state: GameState, starId: string): number {
 }
 
 export function officeHero(state: GameState, star: Star): Combatant {
-  return createHero(star, equippedItems(state), degradationMultiplier(star));
+  return createHero(star, equippedItemsForRun(state, star.id), degradationMultiplier(star));
 }
 
 export function pickStar(state: GameState, starId: string): GameState {

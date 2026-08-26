@@ -13,6 +13,13 @@ export interface Balance {
   start: { gold: number; fans: number; reputation: number; maxFloor: number; days: number; targetFloor: number; inventory: string[] };
   revive: { base: number; floorExp: number; gradeMul: Record<'INTACT' | 'DAMAGED', number>; degradeExp: number; decayPerDay: number; roundTo: number; discardLoot: number };
   dive: { floorSeconds: number; encounterEvery: number; delayGraceSeconds: number; delayFanLossPerSec: number; delayFanLossCap: number };
+  forecast: {
+    hpWeight: number;
+    atkWeight: number;
+    defWeight: number;
+    curveScale: number;
+    bands: { from: number; to: number; difficulty: number }[];
+  };
   combat: CombatBalance;
   mental: {
     max: number;
@@ -347,7 +354,7 @@ function makeFloors(raw: unknown): FloorContent {
 }
 
 export function loadContent(): Content {
-  assertShape(isRecord(balanceJson) && isRecord(balanceJson.start) && isRecord(balanceJson.revive) && isRecord(balanceJson.dive) && isRecord(balanceJson.combat) && isRecord(balanceJson.mental) && isRecord(balanceJson.equipment) && isRecord(balanceJson.degrade) && isRecord(balanceJson.income), 'balance sections missing');
+  assertShape(isRecord(balanceJson) && isRecord(balanceJson.start) && isRecord(balanceJson.revive) && isRecord(balanceJson.dive) && isRecord(balanceJson.forecast) && isRecord(balanceJson.combat) && isRecord(balanceJson.mental) && isRecord(balanceJson.equipment) && isRecord(balanceJson.degrade) && isRecord(balanceJson.income), 'balance sections missing');
   const items = makeItems(itemsJson);
   for (const key of ['gold', 'fans', 'reputation', 'maxFloor', 'days', 'targetFloor'] as const) assertNumber(balanceJson.start[key], `balance.start.${key}`);
   assertShape(Array.isArray(balanceJson.start.inventory) && balanceJson.start.inventory.every((itemId) => typeof itemId === 'string' && items.some((item) => item.id === itemId)), 'balance.start.inventory invalid');
@@ -357,6 +364,14 @@ export function loadContent(): Content {
   assertNumber(balanceJson.revive.gradeMul.INTACT, 'balance.revive.gradeMul.INTACT');
   assertNumber(balanceJson.revive.gradeMul.DAMAGED, 'balance.revive.gradeMul.DAMAGED');
   for (const key of ['floorSeconds', 'encounterEvery', 'delayGraceSeconds', 'delayFanLossPerSec', 'delayFanLossCap'] as const) assertNumber(balanceJson.dive[key], `balance.dive.${key}`);
+  for (const key of ['hpWeight', 'atkWeight', 'defWeight', 'curveScale'] as const) assertNumber(balanceJson.forecast[key], `balance.forecast.${key}`);
+  assertShape(balanceJson.forecast.curveScale > 0, 'balance.forecast.curveScale must be positive');
+  assertShape(Array.isArray(balanceJson.forecast.bands) && balanceJson.forecast.bands.length > 0, 'balance.forecast.bands missing');
+  balanceJson.forecast.bands.forEach((band, index) => {
+    assertShape(isRecord(band), `balance.forecast.bands[${index}] invalid`);
+    for (const key of ['from', 'to', 'difficulty'] as const) assertNumber(band[key], `balance.forecast.bands[${index}].${key}`);
+    assertShape(Number.isInteger(band.from) && Number.isInteger(band.to) && band.from > 0 && band.to >= band.from, `balance.forecast.bands[${index}] range invalid`);
+  });
   assertShape(isRecord(balanceJson.combat.profileScale), 'balance.combat.profileScale missing');
   for (const key of ['hp', 'atk', 'def'] as const) {
     assertNumber(balanceJson.combat.profileScale[key], `balance.combat.profileScale.${key}`);
