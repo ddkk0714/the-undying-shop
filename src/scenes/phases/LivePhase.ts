@@ -164,17 +164,43 @@ const SHIELD_FX_FRAME_MS = 60;
  *    누르는지가 아래 세 줄이다. core 로 옮기는 편이 낫다고 판단되면 HANDOFF 로 넘긴다.
  */
 const AUTO_TURN_MS = 1500;
-/** 체력이 이 아래로 내려가면 방어로 돌린다 */
+/** 체력이 이 아래로 내려가면 방어를 섞는다 */
 const AUTO_DEFEND_RATIO = 0.4;
 /** 이 위로 여유가 있으면 조우 첫 수는 어필로 번다 */
 const AUTO_APPEAL_RATIO = 0.7;
 /** 이 아래로 떨어지고 물약이 있으면 **플레이어에게 묻는다** */
 const POTION_ASK_RATIO = 0.35;
+/**
+ * 체력이 바닥일 때 **방어 한 턴 뒤 이만큼은 공격으로 되받는다** (사용자 확정).
+ * 예전에는 체력이 낮으면 그냥 계속 방어했다 — 적 HP 가 줄지 않으니 조우가 끝나지 않고,
+ * 방어는 매 턴 피해를 ×0.25 로 받기만 해서 **천천히 죽는 길**이었다.
+ * 이제 방어1 + 공격3 의 네 턴 주기로 돈다.
+ *
+ * ⚠️ 사용자가 말한 「방어 효과 3턴 지속」은 **아직 core 에 없다.**
+ *    `resolveCombatChoice` 의 DEFEND 는 그 턴 피해만 깎고, 남는 `Encounter.guarding`
+ *    플래그는 다음 수에 곧바로 꺼지며 어떤 규칙도 읽지 않는다 (읽는 곳은 이 씬의 「방어」
+ *    글자뿐). 지속을 진짜로 만들려면 core 규칙 변경이라 HANDOFF 로 넘긴다 → HO-031
+ */
+const AUTO_ATTACKS_PER_GUARD = 3;
 
-function autoChoice(hero: { hp: number; maxHp: number }, turn: number): CombatChoice {
+/**
+ * ⚠️ **턴 수를 `enc.turn` 으로 세지 않는다.** `createEncounter`(`core/systems/combat.ts`)가
+ *    조우를 `turn: 1` 로 시작하기 때문에 예전의 `turn === 0` 은 영원히 거짓이었고,
+ *    그래서 자동 전투가 어필을 **한 번도** 내지 않았다 — 어필이 없으면
+ *    `resolveCombatChoice` 의 `superchat` 도 서지 않으니 전투 중 슈퍼챗이 통째로 죽는다.
+ *    `log` 는 **낸 수만** 쌓이므로 기수가 0이든 1이든 같은 뜻이 된다. 주기도 여기서 읽는다.
+ */
+function autoChoice(hero: { hp: number; maxHp: number }, log: readonly CombatChoice[]): CombatChoice {
   const ratio = hero.maxHp <= 0 ? 0 : hero.hp / hero.maxHp;
-  if (ratio < AUTO_DEFEND_RATIO) return 'DEFEND';
-  if (turn === 0 && ratio >= AUTO_APPEAL_RATIO) return 'APPEAL';
+
+  if (ratio < AUTO_DEFEND_RATIO) {
+    // 마지막 방어 이후 몇 수를 냈는가. 아직 한 번도 안 막았으면 지금이 그 자리다
+    const lastGuard = log.lastIndexOf('DEFEND');
+    const sinceGuard = lastGuard === -1 ? Number.POSITIVE_INFINITY : log.length - 1 - lastGuard;
+    return sinceGuard >= AUTO_ATTACKS_PER_GUARD ? 'DEFEND' : 'ATTACK';
+  }
+
+  if (log.length === 0 && ratio >= AUTO_APPEAL_RATIO) return 'APPEAL';
   return 'ATTACK';
 }
 
@@ -183,6 +209,9 @@ const CHOICE_LABEL: Record<CombatChoice, string> = {
   DEFEND: '방어한다',
   APPEAL: '어필한다',
 };
+
+/** 슈퍼챗 판(`ui.live.superchat`) 안쪽 검은 칸의 세로 중심 — 판 위쪽 기준 (아트 실측) */
+const SUPERCHAT_TEXT_CY = 40;
 
 /** 층을 하나 클리어하고 내려갈 때 화면이 이만큼 확대됐다가 돌아온다 */
 const DIVE_ZOOM = 1.08;
@@ -436,7 +465,7 @@ export class LivePhase extends PhaseScene {
     }
     if (now < this.autoAt) return;
 
-    const choice = autoChoice(run.hero, enc.turn);
+    const choice = autoChoice(run.hero, enc.log);
     this.lastAuto = choice;
     this.autoAt = now + AUTO_TURN_MS;
     // 어필은 소리를 내지 않는다 — 카메라를 보는 동작이지 부딪는 동작이 아니다
@@ -1551,11 +1580,14 @@ export class LivePhase extends PhaseScene {
     const plate = this.spriteObject(v.x, v.y, 'ui.live.superchat', v.w, v.h);
     const backing = plate === null ? this.rectObject(v.x, v.y, v.w, v.h, 'ink') : null;
     const border = plate === null ? this.frameObject(v.x, v.y, v.w, v.h, 'bone') : null;
+    // `ui.live.superchat` 아트는 위쪽 테두리가 두꺼워 **검은 안쪽 칸이 판 한가운데보다 아래**다.
+    // 판 높이의 절반에 맞추면 글자가 안쪽 칸 위 모서리에 걸터앉는다 (실측 → 40)
+    const textCy = plate === null ? Math.round(v.h / 2) : SUPERCHAT_TEXT_CY;
     const line = this.label(
-      v.x + 16, v.y + Math.round(v.h / 2) - 10,
+      v.x + 16, v.y + textCy,
       this.clip(`${msg.nick}  +${msg.amount} G`, v.w - 32, 'label'),
       'wax',
-    );
+    ).setOrigin(0, 0.5);
 
     const parts: (Phaser.GameObjects.Graphics | Phaser.GameObjects.Text | Phaser.GameObjects.Image)[] = [];
     if (plate !== null) parts.push(plate);

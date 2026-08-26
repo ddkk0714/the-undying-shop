@@ -49,6 +49,9 @@ export class Ticker {
         .text(box.x, y, '', {
           ...FONT_LABEL,
           color: css('dust'),
+          // 접힌 줄은 그냥 두면 행간이 0 이라 한글 글자상자가 서로 맞닿아 뭉개진다.
+          // 줄 높이는 `render` 가 `text.height` 로 다시 재므로 벌려도 자리는 안 어긋난다
+          lineSpacing: 6,
           wordWrap: { width: box.w - 56, useAdvancedWrap: true },
         })
         .setVisible(false);

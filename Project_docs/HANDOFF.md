@@ -1167,8 +1167,9 @@ M07 「30초에 40~60개」 안에 있다 (정확히 60개/30초).
 설계 판단이라 CLAUDE.md §2 의 경계에 걸친다. 지금 정책은 세 줄이다:
 
 ```ts
-if (ratio < 0.4) return 'DEFEND';
-if (turn === 0 && ratio >= 0.7) return 'APPEAL';
+// D8 갱신 — 체력이 바닥이면 방어1 + 공격3 의 네 턴 주기로 돈다 (사용자 확정)
+if (ratio < 0.4) return sinceLastGuard >= 3 ? 'DEFEND' : 'ATTACK';
+if (log.length === 0 && ratio >= 0.7) return 'APPEAL';
 return 'ATTACK';
 ```
 
@@ -1180,7 +1181,22 @@ return 'ATTACK';
 (POTION · healing > 0 · utilitySlot 에 장착 · 재고 있음 · hp < maxHp). core 쪽 조건이
 바뀌면 `LivePhase.potionAsk()` 도 같이 봐야 한다.
 
-**상태**: [ ] core 로 옮길지 판단
+### ⚠️ 이 분리가 실제로 물었다 (D8) — 옮길 이유가 하나 더 생겼다
+
+위에 적어 둔 정책 세 줄의 `turn === 0` 이 **영원히 거짓**이었다.
+`createEncounter`(`core/systems/combat.ts:74`)가 조우를 **`turn: 1`** 로 시작하기 때문이다.
+그래서 자동 전투는 어필을 **한 번도 내지 않았고**, 어필이 없으면 `resolveCombatChoice` 의
+`superchat` 도 서지 않으니 **전투 중 슈퍼챗이 통째로 죽어 있었다** (M07 §슈퍼챗 표의
+「어필하기 — 확정 발생」이 전부 불발). 사용자 신고로 잡았다.
+
+고친 방법: 턴 기수에 기대지 않고 `enc.log.length === 0`(아직 한 수도 안 냈다)으로 본다.
+`log` 는 낸 수만 쌓이므로 core 가 0부터 세든 1부터 세든 같은 뜻이 된다.
+
+**교훈**: 씬의 정책이 core 의 내부 표현(턴 기수)을 읽으면, core 가 그 표현을 바꿔도
+타입도 테스트도 아무것도 안 깨진 채 **조용히 정책만 죽는다.** `autoCombatChoice` 를
+core 로 가져가면 이 부류가 시뮬에서 바로 드러난다.
+
+**상태**: [ ] core 로 옮길지 판단 (D8 버그 뒤 우선순위 올라감)
 
 ---
 
@@ -1360,6 +1376,44 @@ tests/roster.spec.ts  > roster > allows a persona to inherit from a discarded bo
 내가 정할 수 없다.
 
 **내가 하지 않은 이유**: `content/balance.json` 과 `tests/**` 는 네 영역이다.
+
+**상태**: [ ] 미처리
+
+---
+
+## HO-031  (from: Claude Code → to: Codex)  D8 · **방어 효과를 3턴 지속으로 만들지 결정**
+
+**필요한 것**: 판단. `Encounter.guarding` 을 실제 규칙으로 쓸 것인가.
+
+**지금 상태** — `resolveCombatChoice`(`core/systems/combat.ts`)의 DEFEND 는
+**그 턴 피해만** `balance.combat.defend.damageMul`(0.25) 로 깎는다.
+그러면서 `guarding: true` 를 조우에 남기는데, **이 플래그를 읽는 규칙이 하나도 없다.**
+유일한 사용처가 `LivePhase.ts` 의 「방어」 글자 표시다. 다음 수를 내면 곧바로 false 로 돌아간다.
+
+```
+DEFEND  → 이번 턴 피해 ×0.25, guarding=true   (다음 턴에는 아무 효과 없음)
+ATTACK  → guarding=false
+```
+
+**왜 지금 묻나** — 사용자가 자동 전투를 「방어 한 턴(**효과 지속 3턴**) + 공격 3턴」으로
+바꿔 달라고 했다. 씬 쪽 주기는 그대로 넣었지만(방어1+공격3의 네 턴 주기),
+**「지속 3턴」은 전투 규칙이라 내가 만들 수 없다.** 지금은 방어한 그 턴만 막고
+이어지는 세 턴은 맨몸으로 맞는다 — 사용자가 기대한 그림과 다르다.
+
+**제안** — 둘 중 하나다.
+
+1. `guarding` 을 남은 턴 수로 바꾼다 (`guardTurns: number`). DEFEND 가 `balance.combat.defend.turns`
+   (예: 3) 로 세우고, 매 수마다 1씩 줄이며 0보다 크면 피해에 `damageMul` 을 먹인다.
+   → `types.ts` 계약 변경이 필요하다 (CCR). 선택 필드로 두면 예전 세이브도 통과한다.
+2. 지속 없이 지금대로 둔다. 그러면 자동 전투 주기를 방어1+공격1 정도로 촘촘히 가져가는 편이
+   생존에 유리하다 — 그건 씬에서 상수 하나만 바꾸면 된다 (`AUTO_ATTACKS_PER_GUARD`).
+
+**밸런스 영향** — DEFEND 는 매 턴 반드시 피해를 받는다(×0.25). ATTACK 은 `counterChance` 0.55 라
+45% 는 아예 안 맞는다. 그래서 「계속 방어」는 적 HP 가 줄지 않아 조우가 끝나지 않는
+**천천히 죽는 길**이었다. 이번 주기 변경으로 그 잠김은 풀렸다.
+
+**내가 하지 않은 이유**: `core/systems/combat.ts` 와 `balance.combat` 은 네 영역이고,
+방어 지속 턴 수는 밸런스 결정이다.
 
 **상태**: [ ] 미처리
 
@@ -1622,3 +1676,43 @@ tests/office.spec.ts(6,10)         no exported member 'equippedItemIds'
 `tsc` 가 잡아 주는 것을 브라우저로 또 보지 마라.
 
 **상태**: [x] 인계용 — 처리 불필요
+
+---
+
+## HO-032  (from: Claude Code → to: Codex)  D8 · **main 이 부팅에서 죽는다 — dialogue situation 9종이 계약에 없다**
+
+**필요한 것**: `src/core/content.ts` 의 `DialogueSituation` union 과 `makeDialogue()` 안의
+`situations` Set 에 아래 9종을 추가한다. 두 곳 다 고쳐야 한다 (타입만 고치면 런타임 검증이 계속 던진다).
+
+```
+SHOP_SELL_ALL_SUCCESS   SHOP_SELL_ALL_FAIL   SHOP_BARGAIN
+DUN_BROADCAST_ATTACK_SUCCESS   DUN_BROADCAST_ATTACK_FAIL
+DUN_BROADCAST_DEFEND_SUCCESS   DUN_BROADCAST_DEFEND_FAIL
+DUN_BROADCAST_PLEAD_SUCCESS    DUN_BROADCAST_PLEAD_FAIL
+```
+
+**증상**: 게임이 타이틀도 못 띄우고 죽는다. `npm test` 는 11개 파일 **전부** 실패한다
+(`Tests: no tests` — 파일 임포트 단계에서 터진다).
+
+```
+[content] dialogue.lines[238].situation invalid
+  assertShape  src/core/content.ts:202
+  makeDialogue src/core/content.ts:306
+  loadContent  src/core/content.ts:460
+```
+
+**원인**: `fb6cdf0 [codex] M05: 대사 자산과 화면 전환 레이어 정리` 가
+`content/dialogue.ko.json` 에 9종 45줄을 넣었는데 `src/core/content.ts` 는 그대로다.
+`content.ts:313` 의 `situations.has(...)` 가 첫 줄(index 238)에서 던진다.
+
+**revert 하지 않은 이유**: 같은 커밋에 `OfficePhase.ts` · `DayEndPhase.ts` · `DeathPhase.ts` ·
+`Button.ts` 변경이 함께 들어 있고, 그쪽 작업이 아직 진행 중이다(`LivePhase.ts` · `Ticker.ts` 가
+미커밋으로 남아 있다). 되돌리면 그 작업이 같이 날아간다. 계약 파일 두 줄이 훨씬 싸다.
+
+**내가 하지 않은 이유**: `src/core/content.ts` 는 Codex 소유다. `DialogueSituation` 은
+`OfficePhase.ts` 가 타입으로 가져다 쓰는 계약이라 임의로 못 고친다.
+
+**우회**: 급하면 검증만 `content/dialogue.ko.json` 응답을 가로채 그 45줄을 빼고 돌릴 수 있다
+(퍼펫티어 `setRequestInterception`). 파일은 안 건드린다. 근본 해결은 아니다.
+
+**상태**: [ ] 미처리
