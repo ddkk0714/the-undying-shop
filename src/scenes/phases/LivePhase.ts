@@ -192,6 +192,8 @@ export class LivePhase extends PhaseScene {
   private radioText = '';
   private radioObj: Dialogue | null = null;
   private radioAt = 0;
+  /** 지금 줄이 끝까지 나왔는가. 끝나기 전에는 다음 줄을 받지 않는다 */
+  private radioDone = true;
   /** 이 줄에 붙은 표정. 줄이 떠 있는 동안 초상이 이걸 쓴다 */
   private radioFace: string | null = null;
 
@@ -230,6 +232,7 @@ export class LivePhase extends PhaseScene {
     this.radioText = '';
     this.radioObj = null;
     this.radioAt = 0;
+    this.radioDone = true;
     this.radioFace = null;
     this.fanDropUntil = 0;
 
@@ -729,12 +732,16 @@ export class LivePhase extends PhaseScene {
   private stageRadio(spoken: { text: string; expression: string | null; effects: readonly string[] }): void {
     if (spoken.text === this.radioText) return;                 // 같은 줄 — 하던 걸 계속한다
     const now = this.time.now;
+    // **끝까지 나오기 전에는 다음 줄로 넘어가지 않는다** (사용자 확정).
+    // 간격만 재던 때는 긴 줄이 아직 타자 중인데 새 줄이 덮어써서 문장이 잘려 보였다
+    if (!this.radioDone) return;
     if (this.radioObj !== null && now - this.radioAt < RADIO_GAP_MS) return; // 아직 이르다
 
     this.clearRadio();
     this.radioText = spoken.text;
     this.radioFace = spoken.expression;
     this.radioAt = now;
+    this.radioDone = false;
 
     const fx = new Set(spoken.effects);
     const v = L.live.dialogue;
@@ -742,14 +749,23 @@ export class LivePhase extends PhaseScene {
     if (fx.has('blackout') && !this.reduced) this.blackout();
 
     const start = (): void => {
-      if (this.radioText !== spoken.text) return;               // 기다리는 사이에 줄이 바뀌었다
+      // 「pause」로 기다리는 사이에 줄이 바뀌었다 — 잠금은 풀어 준다
+      if (this.radioText !== spoken.text) { this.radioDone = true; return; }
+      // 배너가 사선으로 잘린 그림이라 글은 가운데 검은 띠 안에만 놓는다.
+      // 여백을 **상자 폭의 비율**로 잡는다 — 900 기준의 200/330 을 그대로 두면
+      // 상자를 넓혔을 때 글이 사선 부분까지 밀려 나간다
+      // 배너 왼쪽 위가 사선으로 잘려 있어서, 첫 줄을 너무 올리거나 왼쪽에 붙이면
+      // 밝은 쐐기에 글자 윗부분이 먹힌다 (실측). 안쪽으로 한 칸 더 들여 앉힌다
+      const inset = Math.round(v.w * 0.24);
+      const usable = v.w - Math.round(v.w * 0.38);
       const line = new Dialogue(this, {
-        x: v.x + 200,
-        y: v.y + Math.round(v.h / 2) - 4,
-        w: v.w - 330,
-        line: this.clip(`"${spoken.text}"`, v.w - 330),
+        x: v.x + inset,
+        y: v.y + Math.round(v.h / 2) - 16,
+        w: usable,
+        line: `"${spoken.text}"`,                               // 자르지 않는다 — 넘치면 접힌다
         size: 'body',
         effects: spoken.effects,
+        onComplete: () => { this.radioDone = true; },
         // 「silent」 — 속으로 하는 말이다. 타자 소리를 내지 않는다
         ...(fx.has('silent') ? {} : { onChar: () => playSfx(this, 'sfx.text', 0.05) }),
       });
@@ -762,8 +778,13 @@ export class LivePhase extends PhaseScene {
     else start();
   }
 
-  /** 떠 있던 무전 줄을 걷는다 */
+  /**
+   * 떠 있던 무전 줄을 걷는다.
+   * **`radioDone` 을 반드시 되돌린다** — 타자 도중에 걷으면 `onComplete` 가 오지 않아
+   * 「끝날 때까지 기다린다」가 영영 안 풀린다 (다음 줄이 하나도 안 뜬다)
+   */
   private clearRadio(): void {
+    this.radioDone = true;
     if (this.radioObj === null) return;
     this.dropAlive(this.radioObj);
     this.radioObj.destroy();

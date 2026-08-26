@@ -43,13 +43,19 @@ export class Dialogue extends Phaser.GameObjects.Container {
     this.chars = Array.from(opts.line);
     const effects = new Set(opts.effects ?? []);
     const emphasis = effects.has('big') ? 1.6 : effects.has('bold') ? 1.3 : 1;
+    // 글자는 `w` 안에서 접는다. 예전에는 한 줄로 흘려서, 부르는 쪽이 미리 잘라 넘기지
+    // 않으면 상자 밖으로 삐져나갔다 (생방송 무전에서 「…·」로 잘리던 원인).
+    // 접는 폭은 **확대 전** 기준이라 배율로 나눠 준다
+    const zoom = (opts.scale ?? 1) * emphasis;
+    const wrapPx = Math.max(64, Math.round(opts.w / zoom));
     this.lineObject = scene.add
       .text(0, 0, '', {
         ...(opts.size === 'body' ? FONT : FONT_TITLE),
         color: css(opts.color ?? 'bone'),
+        wordWrap: { width: wrapPx, useAdvancedWrap: true },
         ...(effects.has('bold') ? { fontStyle: 'bold' } : {}),
       })
-      .setScale((opts.scale ?? 1) * emphasis);
+      .setScale(zoom);
     this.arrow = scene.add
       .text(Math.max(0, Math.round(opts.w - 48)), 12, '▼', { ...FONT, color: css('dust') })
       .setVisible(false);
