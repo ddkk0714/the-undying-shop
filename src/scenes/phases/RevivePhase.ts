@@ -262,31 +262,29 @@ export class RevivePhase extends PhaseScene {
     const daysHeld = reviveDaysHeld(s, corpse);
 
     // 좌상단은 종이 자체에 그려진 클립 그림과 겹친다 — 제목은 클립을 피해 오른쪽에서 시작한다
-    at(170, 70, '사망 기록', 0.92);
-    at(600, 78, `#${star.reviveCount + 1}`, 0.5, 'ink');
-    at(60, 175, `이름 : ${this.clip(persona?.displayName ?? star.bodyName, 560, 'body')}`, 0.7);
-    at(60, 235, `사망 층 : ${corpse.diedFloor}F`, 0.7);
-    at(60, 295, `경과 : ${daysHeld}일`, 0.7);
-    at(60, 410, `상태 : ${corpse.grade === 'INTACT' ? '온전' : '훼손'}`, 0.7);
+    at(170, 66, '사망 기록', 1.05);
+    at(605, 78, `#${star.reviveCount + 1}`, 0.6, 'ink');
+    at(60, 172, `이름 : ${this.clip(persona?.displayName ?? star.bodyName, 520, 'body')}`, 0.85);
+    at(60, 234, `사망 층 : ${corpse.diedFloor}F`, 0.85);
+    at(60, 296, `경과 : ${daysHeld}일`, 0.85);
+    at(60, 408, `상태 : ${corpse.grade === 'INTACT' ? '온전' : '훼손'}`, 0.85);
 
     // 도장이 앉는 원형 워터마크 자리(약 400~840)를 비워 두고, 그 아래 좁은 띠에 나머지를 몰아 적는다.
-    // 목격·경고·비용을 한 줄씩으로 압축한다 — 최대 4줄이 895~1080 구간(185px)에 다 들어가야 한다.
+    // 목격·경고·비용을 한 줄씩으로 압축한다 — 최대 3줄이 895~1080 구간(185px)에 다 들어가야 한다.
     let by = 900;
     if (star.witnessed.length > 0) {
-      at(60, by, `목격 : ${star.witnessed.map((f) => `${f}F`).join(' · ')}`, 0.56);
-      by += 42;
+      at(60, by, `목격 : ${star.witnessed.map((f) => `${f}F`).join(' · ')}`, 0.66);
+      by += 48;
     }
     if (quote.witnessWarning) {
-      at(60, by, '아래를 본 사람이다 — 되살리면 방송에서 말한다.', 0.5, 'wax');
-      by += 42;
+      at(60, by, '아래를 본 사람이다 — 되살리면 방송에서 말한다.', 0.58, 'wax');
+      by += 48;
     }
-    at(60, by, `소생 비용 : ${fmtGold(quote.cost)} G   ·   보유 : ${fmtGold(s.gold)} G`, 0.58, quote.affordable ? 'ink' : 'wax');
-    by += 42;
-    at(
-      60, by,
-      quote.affordable ? '도장을 누르면 소생을 확정합니다.' : '자금이 부족합니다. 종이를 누르면 접습니다.',
-      0.44, quote.affordable ? 'ink' : 'wax',
-    );
+    at(60, by, `소생 비용 : ${fmtGold(quote.cost)} G   ·   보유 : ${fmtGold(s.gold)} G`, 0.7, quote.affordable ? 'ink' : 'wax');
+    by += 48;
+    // 도장은 소생을 확정하지 않는다 — 상태 판정만 확인한다. 실제 소생 여부는
+    // 하단 「소생」 버튼에서 결정한다 (사용자 확정)
+    at(60, by, '도장 = 상태 판정 확인. 소생은 하단 버튼으로 결정합니다.', 0.5);
 
     // 도장 — 서류에 인쇄된 원형 자리에 앉힌다. 등급은 시체 상태 그대로다 (온전=S · 훼손=F)
     const stampKey = corpse.grade === 'INTACT' ? 'prop.revive.stamp.s' : 'prop.revive.stamp.f';
@@ -313,15 +311,18 @@ export class RevivePhase extends PhaseScene {
       });
     });
 
+    // 도장은 「소생 확정」이 아니라 「상태 판정 확인」이다 (사용자 확정) — 찍어도
+    // REVIVE/PAY 를 부르지 않는다. 실제 소생은 하단 액션 바의 「소생」 버튼이 그대로 맡는다.
+    // 한 번 찍히면 그 자리에 그대로 남는다 — 마우스가 벗어나도 다시 흐려지지 않는다.
+    let stamped = false;
     const stampZone = this.add.zone(stampBox.x, stampBox.y, stampBox.w, stampBox.h)
       .setOrigin(0, 0)
       .setDepth(depth + 5)
-      .setInteractive({ cursor: quote.affordable ? 'pointer' : 'not-allowed' });
-    // 자금이 부족해도 도장이 어디 앉는지는 보여준다 — 확정만 막는다
-    stampZone.on('pointerover', () => stamp?.setAlpha(quote.affordable ? 0.38 : 0.16));
-    stampZone.on('pointerout', () => { if (!this.recordStamping) stamp?.setAlpha(0); });
+      .setInteractive({ cursor: 'pointer' });
+    stampZone.on('pointerover', () => { if (!stamped) stamp?.setAlpha(0.38); });
+    stampZone.on('pointerout', () => { if (!stamped && !this.recordStamping) stamp?.setAlpha(0); });
     stampZone.on('pointerup', () => {
-      if (this.recordStamping || stamp === null || !quote.affordable) return;
+      if (this.recordStamping || stamped || stamp === null) return;
       this.recordStamping = true;
       stamp.setAlpha(1).setY(stampBox.y - 44);
       this.tweens.add({
@@ -331,12 +332,8 @@ export class RevivePhase extends PhaseScene {
         ease: 'Quad.easeIn',
         onComplete: () => {
           playSfx(this, 'sfx.contract.stamp', 0.2);
-          this.time.delayedCall(180, () => {
-            this.recordStamping = false;
-            this.recordOpen = false;
-            playSfx(this, 'sfx.revive', 0.8);
-            this.store.dispatch({ type: 'REVIVE/PAY', starId: corpse.starId });
-          });
+          this.recordStamping = false;
+          stamped = true;
         },
       });
     });
