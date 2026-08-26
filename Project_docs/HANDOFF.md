@@ -1490,3 +1490,79 @@ parts?: { part: 'HEAD' | 'CHEST' | 'LEFT ARM' | 'RIGHT ARM' | 'LEFT LEG' | 'RIGH
 **내가 하지 않은 이유**: `src/core/types.ts` 는 계약 파일이고, 부위 손상은 검시 규칙이다.
 
 **상태**: [ ] 미처리
+
+---
+---
+
+# 세션 인계 — Claude Code → 다음 Claude Code  (2026-08-26 · D6 제출일)
+
+> **기준점: `e6898c3` — push 완료. `origin/main` 과 로컬 커밋이 같다.**
+
+## 1. 시작하자마자 — 30초
+
+```bash
+git fetch origin main && git rev-list --left-right --count origin/main...HEAD
+git status --porcelain -- src/core tests content    # Codex 가 진행 중인 게 보인다
+npx tsc --noEmit
+```
+
+`git pull --rebase` 는 **항상 실패한다** (사람이 `Project_docs/**` 를 미커밋으로 편집 중).
+`fetch` + `rev-list` 로 대신 보고, 뒤처졌으면 `git merge --ff-only origin/main`.
+
+## 2. ⚠️ `npm run build` 가 지금 깨져 있다 — **내 코드가 아니다**
+
+```
+src/core/systems/dive.ts(8,51)     'ItemDef' is declared but never used
+src/core/systems/office.ts(145,10) 'equippedItems' is declared but never read
+tests/office.spec.ts(6,10)         no exported member 'equippedItemIds'
+```
+
+전부 **Codex 소유 파일의 미커밋 편집**이다. 커밋된 `HEAD` 는 멀쩡하고 내 파일은 `tsc` 통과한다.
+**손대지 마라.** 화면이 안 뜨면 `git status` 부터 보고 그쪽 저장인지 확인해라.
+
+## 3. 이번 세션에 넣은 것 (전부 push 됨)
+
+| 커밋 | 내용 |
+|---|---|
+| `c6c0d1c` | 소생실·편성실·생방송 UI + 전투 SFX 5종 + 에셋 갱신 |
+| `534fedd` | 하루 종료 신문 드래그 연출 |
+| `d15a84e` | **몬스터 피격** — 피격음 · wax 곱하기 틴트 180ms · 처치 파편 12→26 |
+| `e6898c3` | **소생실 부위 마크** — 1회 재생 후 고정 · 부위명 · 손상 표시 |
+
+### 부위 마크에서 알아 둘 것 (`RevivePhase.ts`)
+
+「마크 애니메이션.gif」 28프레임을 **스프라이트시트로 굽지 않았다.** 뜯어 보니
+왼쪽→오른쪽 **단조 증가하는 가로 와이프**여서, 마지막 프레임 한 장만 굽고
+`MARK_REVEAL` 표(프레임별 실제 폭)대로 `setCrop` 으로 드러낸다.
+시트로 구웠으면 532×226×28 = **14,896px** 텍스처가 됐다. 다른 GIF 연출도 같은 수법을 먼저 의심해라.
+
+**GIF 는 빈 라벨 박스로 끝난다** — 부위명은 다 그려진 뒤 코드가 넣는다.
+
+## 4. 다음에 할 일
+
+1. **HO-029** — 부위별 손상(`Corpse.parts`)이 core 에 없다. 지금은 훼손된 몸이면
+   두 부위 모두에 상처를 얹는다. `MARK_SPOTS` 표만 갈아끼우면 되게 해 뒀다
+2. 미처리 HANDOFF: HO-003 · 005 · 006 · 007 · 012 · 013 · 014 · 016 · 018 · 019
+3. D6 오후는 제출물이다 (`05-PRIORITY.md` §3) — **신기능 금지**
+
+## 5. 밟으면 아픈 곳
+
+- **새 에셋을 넣으면 dev 서버를 재시작해야 한다.** Vite 가 public 파일 목록을
+  **시작 시점에 캐시**해서, 안 그러면 PNG 가 404 로 떨어지고 Phaser 가
+  `Failed to process file: image ...` 만 뱉는다. 이번에 여기서 한 번 헛돌았다
+- **dev 서버가 여러 개 떠 있다** (5173/5174/5175/5176 = 다른 작업자). 내 것은 **5184** 로
+  따로 띄웠다. **상대 것을 끄지 마라**
+- `PhaseScene.update()` 는 `dirty` 일 때만 다시 그린다. 매 프레임 진행하는 연출은
+  `update()` 를 override 해서 직접 밀어야 한다 (`RevivePhase.stepPartMarks` 참고)
+- 연출 오브젝트를 `keepAlive` 하면 창고를 여닫을 때마다 **겹쳐 쌓인다.**
+  오브젝트는 매번 다시 만들고 **시작 시각만** 필드에 들고 있는 편이 안전하다
+
+## 6. 검증은 아껴 써라 — 사람 지시 (재확인)
+
+> **「검증 횟수를 좀 줄여줘 너무 오래 걸린다」**
+
+**한 작업당 puppeteer 1회.** 확인할 분기가 여럿이면 **한 스크립트 안에서 이어서** 돈다
+(새 임시 프로필이라 localStorage 가 매번 날아간다). 스크린샷은 핵심 2~3장만 읽는다.
+`tsc` 가 잡아 주는 것을 브라우저로 또 보지 마라.
+
+**상태**: [x] 인계용 — 처리 불필요
