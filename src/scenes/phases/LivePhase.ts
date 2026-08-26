@@ -116,9 +116,11 @@ const COUNTER_BOUNCE = 0.18;
 const COUNTER_SHAKE_MS = 180;
 const COUNTER_SHAKE = 0.004;
 const ENEMY_SPAWN_FADE_MS = 360;
-const ENEMY_DEFEAT_SCATTER_MS = 460;
-/** 처치 파편 개수 — 12는 허전하다는 요청으로 늘렸다 */
-const ENEMY_DEFEAT_FRAGMENTS = 26;
+const ENEMY_DEFEAT_SCATTER_MS = 720;
+/** 처치 순간 튀는 외곽 파편 */
+const ENEMY_DEFEAT_FRAGMENTS = 38;
+/** 파편 뒤에 남아 산화하듯 위로 사라지는 미세 가루 */
+const ENEMY_DEFEAT_DUST = 46;
 /** 피격 순간 — `wax` 로 잠깐 물들고, 발밑을 고정한 채 잘게 튄다 (사용자 요청) */
 const ENEMY_HIT_FX_MS = 180;
 const ENEMY_HIT_SHAKE_PX = 5;
@@ -1386,30 +1388,73 @@ export class LivePhase extends PhaseScene {
     b.img.x += Math.round(Math.sin(t * 50) * ENEMY_HIT_SHAKE_PX * decay);
   }
 
-  /** 처치된 적이 그 자리에 남지 않도록, 실루엣 크기의 도트 파편으로 흩어진다. */
+  /** 처치된 적이 산화하듯 부서진 뒤, 가루가 위로 날려 사라진다. */
   private scatterEnemyDefeat(enemyKey: string): void {
     if (this.reduced) return;
     const e = L.live.enemy;
     const seed = strHash(enemyKey);
+    // 중심에서 잠깐 밝게 타오른 뒤 꺼진다. 몸이 통째로 증발하는 첫 박자를 만든다.
+    const core = this.add.rectangle(e.x + e.w / 2, e.y + e.h / 2, Math.round(e.w * 0.58), Math.round(e.h * 0.58), PALETTE.bone)
+      .setOrigin(0.5)
+      .setAlpha(0.7);
+    this.keepAlive(core);
+    this.tweens.add({
+      targets: core,
+      scaleX: { from: 1, to: 0.15 },
+      scaleY: { from: 1, to: 0.15 },
+      alpha: { from: 0.7, to: 0 },
+      duration: 210,
+      ease: 'Quad.easeIn',
+      onComplete: () => {
+        this.dropAlive(core);
+        core.destroy();
+      },
+    });
     for (let i = 0; i < ENEMY_DEFEAT_FRAGMENTS; i += 1) {
       const angle = hash2(seed, i) * Math.PI * 2;
       const distance = 46 + Math.round(hash2(seed ^ 0x9e3779b9, i) * 110);
-      const size = 8 + Math.floor(hash2(seed ^ 0x85ebca6b, i) * 13);
+      const size = 12 + Math.floor(hash2(seed ^ 0x85ebca6b, i) * 16);
       const x = e.x + e.w / 2 + Math.round((hash2(seed ^ 0x27d4eb2d, i) - 0.5) * e.w * 0.45);
       const y = e.y + e.h / 2 + Math.round((hash2(seed ^ 0x165667b1, i) - 0.5) * e.h * 0.45);
-      const fragment = this.add.rectangle(x, y, size, size, i % 3 === 0 ? PALETTE.wax : i % 2 === 0 ? PALETTE.bone : PALETTE.mid).setOrigin(0.5);
+      const fragment = this.add.rectangle(x, y, size, size, i % 7 === 0 ? PALETTE.wax : PALETTE.bone).setOrigin(0.5);
       this.keepAlive(fragment);
       this.tweens.add({
         targets: fragment,
         x: x + Math.round(Math.cos(angle) * distance),
         y: y + Math.round(Math.sin(angle) * distance),
-        alpha: 0,
+        alpha: { from: 1, to: 0 },
+        scaleX: { from: 1, to: 0.35 },
+        scaleY: { from: 1, to: 0.35 },
         angle: Math.round((hash2(seed ^ 0xc2b2ae35, i) - 0.5) * 180),
         duration: ENEMY_DEFEAT_SCATTER_MS,
         ease: 'Quad.easeOut',
         onComplete: () => {
           this.dropAlive(fragment);
           fragment.destroy();
+        },
+      });
+    }
+    for (let i = 0; i < ENEMY_DEFEAT_DUST; i += 1) {
+      const spreadX = (hash2(seed ^ 0x7f4a7c15, i) - 0.5) * e.w * 0.78;
+      const spreadY = (hash2(seed ^ 0x94d049bb, i) - 0.5) * e.h * 0.62;
+      const x = e.x + e.w / 2 + Math.round(spreadX);
+      const y = e.y + e.h / 2 + Math.round(spreadY);
+      const size = 6 + Math.floor(hash2(seed ^ 0xed5ad4bb, i) * 9);
+      const dust = this.add.rectangle(x, y, size, size, i % 6 === 0 ? PALETTE.dust : PALETTE.bone).setOrigin(0.5).setAlpha(0.9);
+      this.keepAlive(dust);
+      this.tweens.add({
+        targets: dust,
+        x: x + Math.round((hash2(seed ^ 0x165667b1, i) - 0.5) * 100),
+        y: y - 44 - Math.round(hash2(seed ^ 0x27d4eb2d, i) * 116),
+        alpha: { from: 0.9, to: 0 },
+        scaleX: { from: 1, to: 0.2 },
+        scaleY: { from: 1, to: 0.2 },
+        duration: ENEMY_DEFEAT_SCATTER_MS + 140,
+        delay: Math.floor(hash2(seed ^ 0xc2b2ae35, i) * 110),
+        ease: 'Cubic.easeOut',
+        onComplete: () => {
+          this.dropAlive(dust);
+          dust.destroy();
         },
       });
     }
