@@ -60,8 +60,14 @@ export class RevivePhase extends PhaseScene {
     this.emptyKnockTimer = null;
     this.emptyKnockPlayed = false;
     super.create();
-    // 소생실은 편성실과 다른 곡을 쓴다 (사운드V4 · 소생실메인브금)
-    playBgm(this, 'bgm.revive');
+    // 소생실은 편성실과 다른 곡을 쓴다 (사운드V4 · 소생실메인브금).
+    //
+    // ★ 볼륨이 다른 단계(0.35)와 다른 데는 이유가 있다. 이 곡의 원본이 **4.2dB 작다**
+    //   (RMS: revive -21.9 / shop -17.7 / live -18.0 / tension -18.4 dBFS).
+    //   0.35 로 두면 편성실에서 소생실로 넘어올 때 소리가 뚝 떨어진다.
+    //   0.56 = 0.35 × 10^(4.19/20) — 귀에 들리는 크기를 편성실과 맞춘 값이다.
+    //   원본 피크가 -4.4dBFS 라 이 배율에서도 클리핑은 나지 않는다.
+    playBgm(this, 'bgm.revive', 0.56);
   }
 
   protected build(s: Readonly<GameState>): void {
