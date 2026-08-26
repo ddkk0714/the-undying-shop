@@ -11,7 +11,10 @@ import { Ticker } from '../../ui/Ticker';
 import { createTooltip } from '../../ui/Tooltip';
 import { playBgm, playSfx } from '../../audio/Sfx';
 import { starVoice } from '../../audio/Voice';
-import { mouthKey, mouthSpot } from '../../render/mouth';
+// 입 움직임 연출은 폐지했다 (사용자 확정 — 받은 입 그림이 검사·마법사 모두 얼굴에 비해
+// 크기가 안 맞았다). 나중에 다시 살릴 수 있게 표(`render/mouth.ts`)와 에셋은 그대로 두고
+// **부르는 자리만 주석 처리**한다. 되살리려면 이 파일에서 「입 연출」 주석을 다 풀면 된다.
+// import { mouthKey, mouthSpot } from '../../render/mouth';
 import { reducedMotion, speedMul } from '../../ui/options';
 import { PhaseScene } from './PhaseScene';
 import type { WipeScene } from '../WipeScene';
@@ -207,9 +210,10 @@ export class LivePhase extends PhaseScene {
   /** 이 줄에 붙은 표정. 줄이 떠 있는 동안 초상이 이걸 쓴다 */
   private radioFace: string | null = null;
   /** 흉상이 스프라이트를 어디에 놓았는지 — 입을 같은 좌표계로 얹기 위해 기억한다 */
-  private bustOrigin: { x: number; y: number; cx: number; cy: number; cw: number; ch: number } | null = null;
-  /** 이 배우의 입이 스프라이트 어디까지 내려오는가 — 흉상 crop 이 이걸 보고 창을 내린다 */
-  private mouthBottom: number | null = null;
+  // 입 연출 — 폐지. 되살릴 때 함께 푼다
+  // private bustOrigin: { x: number; y: number; cx: number; cy: number; cw: number; ch: number } | null = null;
+  // 입 연출 — 폐지. 이 배우의 입이 스프라이트 어디까지 내려오는가 (흉상 crop 이 참고했다)
+  // private mouthBottom: number | null = null;
 
   /** 프레임마다 손보는 오브젝트 — build() 가 매번 다시 채운다 */
   private blinkers: (Phaser.GameObjects.Rectangle | Phaser.GameObjects.Image)[] = [];
@@ -949,12 +953,13 @@ export class LivePhase extends PhaseScene {
       ...(appealing ? [art.appeal] : []),
       art.portrait,
     ];
-    this.bustOrigin = null;
-    const spot = mouthSpot(star.id);
-    this.mouthBottom = spot === null ? null : spot.y + spot.h;
+    // 입 연출 — 폐지
+    // this.bustOrigin = null;
+    // const spot = mouthSpot(star.id);
+    // this.mouthBottom = spot === null ? null : spot.y + spot.h;
     if (!this.bust(v, keys)) this.dither(v.x, v.y, v.w, v.h, 'mid', ratio < 0.15 ? 12 : 8);
-    // 대사가 나오는 **동안에만** 입을 얹는다. 다 나오면 표정 스프라이트만 남는다
-    if (!this.radioDone) this.buildMouth(v, star.id);
+    // 입 연출 — 폐지. 대사가 나오는 동안에만 입을 얹던 자리
+    // if (!this.radioDone) this.buildMouth(v, star.id);
     this.frame(v.x, v.y, v.w, v.h, appealing ? 'wax' : 'bone');
 
     // 열화 3+ — 균열 오버레이. 위 모든 상태에 겹친다
@@ -1096,44 +1101,47 @@ export class LivePhase extends PhaseScene {
     const cw = Math.min(src.width, v.w);
     const ch = Math.min(src.height, v.h);
     const cx = Math.round((src.width - cw) / 2);
-    // 머리 위 여백 24px 을 버리는 게 기본이다. 다만 **입이 창 밖으로 나가면 안 된다** —
-    // 말할 때 입 그림이 아래 변에서 잘려 네모난 조각으로 보였다 (실측).
-    // 입 아래로 8px 이 남도록 위쪽을 더 버린다
-    const need = this.mouthBottom === null ? 0 : this.mouthBottom + 8 - ch;
-    const cy = Math.max(0, Math.min(Math.max(24, need), src.height - ch));
+    // 머리 위 여백 24px 을 버린다.
+    // 입 연출을 쓰던 동안에는 입이 창 밖으로 안 나가게 창을 더 내렸다 (karin 기준 51).
+    // 폐지하면서 원래 값으로 되돌린다 — 되살리려면 아래 두 줄을 바꿔 끼우면 된다
+    // const need = this.mouthBottom === null ? 0 : this.mouthBottom + 8 - ch;
+    // const cy = Math.max(0, Math.min(Math.max(24, need), src.height - ch));
+    const cy = Math.min(24, Math.max(0, src.height - ch));
     img.setPosition(v.x - cx, v.y - cy).setCrop(cx, cy, cw, ch);
-    // 입을 얹을 때 쓸 변환 — 스프라이트 좌표 (sx, sy) 는 화면 (v.x - cx + sx, v.y - cy + sy)
-    this.bustOrigin = { x: v.x - cx, y: v.y - cy, cx, cy, cw, ch };
+    // 입을 얹을 때 쓰던 변환 — 스프라이트 좌표 (sx, sy) 는 화면 (v.x - cx + sx, v.y - cy + sy)
+    // this.bustOrigin = { x: v.x - cx, y: v.y - cy, cx, cy, cw, ch };
     return true;
   }
 
-  /**
-   * 말하는 동안 얼굴에 얹는 입 (사용자 확정).
-   *
-   * 흉상은 표정 스프라이트를 **1:1 로 놓고 잘라** 쓰므로, 입도 같은 1:1 좌표에
-   * 그대로 얹으면 맞는다 (`render/mouth.ts` 의 표가 그 좌표계다).
-   * 흉상 창 밖으로 나가는 부분은 잘라 낸다 — 안 그러면 초상 틀 밖에 입이 떠 있다.
-   */
-  private buildMouth(v: { x: number; y: number; w: number; h: number }, starId: string): void {
-    const o = this.bustOrigin;
-    const spot = mouthSpot(starId);
-    if (o === null || spot === null) return;
-    const img = this.spriteObject(o.x + spot.x, o.y + spot.y, mouthKey(starId));
-    if (img === null) return;
-
-    // 흉상이 보이는 창(= v 상자)과 겹치는 부분만 남긴다
-    const left = Math.max(0, v.x - (o.x + spot.x));
-    const top = Math.max(0, v.y - (o.y + spot.y));
-    const right = Math.max(0, (o.x + spot.x + spot.w) - (v.x + v.w));
-    const bottom = Math.max(0, (o.y + spot.y + spot.h) - (v.y + v.h));
-    const cw = spot.w - left - right;
-    const chh = spot.h - top - bottom;
-    if (cw <= 0 || chh <= 0) {
-      img.destroy();
-      return;
-    }
-    img.setPosition(o.x + spot.x, o.y + spot.y).setCrop(left, top, cw, chh);
-  }
+  /* ── 입 연출 (폐지) — 되살리려면 아래를 통째로 푼다 ──────── */
+  // /**
+  // * 말하는 동안 얼굴에 얹는 입 (사용자 확정).
+  // *
+  // * 흉상은 표정 스프라이트를 **1:1 로 놓고 잘라** 쓰므로, 입도 같은 1:1 좌표에
+  // * 그대로 얹으면 맞는다 (`render/mouth.ts` 의 표가 그 좌표계다).
+  // * 흉상 창 밖으로 나가는 부분은 잘라 낸다 — 안 그러면 초상 틀 밖에 입이 떠 있다.
+  // */
+  // private buildMouth(v: { x: number; y: number; w: number; h: number }, starId: string): void {
+  // const o = this.bustOrigin;
+  // const spot = mouthSpot(starId);
+  // if (o === null || spot === null) return;
+  // const img = this.spriteObject(o.x + spot.x, o.y + spot.y, mouthKey(starId));
+  // if (img === null) return;
+  //
+  // // 흉상이 보이는 창(= v 상자)과 겹치는 부분만 남긴다
+  // const left = Math.max(0, v.x - (o.x + spot.x));
+  // const top = Math.max(0, v.y - (o.y + spot.y));
+  // const right = Math.max(0, (o.x + spot.x + spot.w) - (v.x + v.w));
+  // const bottom = Math.max(0, (o.y + spot.y + spot.h) - (v.y + v.h));
+  // const cw = spot.w - left - right;
+  // const chh = spot.h - top - bottom;
+  // if (cw <= 0 || chh <= 0) {
+  // img.destroy();
+  // return;
+  // }
+  // img.setPosition(o.x + spot.x, o.y + spot.y).setCrop(left, top, cw, chh);
+  // }
+  //
 
   /* ── ⑧ 채팅 ────────────────────────────────────────── */
   private buildChat(s: Readonly<GameState>): void {

@@ -5,7 +5,9 @@ import { pickDialogue, totalRevivals } from '../../core/systems/dialogue';
 import { saleHaggleCount, saleOfferTried, salePriceMultiplier, salePurchaseChance, saleSlotSold } from '../../core/systems/office';
 import { key, starArt, starExpression } from '../../render/assets';
 import { PALETTE } from '../../render/palette';
-import { mouthKey, mouthSpot } from '../../render/mouth';
+// 입 움직임 연출은 폐지했다 (사용자 확정 — 입 그림 크기가 얼굴에 안 맞았다).
+// 표(`render/mouth.ts`)와 에셋은 남겨 두고 부르는 자리만 주석 처리한다
+// import { mouthKey, mouthSpot } from '../../render/mouth';
 import { starVoice } from '../../audio/Voice';
 import { L, actionX, ACTION_W } from '../../ui/layout';
 import { Button } from '../../ui/Button';
@@ -250,11 +252,8 @@ export class OfficePhase extends PhaseScene {
         this.redraw();
       });
     }
-    // 말하는 동안 입을 얹는다 (사용자 확정). 표정 스프라이트를 칸에 맞춰 늘려 놓았으므로
-    // 입도 같은 배율로 옮긴다 — `render/mouth.ts` 의 표는 원본 752x792 좌표계다.
-    // 다시 그리지 않고 **보였다 감추는 것만** 한다. 여기서 redraw 를 부르면
-    // 새 `Dialogue` 가 만들어지고 그게 또 끝나면서 무한히 돈다
-    const mouth = this.buildGuestMouth(bodyGeometry, star?.id, speech.expressionAsset);
+    // 입 연출 — 폐지. 말하는 동안 입을 얹던 자리
+    // const mouth = this.buildGuestMouth(bodyGeometry, star?.id, speech.expressionAsset);
     new Dialogue(this, {
       x: coverX + L.pad,
       y: coverY + 52,
@@ -263,7 +262,8 @@ export class OfficePhase extends PhaseScene {
       scale: 0.78,
       effects: speech.effects,
       voice: starVoice(star?.id),
-      onComplete: () => mouth?.setVisible(false),
+      // 입 연출 — 폐지
+      // onComplete: () => mouth?.setVisible(false),
     });
   }
 
@@ -274,33 +274,35 @@ export class OfficePhase extends PhaseScene {
    * 그래서 화면 기하는 `bodyGeometry` 하나로 고정돼 있고, 입도 그 배율로 옮기면 맞는다.
    * **표정 스프라이트를 쓰고 있을 때만** 얹는다 — 기본 전신 그림은 좌표계가 다르다.
    */
-  /** 이 에셋 키의 텍스처 원본 크기 — 없으면 null */
-  private textureSize(assetKey: string): { width: number; height: number } | null {
-    if (!this.hasArt(assetKey)) return null;
-    const src = this.textures.get(key(assetKey)).getSourceImage() as { width: number; height: number };
-    return { width: src.width, height: src.height };
-  }
-
-  private buildGuestMouth(
-    geometry: { x: number; y: number; w: number; h: number } | null,
-    starId: string | undefined,
-    expressionAsset: string | undefined,
-  ): Phaser.GameObjects.Image | null {
-    const spot = mouthSpot(starId);
-    if (geometry === null || spot === null || starId === undefined || expressionAsset === undefined) return null;
-    const src = this.textureSize(expressionAsset);
-    if (src === null) return null;
-    const sx = geometry.w / src.width;
-    const sy = geometry.h / src.height;
-    const img = this.spriteObject(
-      geometry.x + spot.x * sx,
-      geometry.y + spot.y * sy,
-      mouthKey(starId),
-      Math.round(spot.w * sx),
-      Math.round(spot.h * sy),
-    );
-    return img;
-  }
+  /* ── 입 연출 (폐지) — 되살리려면 아래를 통째로 푼다 ──────── */
+  // /** 이 에셋 키의 텍스처 원본 크기 — 없으면 null */
+  // private textureSize(assetKey: string): { width: number; height: number } | null {
+  // if (!this.hasArt(assetKey)) return null;
+  // const src = this.textures.get(key(assetKey)).getSourceImage() as { width: number; height: number };
+  // return { width: src.width, height: src.height };
+  // }
+  //
+  // private buildGuestMouth(
+  // geometry: { x: number; y: number; w: number; h: number } | null,
+  // starId: string | undefined,
+  // expressionAsset: string | undefined,
+  // ): Phaser.GameObjects.Image | null {
+  // const spot = mouthSpot(starId);
+  // if (geometry === null || spot === null || starId === undefined || expressionAsset === undefined) return null;
+  // const src = this.textureSize(expressionAsset);
+  // if (src === null) return null;
+  // const sx = geometry.w / src.width;
+  // const sy = geometry.h / src.height;
+  // const img = this.spriteObject(
+  // geometry.x + spot.x * sx,
+  // geometry.y + spot.y * sy,
+  // mouthKey(starId),
+  // Math.round(spot.w * sx),
+  // Math.round(spot.h * sy),
+  // );
+  // return img;
+  // }
+  //
 
   /* ── 우 · 작업대 배경 ─────────────────────────────────── */
 
