@@ -39,6 +39,27 @@ const SHELF_SLOTS = [
   { x: 1488, y: 249, w: 214, h: 266 },
 ] as const;
 
+/** 한글은 공백 없이 길어질 수 있어, 편성실 대사창 폭에 맞춰 명시적으로 줄을 나눈다. */
+function wrapOfficeDialogue(line: string, maxUnits = 64): string {
+  let units = 0;
+  let wrapped = '';
+  for (const ch of line) {
+    if (ch === '\n') {
+      wrapped += ch;
+      units = 0;
+      continue;
+    }
+    const width = ch.charCodeAt(0) > 0x2000 ? 2 : 1;
+    if (units > 0 && units + width > maxUnits) {
+      wrapped += '\n';
+      units = 0;
+    }
+    wrapped += ch;
+    units += width;
+  }
+  return wrapped;
+}
+
 export class OfficePhase extends PhaseScene {
   /** 계약서가 2장 올 수 있다 (M05). 지금 보고 있는 장 */
   private contractIndex = 0;
@@ -54,14 +75,39 @@ export class OfficePhase extends PhaseScene {
   private draggingInventoryItem = false;
   /** 작업대에 놓인 계약서 축소본을 왼쪽 클릭하면, 같은 종이를 읽기 크기로 펼친다. */
   private contractReaderOpen = false;
+  /** 용사가 함께 제출한 하강 예상·스탯 서류의 확대 상태. */
+  private statsReaderOpen = false;
   /** 하단 계약 버튼의 첫 클릭은 서류 확인만 열고, 두 번째 클릭에서만 수락한다. */
   private contractConfirmationOpen = false;
+  /** 계약서에 도장을 내리치는 중에는 중복 입력을 막는다. */
+  private contractStamping = false;
+  /** 계약한 용사는 돌려보내기를 누르기 전까지 편성실에서 감사 인사를 남긴다. */
+  private contractedGuestDeparted = false;
   /** 첫날에는 배경의 문을 직접 열기 전까지 손님을 맞지 않는다. */
   private shopOpened = false;
+  /** 돌려보낸 뒤에는 다음 지원자를 다시 문으로 맞이한다. */
+  private waitingForNextVisitorDoor = false;
   /** 첫 영업의 빈 편성실에서 문을 열 때까지 반복되는 노크 */
   private officeKnockTimer: Phaser.Time.TimerEvent | null = null;
   /** 전신을 누를 때 SHOP_TOUCH 대사를 순서대로 넘긴다. */
   private guestTouchCount = 0;
+  /** 우측 UI를 다시 그려도 같은 대사를 처음부터 재생하지 않도록 유지하는 대사 오브젝트. */
+  private guestDialogue: Dialogue | null = null;
+  private guestDialogueKey: string | null = null;
+  /**
+   * 현재 화면의 대사 진행 전용 용사 클릭 판정 대상.
+   * 사각 상자(Zone)가 아니라 **용사 본인 스프라이트**를 픽셀 단위(alpha)로 판정한다 —
+   * 원화 캔버스에 여백이 크고 인물 실루엣이 오목한 모양(머리카락 사이로 문·TV가 비치는 등)이라,
+   * 사각 상자로는 아무리 좁혀도 배경까지 함께 잡힌다 (사용자 리포트 재현 — 문틀·TV를 눌러도
+   * 대사가 넘어갔다). `body.setInteractive({ pixelPerfect: true })` 로 만든 진짜 스프라이트를 쓴다.
+   */
+  private guestDialogueTarget: Phaser.GameObjects.Image | null = null;
+  /** 현재 편성실에 보이는 용사 전신. 숨쉬기·입퇴장 연출은 이 이미지에만 적용한다. */
+  private guestSprite: Phaser.GameObjects.Image | null = null;
+  /** 문을 연 직후 한 번만 우하단에서 등장시킨다. */
+  private guestEntryPending = false;
+  /** 퇴장 트윈이 끝나기 전 중복 클릭을 막는다. */
+  private guestExitInProgress = false;
   /** 진열 상품의 가격을 정하는 흥정 팝업. */
   private saleDialogOpen = false;
   private saleMultiplier = 1;
@@ -71,11 +117,26 @@ export class OfficePhase extends PhaseScene {
     super(SCENES.PHASE_OFFICE);
   }
 
+  /**
+   * 계약서·인벤토리 아이콘처럼 pointer 이벤트 안에서 redraw()를 부르는 UI는 파괴 직후에도
+   * Phaser InputPlugin의 제거 대기 목록에 한 프레임 남을 수 있다. 그 유령 입력 판이 다음
+   * 클릭을 받지 않도록, 화면을 비우기 전에 모든 기존 입력을 즉시 비활성화한다.
+   */
+  protected override redraw(): void {
+    for (const child of this.children.list) {
+      if (child.input !== null) this.input.clear(child);
+    }
+    super.redraw();
+  }
+
   override create(): void {
   /**
    * ★ Phaser 씬 인스턴스는 stop/launch 를 거쳐도 **살아남는다.**
    * 어제 남긴 필드를 지우지 않으면 다음 날 화면이 어제 상태로 시작한다.
    */
+    // 겹치는 클릭 영역은 가장 앞의 조작 대상만 받는다. 진열대 클릭이 뒤의 용사 스프라이트로
+    // 전파되어 SHOP_TOUCH 대사가 넘어가는 것을 막는다.
+    this.input.setTopOnly(true);
     this.contractIndex = 0;
     this.inventoryOpen = false;
     this.selectedItemId = null;
@@ -83,25 +144,47 @@ export class OfficePhase extends PhaseScene {
     this.itemDetail = [];
     this.draggingInventoryItem = false;
     this.contractReaderOpen = false;
+    this.statsReaderOpen = false;
     this.contractConfirmationOpen = false;
+    this.contractStamping = false;
+    this.contractedGuestDeparted = false;
     this.shopOpened = false;
+    this.waitingForNextVisitorDoor = false;
     this.officeKnockTimer = null;
     this.guestTouchCount = 0;
+    this.guestDialogue = null;
+    this.guestDialogueKey = null;
+    this.guestDialogueTarget = null;
+    this.guestSprite = null;
+    this.guestEntryPending = false;
+    this.guestExitInProgress = false;
     this.saleDialogOpen = false;
     this.saleMultiplier = 1;
     this.saleReaction = null;
     // 방송 화면과 같은 버튼 툴팁. redraw 때 버튼만 다시 만들어져도 툴팁 판은 유지한다.
     this.keepAlive(...createTooltip(this).objects());
     super.create();
+    // 대사 진행은 개별 이미지/버튼의 pointerup 이벤트를 전혀 사용하지 않는다.
+    // 우측 UI가 화면을 다시 그리는 중에도, 이 단일 좌표 게이트만 용사 대사를 바꿀 수 있다.
+    this.input.on('pointerdown', this.handleGuestDialoguePointer, this);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.input.off('pointerdown', this.handleGuestDialoguePointer, this);
+    });
     playBgm(this, 'bgm.shop');
   }
 
   protected build(s: Readonly<GameState>): void {
+    // 모달을 열고 닫으며 다시 그린 뒤에도 겹친 입력이 뒤 오브젝트로 전달되지 않게 한다.
+    this.input.setTopOnly(true);
     // redraw()가 이전 동적 오브젝트를 정리한 뒤 새 화면을 만든다.
     this.itemDetail = [];
     this.draggingInventoryItem = false;
+    this.guestDialogueTarget = null;
+    this.guestSprite = null;
     this.stageBackdrop();
-    if (s.day === 1 && !this.shopOpened) {
+    // Entering OFFICE always starts with the visitor behind the door.
+    // The scene instance is reused across days, and create() resets shopOpened.
+    if (!this.shopOpened) {
       this.scheduleOfficeKnock();
       this.buildShopStart();
       return;
@@ -114,6 +197,7 @@ export class OfficePhase extends PhaseScene {
     if (this.inventoryOpen) this.buildInventory(s);
     // 확대는 별도 장면이 아니라, 이미 그린 작업대 위에 원본 종이를 얹는다.
     if (this.contractReaderOpen) this.buildContract(s);
+    else if (this.statsReaderOpen) this.buildStatsSheet(s);
     this.buildActions(s);
     if (this.saleDialogOpen) this.buildSaleDialog(s);
   }
@@ -127,7 +211,7 @@ export class OfficePhase extends PhaseScene {
     this.spriteCover(g, ['bg.shop.room']);
     // 배경 원화(1086×1324)의 왼쪽 상자 위 좌표를 좌측 용사 칸(752×792)으로 옮겼다.
     // 용사 전신보다 먼저 그려, 참고 이미지처럼 방 안 소품으로 남긴다.
-    this.sprite(g.x + 32, g.y + 275, 'prop.tv', 152, 121);
+    this.sprite(g.x + 27, g.y + 275, 'prop.tv', 140, 112);
     this.frame(g.x, g.y, g.w, g.h, 'dust');
     this.buildBenchBackdrop();
 
@@ -136,17 +220,24 @@ export class OfficePhase extends PhaseScene {
     const handle = this.add.zone(door.x, door.y, door.w, door.h).setOrigin(0, 0).setInteractive({ cursor: 'pointer' });
     handle.on('pointerup', () => {
       this.shopOpened = true;
+      this.guestEntryPending = true;
+      this.waitingForNextVisitorDoor = false;
       this.cancelOfficeKnock();
       playSfx(this, 'sfx.title.door', 0.28);
+      playSfx(this, 'sfx.office.walk', 0.22);
       this.redraw();
     });
-    // 안내 묶음을 패널 좌상단에 붙인다. 용사 이름과 같은 ink→디더 가리개라
-    // 밝은 문 그림 위에서도 읽힌다.
-    const prompt = { x: g.x + L.line, y: g.y + L.line, w: 620, h: 104 };
+    // 빈 편성실도 손님이 있을 때와 같은 상단 이름판·하단 가리개 크기를 사용한다.
+    // 문을 열어 손님이 나타나는 순간 UI가 흔들리거나 크기가 바뀌어 보이지 않는다.
+    const prompt = { x: g.x + L.line, y: g.y + L.line, w: 460, h: 76 };
     this.scrimBlock(prompt.x, prompt.y, prompt.w, prompt.h);
-    this.label(prompt.x + 28, prompt.y + 18, '첫 영업', 'bone').setScale(1.25);
-    this.text(prompt.x + 28, prompt.y + 58, '문을 눌러 장사를 시작하세요.', 'bone').setScale(0.78);
-    this.label(L.bench.x + 70, L.bench.y + 70, '문이 열리면 첫 손님이 계약서를 들고 옵니다.', 'dust').setScale(0.86);
+    this.title(g.x + L.pad, g.y + 18, this.waitingForNextVisitorDoor ? '손님 대기' : '첫 영업', 'bone').setScale(0.55);
+    this.text(prompt.x + 28, prompt.y + 46, '문을 눌러 장사를 시작하세요.', 'bone').setScale(0.55);
+    const coverW = g.w;
+    const coverH = Math.round(258 * (coverW / 1087));
+    const coverY = g.y + g.h - coverH;
+    this.sprite(g.x, coverY, 'ui.guest.cover', coverW, coverH);
+    this.rect(L.dialogue.x, L.dialogue.y, L.dialogue.w, L.dialogue.h, 'ink');
   }
 
   /** 진입 2초 뒤 한 번, 이후 문을 열 때까지 3초마다 노크한다. */
@@ -176,20 +267,28 @@ export class OfficePhase extends PhaseScene {
 
   private buildGuest(s: Readonly<GameState>): void {
     const g = L.guest;
+    const broadcastReady = s.today !== null && this.contractedGuestDeparted;
     this.rect(g.x, g.y, g.w, g.h, 'ink');
     this.spriteCover(g, ['bg.shop.room']);
     // TV는 방 배경 다음, 용사 전신 전 단계에서 만들어져 항상 방 안 소품으로 남는다.
     // 계약이 끝나면 재생 화면으로 바뀌며, 이 TV만 방송 시작 입력을 받는다.
-    const tv = this.spriteObject(g.x + 32, g.y + 275, s.today === null ? 'prop.tv' : 'prop.tv.live', 152, 121);
-    if (tv !== null && s.today !== null) {
+    const tv = this.spriteObject(g.x + 27, g.y + 275, broadcastReady ? 'prop.tv.live' : 'prop.tv', 140, 112);
+    if (tv !== null && broadcastReady) {
       const showLiveTv = (hovered: boolean): void => {
         tv.setTexture(key(hovered && this.hasArt('prop.tv.live.hover') ? 'prop.tv.live.hover' : 'prop.tv.live'))
-          .setDisplaySize(152, 121);
+          .setDisplaySize(140, 112);
       };
-      tv.setInteractive({ cursor: 'pointer' });
+      // TV는 배경 위, 뒤이어 생성되는 용사 전신 뒤에 있어야 한다.
+      tv.setInteractive({ cursor: 'pointer' }).setDepth(0);
       tv.on('pointerover', () => showLiveTv(true));
       tv.on('pointerout', () => showLiveTv(false));
       tv.on('pointerup', () => this.store.dispatch({ type: 'OFFICE/CONFIRM' }));
+    } else if (tv !== null) {
+      // 아직 아무 기능이 없어도 이 자리는 눌러 잡아 둔다. 안 그러면 뒤에 깔리는
+      // 용사 클릭 판정 상자(guestDialogueTarget)로 클릭이 새어 들어가, TV를 눌렀는데
+      // 대사가 넘어가 버린다 (사용자 리포트 — characterHitbox 로 상자를 좁혀도
+      // TV는 그 상자 '안'에 그려지는 소품이라 겹침 자체는 남는다).
+      tv.setInteractive({ cursor: 'default' }).setDepth(0);
     }
     this.frame(g.x, g.y, g.w, g.h, 'dust');
 
@@ -202,9 +301,11 @@ export class OfficePhase extends PhaseScene {
     const star = guest
       ?? s.stars.find((x) => x.id === s.today?.starId)
       ?? s.stars.find((x) => x.status === 'ALIVE');
-    const name = contracting
-      ? visitor.displayName
-      : s.personas.find((p) => p.id === star?.personaId)?.displayName ?? '무명';
+    const name = broadcastReady
+      ? 'TV를 눌러 방송 시작'
+      : contracting
+        ? visitor.displayName
+        : s.personas.find((p) => p.id === star?.personaId)?.displayName ?? '무명';
 
     // 전신 CG 자리 — star.body.* → star.portrait.* → 실루엣 순으로 내려간다
     const art = star === undefined ? null : starArt(star.id);
@@ -214,8 +315,9 @@ export class OfficePhase extends PhaseScene {
     const y = g.y + g.h - h - 24;
     // 전신은 좌측 칸과 1:1 이다 (752x792). 이름 글자는 그 위에 얹는다
     const full = { x: g.x, y: g.y, w: g.w, h: g.h };
-    const body = art === null ? null : this.spriteFitObject(full, [art.body]);
-    if (body === null && !this.spriteFit({ x, y, w, h }, [...(art === null ? [] : [art.portrait]), 'star.silhouette'])) {
+    // 돌려보내기를 누르기 전까지 계약한 용사는 감사 인사를 위해 자리에 남는다.
+    const body = broadcastReady || art === null ? null : this.spriteFitObject(full, [art.body]);
+    if (!broadcastReady && body === null && !this.spriteFit({ x, y, w, h }, [...(art === null ? [] : [art.portrait]), 'star.silhouette'])) {
       this.rect(x, y, w, h, 'mid');
     }
 
@@ -235,7 +337,8 @@ export class OfficePhase extends PhaseScene {
     const situation = this.guestTouchCount > 0
       ? 'SHOP_TOUCH'
       : contracting ? 'SHOP_FIRST' : 'SHOP_GREET';
-    const speechLine = star === undefined ? null : pickDialogue(star.id, situation, {
+    const contractedGuestWaiting = s.today !== null && !this.contractedGuestDeparted;
+    const speechLine = broadcastReady || contractedGuestWaiting || star === undefined ? null : pickDialogue(star.id, situation, {
       floor: profile?.targetFloor,
       revives: totalRevivals(star.id, star.reviveCount),
       viewers: profile?.fans,
@@ -243,7 +346,9 @@ export class OfficePhase extends PhaseScene {
       generation: s.personas.find((persona) => persona.id === star.personaId)?.generation,
     }, ((s.day * 17 + this.contractIndex * 7 + this.guestTouchCount) % 100) / 100);
     const speech: { line: string; expressionAsset?: string; effects?: readonly string[] } = {
-      line: this.saleReaction ?? speechLine?.text ?? (contracting ? '...일할 자리 있나요?' : '...강한 무기 있나요?'),
+      line: contractedGuestWaiting
+        ? '계약해 주셔서 감사합니다. 방송에서 뵐게요.'
+        : this.saleReaction ?? speechLine?.text ?? (contracting ? '...일할 자리 있나요?' : '...강한 무기 있나요?'),
       expressionAsset: star === undefined || speechLine === null ? undefined : starExpression(star.id, speechLine.expression),
       effects: speechLine?.effects,
     };
@@ -263,24 +368,166 @@ export class OfficePhase extends PhaseScene {
     };
     if (art !== null) setCharacterFrame(speech.expressionAsset ?? art.dialogue);
     if (body !== null && star !== undefined) {
-      body.setInteractive({ cursor: 'pointer' });
-      body.on('pointerup', () => {
-        this.guestTouchCount += 1;
-        this.redraw();
-      });
+      // 대사를 넘기는 유일한 입력 대상 — 사각 상자(Zone)가 아니라 **스프라이트 자신**을
+      // 픽셀 단위(alpha)로 판정한다. 원화 인물 실루엣이 오목해서(머리카락 사이로 문·TV가
+      // 비치는 등) 사각 상자로는 아무리 좁혀도 배경까지 함께 잡혔다 — 이전 시도(characterHitbox,
+      // 알파 bounding box)가 이 실패를 반복했다. 개별 pointer 이벤트는 달지 않고, 씬 전역
+      // 이벤트가 제공하는 currentlyOver 의 최상단 대상과만 비교한다 (handleGuestDialoguePointer).
+      body.setInteractive({ cursor: 'pointer', pixelPerfect: true, alphaTolerance: 8 });
+      this.guestDialogueTarget = body;
+      this.guestSprite = body;
+      this.animateGuestArrivalAndBreathing(body, bodyGeometry?.x ?? body.x, bodyGeometry?.y ?? body.y);
     }
     // 입 연출 — 폐지. 말하는 동안 입을 얹던 자리
     // const mouth = this.buildGuestMouth(bodyGeometry, star?.id, speech.expressionAsset);
-    new Dialogue(this, {
-      x: coverX + L.pad,
-      y: coverY + 52,
-      w: coverW - L.pad,
-      line: this.clip(speech.line, coverW - 96, 'title'),
-      scale: 0.78,
-      effects: speech.effects,
-      voice: starVoice(star?.id),
-      // 입 연출 — 폐지
-      // onComplete: () => mouth?.setVisible(false),
+    if (!broadcastReady) {
+      const dialogueKey = [star?.id ?? '', speech.line, speech.expressionAsset ?? '', ...(speech.effects ?? [])].join('\u0001');
+      if (this.guestDialogueKey !== dialogueKey || this.guestDialogue === null || !this.guestDialogue.active) {
+        if (this.guestDialogue !== null) {
+          this.dropAlive(this.guestDialogue);
+          this.guestDialogue.destroy();
+        }
+        this.guestDialogue = new Dialogue(this, {
+        x: coverX + L.pad,
+        y: coverY + 52,
+        w: coverW - L.pad,
+        // 대사를 생략하지 않고, 작은 본문 글씨로 여러 줄에 모두 표시한다.
+        line: wrapOfficeDialogue(speech.line),
+        size: 'body',
+        scale: 0.90,
+        effects: speech.effects,
+        voice: starVoice(star?.id),
+        // 입 연출 — 폐지
+        // onComplete: () => mouth?.setVisible(false),
+        });
+        this.guestDialogueKey = dialogueKey;
+        this.keepAlive(this.guestDialogue);
+      }
+    } else if (this.guestDialogue !== null) {
+      this.dropAlive(this.guestDialogue);
+      this.guestDialogue.destroy();
+      this.guestDialogue = null;
+      this.guestDialogueKey = null;
+    }
+  }
+
+  /** Phaser가 판정한 최상단 클릭 대상이 용사 전신일 때만 다음 대사로 인정한다. */
+  private handleGuestDialoguePointer(
+    _pointer: Phaser.Input.Pointer,
+    currentlyOver: Phaser.GameObjects.GameObject[],
+  ): void {
+    const target = this.guestDialogueTarget;
+    if (target === null || currentlyOver[0] !== target) return;
+    this.guestTouchCount += 1;
+    this.redraw();
+  }
+
+  /** 용사 스프라이트만 아주 작게 상하로 흔들어 정지 화면에서도 숨 쉬는 느낌을 준다. */
+  private startGuestBreathing(body: Phaser.GameObjects.Image, baseY: number): void {
+    if (reducedMotion(this.registry)) return;
+    this.tweens.add({
+      targets: body,
+      y: baseY - 2,
+      duration: 1450,
+      ease: 'Sine.easeInOut',
+      yoyo: true,
+      repeat: -1,
+    });
+  }
+
+  /** 검은 실루엣을 원래 밝기로 부드럽게 되돌린다. */
+  private brightenGuest(body: Phaser.GameObjects.Image, from: number, to: number, duration: number, onComplete: () => void): void {
+    this.tweens.addCounter({
+      from,
+      to,
+      duration,
+      ease: 'Sine.easeInOut',
+      onUpdate: (tween) => {
+        const tone = Math.round(tween.getValue() ?? from);
+        body.setTint((tone << 16) | (tone << 8) | tone);
+      },
+      onComplete: () => {
+        if (to === 255) body.clearTint();
+        onComplete();
+      },
+    });
+  }
+
+  /** 문을 연 때만 우측 중하단의 검은 실루엣이 들어와 원래 밝기로 드러난다. */
+  private animateGuestArrivalAndBreathing(body: Phaser.GameObjects.Image, baseX: number, baseY: number): void {
+    if (!this.guestEntryPending) {
+      this.startGuestBreathing(body, baseY);
+      return;
+    }
+    this.guestEntryPending = false;
+    if (reducedMotion(this.registry)) {
+      this.startGuestBreathing(body, baseY);
+      return;
+    }
+    body.setPosition(baseX + Math.round(body.displayWidth * 0.62), baseY + 8).setTint(0x000000);
+    this.tweens.add({
+      targets: body,
+      x: baseX,
+      duration: 340,
+      ease: 'Quad.easeOut',
+      onComplete: () => {
+        body.setPosition(baseX, baseY);
+        this.brightenGuest(body, 0, 255, 210, () => this.startGuestBreathing(body, baseY));
+      },
+    });
+    this.tweens.add({
+      targets: body,
+      y: baseY - 2,
+      duration: 80,
+      ease: 'Sine.easeInOut',
+      yoyo: true,
+      repeat: 1,
+    });
+  }
+
+  /** 용사를 먼저 검은 실루엣으로 만든 뒤 좌측 중단으로 빠져나가게 한다. */
+  private departGuest(afterDeparture: () => void): void {
+    if (this.guestExitInProgress) return;
+    this.guestExitInProgress = true;
+    const body = this.guestSprite;
+    this.guestDialogueTarget = null;
+    // 퇴장 중에는 이전 대사가 남지 않게 대사창을 비운다.
+    if (this.guestDialogue !== null) {
+      this.dropAlive(this.guestDialogue);
+      this.guestDialogue.destroy();
+      this.guestDialogue = null;
+      this.guestDialogueKey = null;
+    }
+    playSfx(this, 'sfx.office.walk', 0.22);
+    if (body === null || !body.active || reducedMotion(this.registry)) {
+      this.guestExitInProgress = false;
+      afterDeparture();
+      return;
+    }
+    this.input.clear(body);
+    this.tweens.killTweensOf(body);
+    this.brightenGuest(body, 255, 0, 170, () => {
+      const exitY = body.y - 12;
+      this.tweens.add({
+        targets: body,
+        x: body.x - Math.round(body.displayWidth * 0.62),
+        duration: 340,
+        ease: 'Quad.easeIn',
+        onComplete: () => {
+          body.setY(exitY);
+          this.guestExitInProgress = false;
+          this.guestSprite = null;
+          afterDeparture();
+        },
+      });
+      this.tweens.add({
+        targets: body,
+        y: body.y - 10,
+        duration: 80,
+        ease: 'Sine.easeInOut',
+        yoyo: true,
+        repeat: 1,
+      });
     });
   }
 
@@ -344,9 +591,9 @@ export class OfficePhase extends PhaseScene {
     }
     const body = s.recruitPool.find((candidate) => candidate.id === visitor.starId);
     const profile = content.starProfiles[visitor.starId];
-    // 원본 비율(700×914)을 유지한다. 읽기 상태에서는 HUD까지 쓰는 1.43배 크기로
-    // 올려, 서류의 표기와 실제 입력값을 한눈에 읽을 수 있게 한다.
-    const paper = { x: 900, y: 18, w: 800, h: 1045 };
+    // 원본 비율(700×914)을 유지한 채 기존 펼침의 1/1.3 크기로 줄였다.
+    // 본문 좌표·폰트는 아래 scale/textScale을 함께 써서 종이 안의 상대 위치를 보존한다.
+    const paper = { x: 992, y: 100, w: 616, h: 804 };
     const asset = this.contractSheetAsset();
     if (asset === null) return;
     const paperDepth = 800;
@@ -359,24 +606,58 @@ export class OfficePhase extends PhaseScene {
     // 작업대 배경을 그대로 남긴다. 입력은 build()의 모달 분기로 이미 차단되어 있다.
     this.add.image(paper.x, paper.y, key(asset)).setOrigin(0, 0).setDisplaySize(paper.w, paper.h).setDepth(paperDepth);
 
-    // 펼침을 만든 첫 클릭과 충돌하지 않도록, 다음 프레임부터만 접기 입력을 받는다.
-    const page = this.add.zone(paper.x, paper.y, paper.w, paper.h).setOrigin(0, 0).setDepth(paperDepth + 1);
-    this.time.delayedCall(0, () => {
-      if (!page.active) return;
-      page.setInteractive({ cursor: 'pointer' });
-      page.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-        if (!pointer.leftButtonDown()) return;
-        this.contractReaderOpen = false;
-        this.contractConfirmationOpen = false;
-        this.redraw();
-      });
+    // 계약서 좌측 하단의 빈 원형 도장란(원본 x≈50, y≈745)에 맞춘다.
+    const stampBox = { x: paper.x + 44, y: paper.y + 645, w: 122, h: 122 };
+    const stamp = this.spriteObject(stampBox.x, stampBox.y, 'prop.contract.stamp', stampBox.w, stampBox.h);
+    stamp?.setDepth(paperDepth + 4).setAlpha(0);
+
+    // 계약서를 여는 클릭은 이 redraw 이전의 축소본에 전달됐으므로, 여기서는 바로 입력을 등록해도
+    // 충돌하지 않는다. delayedCall로 늦게 등록하면 닫은 뒤의 폐기된 page가 InputPlugin에 남을 수 있다.
+    const page = this.add.zone(paper.x, paper.y, paper.w, paper.h)
+      .setOrigin(0, 0)
+      .setDepth(paperDepth + 1)
+      .setInteractive({ cursor: 'pointer' });
+    page.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      if (!pointer.leftButtonDown()) return;
+      if (this.contractConfirmationOpen
+        && pointer.x >= stampBox.x && pointer.x <= stampBox.x + stampBox.w
+        && pointer.y >= stampBox.y && pointer.y <= stampBox.y + stampBox.h) return;
+      page.disableInteractive();
+      this.contractReaderOpen = false;
+      this.contractConfirmationOpen = false;
+      this.redraw();
     });
 
     if (this.contractConfirmationOpen) {
-      this.title(paper.x + paper.w / 2, paper.y + 52, '정말 계약하시겠습니까?', 'wax')
-        .setOrigin(0.5, 0)
-        .setScale(1.18)
-        .setDepth(paperDepth + 3);
+      const stampZone = this.add.zone(stampBox.x, stampBox.y, stampBox.w, stampBox.h)
+        .setOrigin(0, 0)
+        .setDepth(paperDepth + 5)
+        .setInteractive({ cursor: 'pointer' });
+      stampZone.on('pointerover', () => stamp?.setAlpha(0.38));
+      stampZone.on('pointerout', () => {
+        if (!this.contractStamping) stamp?.setAlpha(0);
+      });
+      stampZone.on('pointerup', () => {
+        if (this.contractStamping || stamp === null) return;
+        this.contractStamping = true;
+        stamp.setAlpha(1).setY(stampBox.y - 44);
+        this.tweens.add({
+          targets: stamp,
+          y: stampBox.y,
+          duration: 120,
+          ease: 'Quad.easeIn',
+          onComplete: () => {
+            playSfx(this, 'sfx.contract.stamp', 0.2);
+            this.time.delayedCall(180, () => {
+              this.contractStamping = false;
+              this.contractReaderOpen = false;
+              this.contractConfirmationOpen = false;
+              this.contractedGuestDeparted = false;
+              this.store.dispatch({ type: 'OFFICE/CONTRACT_ACCEPT', starId: visitor.starId });
+            });
+          },
+        });
+      });
     }
 
     // 상단 개인정보 칸
@@ -404,10 +685,88 @@ export class OfficePhase extends PhaseScene {
     }
     const rates = visitor.claimedTiers.map((tier) => `${tier.floor}F ${Math.round(tier.rate * 100)}%`).join(' · ');
     at(90, 694, this.clip(rates, 500, 'body'), 0.46);
-    this.label(paper.x + 72, paper.y + paper.h - 62, '종이를 누르면 접기 · 하단 계약을 누르면 수락', 'ink').setScale(0.62 * textScale).setDepth(paperDepth + 2);
+    this.label(paper.x + 72, paper.y + paper.h - 62, this.contractConfirmationOpen ? '좌측 하단 도장을 눌러 계약 확정' : '종이를 누르면 접기', 'ink').setScale(0.62 * textScale).setDepth(paperDepth + 2);
   }
 
   /* ── 작업대 B · 장비 진열 ─────────────────────────────── */
+
+  /** 용사가 낸 하강 예상서. 계약서와 달리 읽기 전용이며 실제 프로필 수치로 채운다. */
+  private buildStatsSheet(s: Readonly<GameState>): void {
+    const visitor = s.visitors[this.contractIndex];
+    const asset = this.statsSheetAsset();
+    if (visitor === undefined || asset === null) {
+      this.statsReaderOpen = false;
+      return;
+    }
+    const profile = content.starProfiles[visitor.starId];
+    const paper = { x: 992, y: 100, w: 616, h: 779 };
+    const depth = 800;
+    const scale = paper.w / 705;
+    const at = (x: number, y: number, value: string, textScale = 0.64) =>
+      this.text(paper.x + x * scale, paper.y + y * scale, value, 'ink')
+        .setScale(textScale * scale)
+        .setDepth(depth + 2);
+    this.add.image(paper.x, paper.y, key(asset)).setOrigin(0, 0).setDisplaySize(paper.w, paper.h).setDepth(depth);
+
+    // 캐릭터스탯.xlsm의 개인 시트에 적힌 원래 착용 장비와 기본 스탯.
+    // 진열대는 판매할 상품이므로 용사의 착용 장비로 취급하지 않는다.
+    const originalEquipment = profile?.equipment ?? [];
+    const hp = profile?.hp ?? 0;
+    const atk = profile?.atk ?? 0;
+    const def = profile?.def ?? 0;
+
+    // 서류 안의 글씨는 예시보다 한 단계 크게 잡아 확대 없이도 읽힌다.
+    at(98, 70, '하강 예상서', 1.28);
+    at(96, 134, '캐릭터 스탯', 0.88);
+    at(112, 178, `체력 ${hp}     공격 ${atk}     방어 ${def}`, 0.76);
+    at(112, 222, `특이사항  ${profile?.nature ?? '기록 없음'}${profile?.refuses ? ` · ${profile.refuses}` : ''}`, 0.62);
+
+    at(96, 280, '장비 현황', 0.88);
+    if (originalEquipment.length === 0) {
+      at(112, 334, '등록된 착용 장비가 없습니다.', 0.62);
+    }
+    originalEquipment.slice(0, 3).forEach((item, index) => {
+      const rowY = 322 + index * 64;
+      at(112, rowY, `${index + 1}.`, 0.62);
+      at(160, rowY, item, 0.66);
+    });
+
+    at(96, 530, '구역별 하강 확률', 0.88);
+    const zones = ['RUIN', 'SEWER', 'FLAME', 'ABYSS'];
+    const bestZone = profile?.bestZone ?? '';
+    const combatScore = hp * 0.22 + atk * 2.4 + def * 1.8;
+    zones.forEach((zone, row) => {
+      const chance = Math.max(5, Math.min(95, Math.round(74 - row * 17 + combatScore * 0.34 + (zone === bestZone ? 10 : 0))));
+      const filled = Math.max(1, Math.round(chance / 20));
+      at(112, 580 + row * 47, zone, 0.62);
+      for (let column = 0; column < 5; column += 1) {
+        const cellX = paper.x + (294 + column * 48) * scale;
+        const cellY = paper.y + (578 + row * 47) * scale;
+        this.add.rectangle(cellX, cellY, Math.round(42 * scale), Math.round(30 * scale))
+          .setOrigin(0, 0)
+          .setStrokeStyle(2, PALETTE.ink)
+          .setDepth(depth + 2);
+        if (column < filled) {
+          this.add.rectangle(cellX + 4, cellY + 4, Math.round(34 * scale), Math.round(22 * scale), PALETTE.ink)
+            .setOrigin(0, 0)
+          .setDepth(depth + 1);
+        }
+      }
+      at(552, 580 + row * 47, `${chance}%`, 0.62);
+    });
+
+    const page = this.add.zone(paper.x, paper.y, paper.w, paper.h)
+      .setOrigin(0, 0)
+      .setDepth(depth + 3)
+      .setInteractive({ cursor: 'pointer' });
+    page.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      if (!pointer.leftButtonDown()) return;
+      page.disableInteractive();
+      this.statsReaderOpen = false;
+      this.redraw();
+    });
+    this.label(paper.x + 70, paper.y + paper.h - 54, '종이를 누르면 접기', 'ink').setScale(0.56).setDepth(depth + 2);
+  }
 
   private buildShelf(s: Readonly<GameState>): void {
     // 장비를 고른 순간부터는 이 줄 대신 **화살표**가 어느 칸인지 말한다.
@@ -432,7 +791,16 @@ export class OfficePhase extends PhaseScene {
       const acceptsSelected = !soldOut && selected !== undefined && content.balance.equipment.slotByItem[selected.id] === i;
       const dropZone = this.add.zone(x, y, w, h).setOrigin(0, 0);
       dropZone.setInteractive({ cursor: acceptsSelected ? 'pointer' : 'default' });
-      dropZone.on('pointerup', () => this.placeSelected(i));
+      dropZone.on('pointerup', (
+        _pointer: Phaser.Input.Pointer,
+        _localX: number,
+        _localY: number,
+        event: Phaser.Types.Input.EventData,
+      ) => {
+        // 진열대 클릭은 이 영역에서 끝난다. 뒤쪽 용사 전신으로 전달되면 안 된다.
+        event.stopPropagation();
+        this.placeSelected(i);
+      });
       if (acceptsSelected) this.shelfArrow(slot);
       this.text(x + 12, y + 10, SLOT_NAMES[i]!, 'bone').setScale(0.75);
       if (soldOut) {
@@ -459,17 +827,18 @@ export class OfficePhase extends PhaseScene {
    * 고른 장비가 들어갈 칸을 진열대 **위**에서 가리키는 화살표.
    * 원화 154x161 을 정확히 1/2 로 놓는다 (소수배는 도트가 지글거린다).
    */
-  private shelfArrow(slot: { x: number; y: number; w: number; h: number }): void {
+  private shelfArrow(slot: { x: number; y: number; w: number; h: number }): Phaser.GameObjects.Image | null {
     const w = 77;
     const h = 80;
     const x = slot.x + Math.round((slot.w - w) / 2);
     const y = slot.y - h - 12;
     const arrow = this.spriteObject(x, y, 'ui.shelf.arrow', w, h);
-    if (arrow === null) return;
+    if (arrow === null) return null;
     arrow.setDepth(60);
-    if (reducedMotion(this.registry)) return;
+    if (reducedMotion(this.registry)) return arrow;
     // 위아래로 얕게 까딱인다 — 「여기」를 글자 없이 말하는 유일한 수단이다
     this.tweens.add({ targets: arrow, y: y + 10, duration: 520, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    return arrow;
   }
 
   /* ── 작업대 B · 인벤토리 ───────────────────────────────── */
@@ -489,21 +858,34 @@ export class OfficePhase extends PhaseScene {
       .setDisplaySize(paper.w, paper.h)
       .setDepth(20)
       .setInteractive({ cursor: 'pointer' });
-      // 축소된 종이에도 최소한의 식별 정보가 있어, 어떤 계약서를 집는지 바로 알 수 있다.
-      const left = home.x - paper.w / 2;
-      const top = home.y - paper.h / 2;
-    this.label(left + 18, top + 16, '하강 계약서', 'ink').setScale(0.58).setDepth(21);
-    this.text(left + 18, top + 46, this.clip(visitor.displayName, 150, 'body'), 'ink').setScale(0.54).setDepth(21);
-    this.label(left + 18, top + 78, `계약금 ${visitor.fee.toLocaleString('en-US')} G`, 'ink').setScale(0.52).setDepth(21);
-    const target = visitor.claimedTiers.at(-1)?.floor ?? 0;
-    this.label(left + 18, top + 102, `목표 ${target}F · 클릭하여 확인`, 'ink').setScale(0.46).setDepth(21);
-
+    // 접힌 상태는 글자 없이 계약서 원화만 남긴다. 세부 내용은 펼친 상태에서만 읽는다.
     // 축소본은 이동할 수 없다. 좌클릭 한 번만 확대라는 유일한 입력으로 쓴다.
     sheet.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       if (!pointer.leftButtonDown()) return;
       this.contractIndex = index;
       this.contractReaderOpen = true;
+      this.statsReaderOpen = false;
+      // 하단 계약서로 펼쳐도 계약 버튼으로 연 것과 같은 도장 확정 모드가 된다.
+      // 단, 계약금이 부족하면 열람만 가능하고 도장으로 우회 확정할 수는 없다.
+      this.contractConfirmationOpen = s.gold >= visitor.fee;
+      this.contractStamping = false;
+      this.redraw();
+    });
+
+    const statsAsset = this.statsSheetAsset();
+    if (statsAsset === null) return;
+    const statsHome = { x: b.x + b.w - 338, y: b.y + b.h - 130 };
+    const statsSheet = this.add.image(statsHome.x, statsHome.y, key(statsAsset))
+      .setOrigin(0.5, 0.5)
+      .setDisplaySize(154, 190)
+      .setDepth(20)
+      .setInteractive({ cursor: 'pointer' });
+    statsSheet.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      if (!pointer.leftButtonDown()) return;
+      this.contractIndex = index;
+      this.contractReaderOpen = false;
       this.contractConfirmationOpen = false;
+      this.statsReaderOpen = true;
       this.redraw();
     });
   }
@@ -513,6 +895,10 @@ export class OfficePhase extends PhaseScene {
     if (this.hasArt('ui.contract.sheet')) return 'ui.contract.sheet';
     if (this.hasArt('prop.ledger')) return 'prop.ledger';
     return null;
+  }
+
+  private statsSheetAsset(): string | null {
+    return this.hasArt('ui.stats.sheet') ? 'ui.stats.sheet' : null;
   }
 
   private buildInventory(s: Readonly<GameState>): void {
@@ -707,6 +1093,7 @@ export class OfficePhase extends PhaseScene {
     image.setInteractive({ cursor: 'grab' });
     this.input.setDraggable(image);
     let dragged = false;
+    let dragArrow: Phaser.GameObjects.Image | null = null;
     image.on('pointerup', () => {
       if (dragged) return;
       this.selectedItemId = item.id;
@@ -718,14 +1105,18 @@ export class OfficePhase extends PhaseScene {
       this.hideItemDetail();
       playSfx(this, 'sfx.item.pick', 0.5);
       image.setDepth(1000).setScale(1.15);
+      const slot = content.balance.equipment.slotByItem[item.id];
+      if (slot !== undefined) dragArrow = this.shelfArrow(SHELF_SLOTS[slot]!);
     });
     image.on('drag', (_pointer: Phaser.Input.Pointer, dragX: number, dragY: number) => image.setPosition(Math.round(dragX), Math.round(dragY)));
     image.on('dragend', () => {
       this.draggingInventoryItem = false;
+      dragArrow?.destroy();
+      dragArrow = null;
       const slot = this.shelfSlotAt(image.x, image.y);
       if (slot === content.balance.equipment.slotByItem[item.id]) {
         this.selectedItemId = null;
-        playSfx(this, 'sfx.item.drop', 0.6);
+        this.playShelfDrop(item);
         this.store.dispatch({ type: 'OFFICE/PLACE', slot, itemId: item.id });
         return;
       }
@@ -737,6 +1128,15 @@ export class OfficePhase extends PhaseScene {
   private wireShelfDrag(image: Phaser.GameObjects.Image, slot: number, home: { x: number; y: number }): void {
     image.setInteractive({ cursor: 'grab' });
     this.input.setDraggable(image);
+    image.on('pointerup', (
+      _pointer: Phaser.Input.Pointer,
+      _localX: number,
+      _localY: number,
+      event: Phaser.Types.Input.EventData,
+    ) => {
+      // 진열된 장비를 눌렀을 때도 입력을 소비한다. 이 뒤에 있는 용사 클릭과는 별개다.
+      event.stopPropagation();
+    });
     image.on('dragstart', () => {
       playSfx(this, 'sfx.item.pick', 0.5);
       image.setDepth(1000).setScale(1.15);
@@ -745,7 +1145,6 @@ export class OfficePhase extends PhaseScene {
     image.on('dragend', () => {
       if (this.inInventory(image.x, image.y)) {
         this.selectedItemId = null;
-        playSfx(this, 'sfx.item.drop', 0.45);
         this.store.dispatch({ type: 'OFFICE/PLACE', slot, itemId: null });
         return;
       }
@@ -764,9 +1163,15 @@ export class OfficePhase extends PhaseScene {
   private placeSelected(slot: number): void {
     if (this.selectedItemId === null) return;
     if (content.balance.equipment.slotByItem[this.selectedItemId] !== slot) return;
-    playSfx(this, 'sfx.item.drop', 0.6);
+    const item = content.items.find((candidate) => candidate.id === this.selectedItemId);
+    if (item !== undefined) this.playShelfDrop(item);
     this.store.dispatch({ type: 'OFFICE/PLACE', slot, itemId: this.selectedItemId });
     this.selectedItemId = null;
+  }
+
+  /** 장비는 무거운 철, 물약·유물은 가벼운 철을 매우 낮은 볼륨으로 낸다. */
+  private playShelfDrop(item: ItemDef): void {
+    playSfx(this, item.kind === 'GEAR' ? 'sfx.item.drop.heavy' : 'sfx.item.drop.light', 0.12);
   }
 
   private inInventory(x: number, y: number): boolean {
@@ -821,48 +1226,66 @@ export class OfficePhase extends PhaseScene {
         tip: '장비를 진열하거나 판매할 수 있는 인벤토리 창을 엽니다.',
         onClick: () => this.openInventory(),
       });
+      if (s.today !== null) {
+        actionButton(2, {
+          label: '돌려보내기', hotkey: '3', variant: 'danger',
+          enabled: !this.contractedGuestDeparted,
+          tip: this.contractedGuestDeparted
+            ? '용사가 방송 준비를 위해 돌아갔습니다. 왼쪽 TV를 누르세요.'
+            : '계약한 용사를 돌려보내고 TV 방송 준비를 시작합니다.',
+          onClick: () => {
+            this.departGuest(() => {
+              this.contractedGuestDeparted = true;
+              this.redraw();
+            });
+          },
+        });
+        actionButton(3, {
+          label: '계약', hotkey: '4', enabled: false,
+          tip: '계약이 완료되었습니다. 왼쪽 TV를 눌러 방송을 시작하세요.',
+          onClick: () => undefined,
+        });
+        return;
+      }
       actionButton(2, {
         label: '돌려보내기', hotkey: '3', variant: 'danger',
         enabled: waiting !== undefined,
         tip: waiting === undefined ? '돌려보낼 지원자가 없습니다.' : '현재 지원자의 계약을 거절하고 다음 지원자를 기다립니다.',
         onClick: () => {
           if (waiting === undefined) return;
-          this.contractReaderOpen = false;
-          this.contractConfirmationOpen = false;
-          this.store.dispatch({ type: 'OFFICE/CONTRACT_REJECT', starId: waiting.starId });
+          this.departGuest(() => {
+            this.contractReaderOpen = false;
+            this.contractConfirmationOpen = false;
+            this.contractIndex = 0;
+            this.guestTouchCount = 0;
+            // 다음 지원자는 이미 로직에서 준비되지만, 문을 다시 열기 전까지 보여 주지 않는다.
+            this.shopOpened = false;
+            this.waitingForNextVisitorDoor = true;
+            this.store.dispatch({ type: 'OFFICE/CONTRACT_REJECT', starId: waiting.starId });
+          });
         },
       });
-      if (s.today !== null) {
-        actionButton(3, {
-          label: '계약', hotkey: '4',
-          enabled: false,
-          tip: '계약이 완료되었습니다. 왼쪽 TV를 눌러 방송을 시작하세요.',
-          onClick: () => undefined,
-        });
-        return;
-      }
       const canAccept = waiting !== undefined && s.gold >= waiting.fee;
       actionButton(3, {
         label: '계약', hotkey: '4',
-        enabled: canAccept,
+        enabled: canAccept && !this.contractConfirmationOpen,
         tip: waiting === undefined
           ? '계약할 지원자가 없습니다.'
           : canAccept
             ? this.contractConfirmationOpen
-              ? `${waiting.fee.toLocaleString('en-US')} G를 지불하고 계약을 확정합니다. 한 번 더 누르세요.`
+              ? '계약서 우측 하단의 도장을 눌러 계약을 확정하세요.'
               : '계약서를 펼쳐 최종 계약 여부를 확인합니다.'
             : `계약금 ${waiting.fee.toLocaleString('en-US')} G가 필요합니다.`,
         onClick: () => {
           if (waiting === undefined) return;
           if (!this.contractConfirmationOpen) {
             this.contractReaderOpen = true;
+            this.statsReaderOpen = false;
             this.contractConfirmationOpen = true;
+            this.contractStamping = false;
             this.redraw();
             return;
           }
-          this.contractReaderOpen = false;
-          this.contractConfirmationOpen = false;
-          this.store.dispatch({ type: 'OFFICE/CONTRACT_ACCEPT', starId: waiting.starId });
         },
       });
       return;

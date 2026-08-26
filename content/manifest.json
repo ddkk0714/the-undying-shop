@@ -146,6 +146,15 @@
           ],
           "desc": "Submitted hero contract; click its desk copy to inspect"
         },
+        "ui.stats.sheet": {
+          "type": "image",
+          "file": "ui/stats_sheet.png",
+          "size": [
+            705,
+            891
+          ],
+          "desc": "Submitted hero descent estimate and stat sheet"
+        },
         "ui.revive.record": {
           "type": "image",
           "file": "ui/revive_record.png",
@@ -2338,6 +2347,15 @@
             1036
           ],
           "desc": "Submitted hero contract; click its desk copy to inspect"
+        },
+        "ui.stats.sheet": {
+          "type": "image",
+          "file": "ui/stats_sheet.png",
+          "size": [
+            705,
+            891
+          ],
+          "desc": "Submitted hero descent estimate and stat sheet"
         },
         "ui.revive.record": {
           "type": "image",
