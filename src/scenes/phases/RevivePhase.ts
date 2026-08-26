@@ -11,7 +11,7 @@ import { Dialogue } from '../../ui/Dialogue';
 import { reducedMotion } from '../../ui/options';
 import { sealStamp } from '../../ui/SealStamp';
 import { degradeOverlay, portrait } from '../../ui/Portrait';
-import { onboard } from '../../ui/Onboarding';
+import { createTooltip } from '../../ui/Tooltip';
 import { playBgm, playSfx } from '../../audio/Sfx';
 import { PhaseScene } from './PhaseScene';
 import type { Corpse, GameState, ItemDef, Persona, Star } from '../../core/types';
@@ -73,6 +73,10 @@ export class RevivePhase extends PhaseScene {
     //   여기서 더 키우려면 볼륨을 1.0 위로 올리는 게 아니라 원본에 게인을 먹여
     //   다시 구워야 한다 (지금 환경에는 인코더가 없다).
     playBgm(this, 'bgm.revive', 1);
+    // 상시 팁(`onboard`)을 걷어내고 **버튼에 올렸을 때만** 뜨는 한 줄로 바꿨다.
+    // 전투 화면이 먼저 같은 이유로 옮겨 갔다 (`ui/Tooltip.ts`).
+    // redraw 로 지워지지 않게 keepAlive 로 붙든다.
+    this.keepAlive(...createTooltip(this).objects());
   }
 
   protected build(s: Readonly<GameState>): void {
@@ -103,7 +107,6 @@ export class RevivePhase extends PhaseScene {
     this.buildInheritButton(s);
     this.buildActions(s, corpse, star);
     if (this.carriedOpen && corpse !== undefined) this.buildCarried(corpse);
-    onboard(this, s.day, 'REVIVE', { x: L.pad, y: L.actionsFull.y - 52, w: L.W - L.pad * 2 });
   }
 
   /** 빈 화면이 유지된 경우에만 2초 뒤 한 번 울린다. 별도 안내 문구는 추가하지 않는다. */
@@ -252,6 +255,7 @@ export class RevivePhase extends PhaseScene {
     new Button(this, {
       x, y, w: 300, h: 64,
       label: `소지품 ${carried.length}점`, hotkey: '5',
+      tip: '죽을 때 지니고 내려간 장비입니다. 눌러서 꺼내 보고, 한 점씩 회수할 수 있습니다.',
       onClick: () => {
         this.carriedOpen = true;
         this.redraw();
@@ -280,6 +284,7 @@ export class RevivePhase extends PhaseScene {
     new Button(this, {
       x: panel.x + panel.w + 12, y: panel.y + 8, w: 128, h: 52,
       label: '닫기',
+      tip: '소지품 창을 닫습니다. 회수하지 않은 장비는 몸에 그대로 남습니다.',
       onClick: () => {
         this.carriedOpen = false;
         this.redraw();
@@ -378,6 +383,7 @@ export class RevivePhase extends PhaseScene {
     new Button(this, {
       x: b.x + b.w - 300, y: b.y + b.h - 96, w: 260, h: 64,
       label: '승계', hotkey: '6', variant: 'danger',
+      tip: `죽은 자의 이름을 살아 있는 다른 몸에 옮겨 씌웁니다. 팬덤이 ${Math.round(content.balance.roster.inheritFandomLoss * 100)}% 떨어지고 의심이 ${content.balance.roster.inheritSuspicion} 오릅니다.`,
       onClick: () => {
         this.inheriting = true;
         this.heirIndex = 0;
@@ -458,6 +464,7 @@ export class RevivePhase extends PhaseScene {
     new Button(this, {
       x: x + L.pad * 2, y: by, w: 320, h: 72,
       label: '씌운다', hotkey: '1', variant: 'danger',
+      tip: `「${persona.displayName}」 을 이 몸에 넘깁니다. 되돌릴 수 없습니다. 팬덤 -${Math.round(content.balance.roster.inheritFandomLoss * 100)}% · 의심 +${content.balance.roster.inheritSuspicion}.`,
       onClick: () => {
         this.inheriting = false;
         this.store.dispatch({ type: 'REVIVE/INHERIT', personaId: persona.id, toStarId: heir.id });
@@ -466,6 +473,7 @@ export class RevivePhase extends PhaseScene {
     new Button(this, {
       x: x + L.pad * 2 + 344, y: by, w: 320, h: 72,
       label: '그만둔다', hotkey: '2', variant: 'ghost',
+      tip: '승계하지 않고 소생실로 돌아갑니다.',
       onClick: () => {
         this.inheriting = false;
         this.redraw();
@@ -475,6 +483,7 @@ export class RevivePhase extends PhaseScene {
       new Button(this, {
         x: x + w - L.pad * 2 - 260, y: by, w: 260, h: 72,
         label: `다음 ${this.heirIndex + 1}/${heirs.length}`, hotkey: '3', variant: 'ghost',
+        tip: '이름을 받을 다른 몸을 봅니다. 능력치가 저마다 다릅니다.',
         onClick: () => {
           this.heirIndex = (this.heirIndex + 1) % heirs.length;
           this.redraw();
@@ -491,6 +500,7 @@ export class RevivePhase extends PhaseScene {
     new Button(this, {
       x: b.x + b.w - 300, y: b.y + L.pad * 3 + 28, w: 220, h: 56,
       label: `다음 ${this.index + 1}/${count}`, hotkey: '5', variant: 'ghost',
+      tip: '대기 중인 다음 시체를 봅니다.',
       onClick: () => {
         this.index = (this.index + 1) % Math.max(1, count);
         this.redraw();
@@ -532,6 +542,11 @@ export class RevivePhase extends PhaseScene {
       label: quote === null ? '소생' : `소생 ${fmtGold(quote.cost)}G`,
       hotkey: '1', variant: 'danger',
       enabled: quote?.affordable === true,
+      tip: quote === null
+        ? '되살릴 시체가 없습니다.'
+        : quote.affordable
+          ? `${fmtGold(quote.cost)}G 를 내고 되살립니다. 부활 횟수가 1 오르고, 몸이 그만큼 열화해 다음 소생은 ${Math.round((content.balance.revive.degradeExp - 1) * 100)}% 비싸집니다.`
+          : `자금이 ${fmtGold(quote.cost - s.gold)}G 모자랍니다. 장비를 팔거나 시체를 폐기해 마련하세요.`,
       onClick: () => {
         if (corpse === undefined) return;
         playSfx(this, 'sfx.revive', 0.8);
@@ -542,6 +557,9 @@ export class RevivePhase extends PhaseScene {
       x: actionX(1), y, w: ACTION_W, h,
       label: '그대로', hotkey: '2',
       enabled: corpse !== undefined,
+      tip: corpse === undefined
+        ? '보관할 시체가 없습니다.'
+        : `오늘은 두고 넘어갑니다. 시체는 남지만, 하루 미룰 때마다 소생 비용이 ${Math.round((content.balance.revive.decayPerDay - 1) * 100)}% 씩 오릅니다.`,
       onClick: () => {
         if (corpse === undefined) return;
         this.store.dispatch({ type: 'REVIVE/SKIP', starId: corpse.starId });
@@ -554,11 +572,15 @@ export class RevivePhase extends PhaseScene {
       x: actionX(2), y, w: ACTION_W, h,
       label: '폐기', hotkey: '3', variant: 'danger',
       enabled: corpse !== undefined && !this.discarding,
+      tip: corpse === undefined
+        ? '폐기할 시체가 없습니다.'
+        : `몸이 사라집니다. 되돌릴 수 없습니다. 대신 유품 ${content.balance.revive.discardLoot}점과 회수하지 않은 소지품이 인벤토리로 들어옵니다.`,
       onClick: () => corpse && this.discard(corpse.starId),
     });
     new Button(this, {
       x: actionX(3), y, w: ACTION_W, h,
       label: '편성실', hotkey: '4',
+      tip: '오늘 방송할 출연자를 고르러 갑니다. 편성실 하단의 「소생」으로 언제든 돌아올 수 있습니다.',
       onClick: () => this.store.dispatch({ type: 'PHASE/ADVANCE' }),
     });
   }
