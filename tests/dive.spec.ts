@@ -30,7 +30,7 @@ describe('live dive', () => {
     expect(state.today?.hero.maxHp).toBeGreaterThan(80);
     expect(state.today?.encounter).not.toBeNull();
     expect(state.today?.encounter?.line).not.toBe('');
-    expect(content.radio.combatHealthy).toContain(state.today?.encounter?.line);
+    expect(content.dialogue.lines.some((line) => line.starId === 'body_karin' && line.text === state.today?.encounter?.line)).toBe(true);
     expect(state.waitingSince).not.toBeNull();
   });
 
@@ -38,7 +38,7 @@ describe('live dive', () => {
     let appealState = liveState(131, 3);
     appealState = { ...appealState, today: { ...appealState.today!, encounter: createEncounter(3, 'NONE', 0) } };
     const appealed = reducer(appealState, { type: 'COMBAT/CHOOSE', choice: 'APPEAL' });
-    expect(content.radio.combatAppeal).toContain(appealed.today?.encounter?.line);
+    expect(content.dialogue.lines.some((line) => line.starId === 'body_karin' && line.text === appealed.today?.encounter?.line)).toBe(true);
 
     let degradedState = liveState(132, 2);
     degradedState = { ...degradedState, stars: degradedState.stars.map((star) => star.id === 'body_karin' ? { ...star, reviveCount: 4 } : star) };
@@ -46,7 +46,7 @@ describe('live dive', () => {
     expect(content.radio.degrade4).toContain(entered.today?.encounter?.line);
   });
 
-  it('reduces mental for deep enemies, witness events, and heavy damage according to grit', () => {
+  it('reduces mental for deep enemies, witness events, and heavy damage according to WILL', () => {
     const deepEnemy = reducer(liveState(146, 23), { type: 'LIVE/TICK', dt: content.balance.dive.floorSeconds });
     expect(['enemy.beast', 'enemy.flame']).toContain(deepEnemy.today?.encounter?.enemyKey);
     expect(deepEnemy.today?.mental).toBeLessThan(content.balance.mental.max);
@@ -64,12 +64,12 @@ describe('live dive', () => {
     const karin = reducer(heavyHit('body_karin', 148), { type: 'COMBAT/CHOOSE', choice: 'DEFEND' });
     const juno = reducer(heavyHit('body_juno', 149), { type: 'COMBAT/CHOOSE', choice: 'DEFEND' });
     expect(karin.today?.mental).toBeLessThan(content.balance.mental.max);
-    expect(karin.today?.mental).toBeGreaterThan(juno.today?.mental ?? 0);
+    expect(juno.today?.mental).toBeGreaterThan(karin.today?.mental ?? 0);
 
     const panicked = reducer(heavyHit('body_karin', 150, 0), { type: 'COMBAT/CHOOSE', choice: 'DEFEND' });
     expect(panicked.phase).toBe('LIVE');
     expect(panicked.today?.mental).toBe(0);
-    expect(content.radio.combatMentalBreak).toContain(panicked.today?.encounter?.line);
+    expect(content.dialogue.lines.some((line) => line.starId === 'body_karin' && line.text === panicked.today?.encounter?.line)).toBe(true);
   });
 
   it('applies the wait penalty without progressing an unresolved encounter', () => {

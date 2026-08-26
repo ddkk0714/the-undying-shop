@@ -1,0 +1,3180 @@
+{
+    "variables":  {
+                      "PLAYER":  "사장님"
+                  },
+    "lines":  [
+                  {
+                      "id":  "MARE_F01",
+                      "starId":  "body_ilan",
+                      "speaker":  "바인",
+                      "situation":  "SHOP_FIRST",
+                      "condition":  "",
+                      "expression":  "neutral",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "……여기가 그 가게구나. 시체를 주워온다는.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "MARE_F02",
+                      "starId":  "body_ilan",
+                      "speaker":  "바인",
+                      "situation":  "SHOP_FIRST",
+                      "condition":  "",
+                      "expression":  "neutral",
+                      "effects":  [
+
+                                  ],
+                      "text":  "바인. 마법사고, 영매도 해. 계약하러 왔어.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "MARE_F03",
+                      "starId":  "body_ilan",
+                      "speaker":  "바인",
+                      "situation":  "SHOP_FIRST",
+                      "condition":  "",
+                      "expression":  "angry",
+                      "effects":  [
+                                      "bold"
+                                  ],
+                      "text":  "……그 눈은 뭐야. 나, 백 살은 넘었어.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "MARE_G01",
+                      "starId":  "body_ilan",
+                      "speaker":  "바인",
+                      "situation":  "SHOP_GREET",
+                      "condition":  "{REVIVES}=1",
+                      "expression":  "neutral",
+                      "effects":  [
+
+                                  ],
+                      "text":  "한 번 죽어봤어. 별거 아니더라.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "MARE_G02",
+                      "starId":  "body_ilan",
+                      "speaker":  "바인",
+                      "situation":  "SHOP_GREET",
+                      "condition":  "{REVIVES}=1",
+                      "expression":  "neutral",
+                      "effects":  [
+                                      "pause"
+                                  ],
+                      "text":  "……근데 돌아오는 길에는 아무것도 없었어. 아무것도.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "MARE_G03",
+                      "starId":  "body_ilan",
+                      "speaker":  "바인",
+                      "situation":  "SHOP_GREET",
+                      "condition":  "2\u003c={REVIVES}\u003c=4",
+                      "expression":  "neutral",
+                      "effects":  [
+
+                                  ],
+                      "text":  "{DEATHS}번째래. 이 탑에서 죽은 사람 수.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "MARE_G04",
+                      "starId":  "body_ilan",
+                      "speaker":  "바인",
+                      "situation":  "SHOP_GREET",
+                      "condition":  "2\u003c={REVIVES}\u003c=4",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "그런데 하나도 안 떠났네. 다들 아직 여기 있어. ……못 간 모양이야.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "MARE_G05",
+                      "starId":  "body_ilan",
+                      "speaker":  "바인",
+                      "situation":  "SHOP_GREET",
+                      "condition":  "{REVIVES}\u003e=5",
+                      "expression":  "empty",
+                      "effects":  [
+                                      "slow",
+                                      "silent"
+                                  ],
+                      "text":  "……오늘도 안 들리네.그렇구나.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "MARE_G06",
+                      "starId":  "body_ilan",
+                      "speaker":  "바인",
+                      "situation":  "SHOP_GREET",
+                      "condition":  "{REVIVES}\u003e=5",
+                      "expression":  "empty",
+                      "effects":  [
+
+                                  ],
+                      "text":  "죽었다 살아날수록 잔향이 흐려져. 내가 흐려지는 건지도.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "MARE_T01",
+                      "starId":  "body_ilan",
+                      "speaker":  "바인",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "angry",
+                      "effects":  [
+                                      "tremble"
+                                  ],
+                      "text":  "머리는 만지지 마. ……어린애 아니야.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "MARE_T02",
+                      "starId":  "body_ilan",
+                      "speaker":  "바인",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "neutral",
+                      "effects":  [
+
+                                  ],
+                      "text":  "커피 있어? 설탕은 됐고…아니 조금만 줘,",
+                      "note":  null
+                  },
+                  {
+                      "id":  "MARE_T03",
+                      "starId":  "body_ilan",
+                      "speaker":  "바인",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "neutral",
+                      "effects":  [
+                                      "pause"
+                                  ],
+                      "text":  "{PLAYER} 뒤에 서 있는 사람, 아는 사람이야?",
+                      "note":  null
+                  },
+                  {
+                      "id":  "MARE_T04",
+                      "starId":  "body_ilan",
+                      "speaker":  "바인",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "blank",
+                      "effects":  [
+
+                                  ],
+                      "text":  "……농담이야. 아무도 없어.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "MARE_T05",
+                      "starId":  "body_ilan",
+                      "speaker":  "바인",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "neutral",
+                      "effects":  [
+
+                                  ],
+                      "text":  "죽은 사람 불러올까? 부탁이 단순해서 편해.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "MARE_T06",
+                      "starId":  "body_ilan",
+                      "speaker":  "바인",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "산 사람은 안 돼. 정 붙이면 오래 남거든.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "MARE_I01",
+                      "starId":  "body_ilan",
+                      "speaker":  "바인",
+                      "situation":  "SHOP_ITEM",
+                      "condition":  "{GEN}\u003e=3",
+                      "expression":  "neutral",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "이 {ITEM}, 손을 많이 탔네.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "MARE_I02",
+                      "starId":  "body_ilan",
+                      "speaker":  "바인",
+                      "situation":  "SHOP_ITEM",
+                      "condition":  "{GEN}\u003e=3",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "pause"
+                                  ],
+                      "text":  "……마지막으로 쥔 사람이 오래 붙들고 있었어. 놓기 싫었던 모양이네.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "MARE_I03",
+                      "starId":  "body_ilan",
+                      "speaker":  "바인",
+                      "situation":  "SHOP_ITEM",
+                      "condition":  "{GEN}=0",
+                      "expression":  "neutral",
+                      "effects":  [
+
+                                  ],
+                      "text":  "깨끗하네. 아직 아무 말도 안 하는 물건이야.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "MARE_C01",
+                      "starId":  "body_ilan",
+                      "speaker":  "바인",
+                      "situation":  "SHOP_CONTRACT",
+                      "condition":  "",
+                      "expression":  "neutral",
+                      "effects":  [
+
+                                  ],
+                      "text":  "서명. ……나이 칸은 비워둘게.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "MARE_L01",
+                      "starId":  "body_ilan",
+                      "speaker":  "바인",
+                      "situation":  "SHOP_LEAVE",
+                      "condition":  "",
+                      "expression":  "neutral",
+                      "effects":  [
+
+                                  ],
+                      "text":  "죽으면 잘 부탁해.몸은 너무 함부로 다루지 말고. ……아직 쓰고 있으니까.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "MARE_D01",
+                      "starId":  "body_ilan",
+                      "speaker":  "바인",
+                      "situation":  "DUN_START",
+                      "condition":  "",
+                      "expression":  "neutral",
+                      "effects":  [
+
+                                  ],
+                      "text":  "{FLOOR}층부터. 위에 누가 남아 있는지 보고 올게.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "MARE_R01",
+                      "starId":  "body_ilan",
+                      "speaker":  "바인",
+                      "situation":  "DUN_RADIO",
+                      "condition":  "",
+                      "expression":  "neutral",
+                      "effects":  [
+
+                                  ],
+                      "text":  "..양쪽 다 기척이 있네. {PLAYER}이 골라.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "MARE_R02",
+                      "starId":  "body_ilan",
+                      "speaker":  "바인",
+                      "situation":  "DUN_RADIO",
+                      "condition":  "{FLOOR}\u003e=18",
+                      "expression":  "tremble",
+                      "effects":  [
+                                      "tremble"
+                                  ],
+                      "text":  "이쪽은 안 돼. 여기서 운 사람이 너무 많아.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "MARE_E01",
+                      "starId":  "body_ilan",
+                      "speaker":  "바인",
+                      "situation":  "DUN_EVENT",
+                      "condition":  "",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "여기서 누가 죽었어. 문 쪽을 보고 있었네.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "MARE_E02",
+                      "starId":  "body_ilan",
+                      "speaker":  "바인",
+                      "situation":  "DUN_EVENT",
+                      "condition":  "",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "pause"
+                                  ],
+                      "text":  "……누가 올 거라고 생각했나 봐. 마지막까지 기다렸어.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "MARE_E03",
+                      "starId":  "body_ilan",
+                      "speaker":  "바인",
+                      "situation":  "DUN_EVENT",
+                      "condition":  "{FLOOR}\u003e=18",
+                      "expression":  "surprise",
+                      "effects":  [
+                                      "tremble"
+                                  ],
+                      "text":  "이상해. 여기 잔향이 없어. 아무도 안 죽었어. 한 번도.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "MARE_H01",
+                      "starId":  "body_ilan",
+                      "speaker":  "바인",
+                      "situation":  "DUN_HURT",
+                      "condition":  "",
+                      "expression":  "pain",
+                      "effects":  [
+                                      "shake"
+                                  ],
+                      "text":  "……괜찮아. 이 정도로는 안 죽어.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "MARE_H02",
+                      "starId":  "body_ilan",
+                      "speaker":  "바인",
+                      "situation":  "DUN_HURT",
+                      "condition":  "",
+                      "expression":  "pain",
+                      "effects":  [
+                                      "shake",
+                                      "tremble"
+                                  ],
+                      "text":  "아프긴 하네. 백 년 지나도 이건 안 익숙해져.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "MARE_LW01",
+                      "starId":  "body_ilan",
+                      "speaker":  "바인",
+                      "situation":  "DUN_LOW",
+                      "condition":  "",
+                      "expression":  "pain",
+                      "effects":  [
+                                      "tremble",
+                                      "slow"
+                                  ],
+                      "text":  "{PLAYER}. 잠깐. 지금 풍경이 두 겹으로 보여.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "MARE_LW02",
+                      "starId":  "body_ilan",
+                      "speaker":  "바인",
+                      "situation":  "DUN_LOW",
+                      "condition":  "",
+                      "expression":  "pain",
+                      "effects":  [
+                                      "tremble"
+                                  ],
+                      "text":  "이게 내 잔향인가.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "MARE_M01",
+                      "starId":  "body_ilan",
+                      "speaker":  "바인",
+                      "situation":  "DUN_MENTAL",
+                      "condition":  "멘탈\u003c30",
+                      "expression":  "empty",
+                      "effects":  [
+                                      "silent",
+                                      "slow"
+                                  ],
+                      "text":  "……잠깐만. 지금 누가 불렀어.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "MARE_M02",
+                      "starId":  "body_ilan",
+                      "speaker":  "바인",
+                      "situation":  "DUN_MENTAL",
+                      "condition":  "멘탈\u003c30",
+                      "expression":  "empty",
+                      "effects":  [
+                                      "tremble",
+                                      "pause"
+                                  ],
+                      "text":  "여기 있었어? 계속 여기 있었던 거야?",
+                      "note":  null
+                  },
+                  {
+                      "id":  "MARE_X01",
+                      "starId":  "body_ilan",
+                      "speaker":  "바인",
+                      "situation":  "DEATH",
+                      "condition":  "{REVIVES}=0",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "slow",
+                                      "silent"
+                                  ],
+                      "text":  "아……. 그렇구나. 이런 기분이었네.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "MARE_X02",
+                      "starId":  "body_ilan",
+                      "speaker":  "바인",
+                      "situation":  "DEATH",
+                      "condition":  "{REVIVES}=0",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "tremble",
+                                      "slow"
+                                  ],
+                      "text":  "여기 있었네. 계속.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "MARE_X03",
+                      "starId":  "body_ilan",
+                      "speaker":  "바인",
+                      "situation":  "DEATH",
+                      "condition":  "{REVIVES}\u003e=1",
+                      "expression":  "empty",
+                      "effects":  [
+                                      "slow",
+                                      "silent"
+                                  ],
+                      "text":  "……이번에도 못 들었어.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "MARE_X04",
+                      "starId":  "body_ilan",
+                      "speaker":  "바인",
+                      "situation":  "DEATH",
+                      "condition":  "{REVIVES}\u003e=5",
+                      "expression":  "empty",
+                      "effects":  [
+                                      "silent",
+                                      "blackout"
+                                  ],
+                      "text":  "언니, 라고 했었는데.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "MARE_V01",
+                      "starId":  "body_ilan",
+                      "speaker":  "바인",
+                      "situation":  "REVIVE",
+                      "condition":  "",
+                      "expression":  "blank",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "……돌아왔네.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "MARE_V02",
+                      "starId":  "body_ilan",
+                      "speaker":  "바인",
+                      "situation":  "REVIVE",
+                      "condition":  "{REVIVES}\u003e=3",
+                      "expression":  "empty",
+                      "effects":  [
+                                      "slow",
+                                      "silent"
+                                  ],
+                      "text":  "한 번 더 갈게. 아직 못 들었어.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "RIJE_F01",
+                      "starId":  "body_mor",
+                      "speaker":  "메르네",
+                      "situation":  "SHOP_FIRST",
+                      "condition":  "",
+                      "expression":  "smile",
+                      "effects":  [
+                                      "fast"
+                                  ],
+                      "text":  "안녕하세요. ……회수상 맞죠? 헤에. 진짜 있네.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "RIJE_F02",
+                      "starId":  "body_mor",
+                      "speaker":  "메르네",
+                      "situation":  "SHOP_FIRST",
+                      "condition":  "",
+                      "expression":  "smile",
+                      "effects":  [
+
+                                  ],
+                      "text":  "메르네예요. 간호사였는데, 부활이 생겨서 필요가 없어졌대요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "RIJE_F03",
+                      "starId":  "body_mor",
+                      "speaker":  "메르네",
+                      "situation":  "SHOP_FIRST",
+                      "condition":  "",
+                      "expression":  "smile",
+                      "effects":  [
+                                      "pause"
+                                  ],
+                      "text":  "그래서 방송해요. ……죽는 쪽으로.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "RIJE_G01",
+                      "starId":  "body_mor",
+                      "speaker":  "메르네",
+                      "situation":  "SHOP_GREET",
+                      "condition":  "{REVIVES}=1",
+                      "expression":  "blank",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "……왜 살려주셨어요?",
+                      "note":  null
+                  },
+                  {
+                      "id":  "RIJE_G02",
+                      "starId":  "body_mor",
+                      "speaker":  "메르네",
+                      "situation":  "SHOP_GREET",
+                      "condition":  "{REVIVES}=1",
+                      "expression":  "smile",
+                      "effects":  [
+                                      "fast"
+                                  ],
+                      "text":  "감사하죠. 네. 매우 감사. 국어책에도 그렇게 써 있어요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "RIJE_G03",
+                      "starId":  "body_mor",
+                      "speaker":  "메르네",
+                      "situation":  "SHOP_GREET",
+                      "condition":  "2\u003c={REVIVES}\u003c=4",
+                      "expression":  "neutral",
+                      "effects":  [
+
+                                  ],
+                      "text":  "오늘도 잘 부탁드려요. 살아 있는 동안은……적당히 해볼게요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "RIJE_G04",
+                      "starId":  "body_mor",
+                      "speaker":  "메르네",
+                      "situation":  "SHOP_GREET",
+                      "condition":  "{REVIVES}\u003e=5",
+                      "expression":  "blank",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "다음엔 조금 늦게 회수해도 돼요. 급한 건 아니니까.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "RIJE_G05",
+                      "starId":  "body_mor",
+                      "speaker":  "메르네",
+                      "situation":  "SHOP_GREET",
+                      "condition":  "{REVIVES}\u003e=5",
+                      "expression":  "blank",
+                      "effects":  [
+                                      "slow",
+                                      "pause"
+                                  ],
+                      "text":  "저쪽에서 얘기하다 끊겼거든요. ……대화 강제종료, 좀 매너 없었어요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "RIJE_T01",
+                      "starId":  "body_mor",
+                      "speaker":  "메르네",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "smile",
+                      "effects":  [
+
+                                  ],
+                      "text":  "죽은 분들은 거짓말을 안 해요. 읽씹도 안 하고,그래서 좋아요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "RIJE_T02",
+                      "starId":  "body_mor",
+                      "speaker":  "메르네",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "smile",
+                      "effects":  [
+                                      "fast"
+                                  ],
+                      "text":  "{PLAYER}는 하루에 몇 명이나 만나세요? ……아. 사회인이다.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "RIJE_T03",
+                      "starId":  "body_mor",
+                      "speaker":  "메르네",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "blank",
+                      "effects":  [
+                                      "pause"
+                                  ],
+                      "text":  "……저는 그게 제일 힘들었어요.산 사람은 반응을 해야 하잖아요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "RIJE_T04",
+                      "starId":  "body_mor",
+                      "speaker":  "메르네",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "smile",
+                      "effects":  [
+
+                                  ],
+                      "text":  "환자분들은 다 나가시더라고요. 살아서요. 그게 좀.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "RIJE_T05",
+                      "starId":  "body_mor",
+                      "speaker":  "메르네",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "smile",
+                      "effects":  [
+                                      "fast"
+                                  ],
+                      "text":  "아! 회수 순서 아세요? 발견, 회수, 운반, 판정, 소생이요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "RIJE_T06",
+                      "starId":  "body_mor",
+                      "speaker":  "메르네",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "smile",
+                      "effects":  [
+
+                                  ],
+                      "text":  "몸만 온전하면 되니까 편해요. 마음은 안 봐도 되잖아요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "RIJE_I01",
+                      "starId":  "body_mor",
+                      "speaker":  "메르네",
+                      "situation":  "SHOP_ITEM",
+                      "condition":  "{GEN}\u003e=3",
+                      "expression":  "smile",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "이거 여러 분 손을 거쳤네요. ……인싸 물건인가.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "RIJE_I02",
+                      "starId":  "body_mor",
+                      "speaker":  "메르네",
+                      "situation":  "SHOP_ITEM",
+                      "condition":  "{GEN}\u003e=3",
+                      "expression":  "smile",
+                      "effects":  [
+
+                                  ],
+                      "text":  "다들 여기 계세요? 아니면 벌써 다시 나가셨어요?",
+                      "note":  null
+                  },
+                  {
+                      "id":  "RIJE_I03",
+                      "starId":  "body_mor",
+                      "speaker":  "메르네",
+                      "situation":  "SHOP_ITEM",
+                      "condition":  "{GEN}=0",
+                      "expression":  "blank",
+                      "effects":  [
+
+                                  ],
+                      "text":  "새 거네요. ……좀 노잼.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "RIJE_C01",
+                      "starId":  "body_mor",
+                      "speaker":  "메르네",
+                      "situation":  "SHOP_CONTRACT",
+                      "condition":  "",
+                      "expression":  "smile",
+                      "effects":  [
+
+                                  ],
+                      "text":  "서명은 여기죠? 나머진 대충……아, 용사는 대충 하면 안 되지.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "RIJE_L01",
+                      "starId":  "body_mor",
+                      "speaker":  "메르네",
+                      "situation":  "SHOP_LEAVE",
+                      "condition":  "",
+                      "expression":  "smile",
+                      "effects":  [
+
+                                  ],
+                      "text":  "다녀올게요. 오래 걸리면……이미 죽었을 수도 있고.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "RIJE_D01",
+                      "starId":  "body_mor",
+                      "speaker":  "메르네",
+                      "situation":  "DUN_START",
+                      "condition":  "",
+                      "expression":  "smile",
+                      "effects":  [
+
+                                  ],
+                      "text":  "{FLOOR}층까지 갈게요. 그 위엔 아직 아무도 안 계셔서.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "RIJE_R01",
+                      "starId":  "body_mor",
+                      "speaker":  "메르네",
+                      "situation":  "DUN_RADIO",
+                      "condition":  "",
+                      "expression":  "neutral",
+                      "effects":  [
+
+                                  ],
+                      "text":  "어느 쪽이요? 저는 ……죽은 사람 많은 쪽으로",
+                      "note":  null
+                  },
+                  {
+                      "id":  "RIJE_R02",
+                      "starId":  "body_mor",
+                      "speaker":  "메르네",
+                      "situation":  "DUN_RADIO",
+                      "condition":  "{FLOOR}\u003e=18",
+                      "expression":  "blank",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "……아아, 여긴 파라다이스?",
+                      "note":  null
+                  },
+                  {
+                      "id":  "RIJE_E01",
+                      "starId":  "body_mor",
+                      "speaker":  "메르네",
+                      "situation":  "DUN_EVENT",
+                      "condition":  "",
+                      "expression":  "smile",
+                      "effects":  [
+
+                                  ],
+                      "text":  "어, 여기 분 계셨네요. 안녕하세요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "RIJE_E02",
+                      "starId":  "body_mor",
+                      "speaker":  "메르네",
+                      "situation":  "DUN_EVENT",
+                      "condition":  "",
+                      "expression":  "smile",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "괜찮아요, 금방 데리러 오실 거예요. 저희 사장님 잘하세요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "RIJE_E03",
+                      "starId":  "body_mor",
+                      "speaker":  "메르네",
+                      "situation":  "DUN_EVENT",
+                      "condition":  "{FLOOR}\u003e=23",
+                      "expression":  "surprise",
+                      "effects":  [
+                                      "tremble"
+                                  ],
+                      "text":  "……밭이 있어요. 뭐죠?",
+                      "note":  null
+                  },
+                  {
+                      "id":  "RIJE_H01",
+                      "starId":  "body_mor",
+                      "speaker":  "메르네",
+                      "situation":  "DUN_HURT",
+                      "condition":  "",
+                      "expression":  "pain",
+                      "effects":  [
+                                      "shake"
+                                  ],
+                      "text":  "앗 이런. 찢어졌네. 괜찮아요. 이 정도는 봉합 범위.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "RIJE_H02",
+                      "starId":  "body_mor",
+                      "speaker":  "메르네",
+                      "situation":  "DUN_HURT",
+                      "condition":  "",
+                      "expression":  "pain",
+                      "effects":  [
+                                      "shake"
+                                  ],
+                      "text":  "제가 붙이는 건 잘하거든요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "RIJE_LW01",
+                      "starId":  "body_mor",
+                      "speaker":  "메르네",
+                      "situation":  "DUN_LOW",
+                      "condition":  "",
+                      "expression":  "smile",
+                      "effects":  [
+                                      "tremble",
+                                      "slow"
+                                  ],
+                      "text":  "{PLAYER}, 물약 안 보내셔도 돼요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "RIJE_LW02",
+                      "starId":  "body_mor",
+                      "speaker":  "메르네",
+                      "situation":  "DUN_LOW",
+                      "condition":  "",
+                      "expression":  "smile",
+                      "effects":  [
+                                      "slow",
+                                      "pause"
+                                  ],
+                      "text":  "……저 지금 좀 설레요.이상하네. 사망 직전이라 그런가.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "RIJE_M01",
+                      "starId":  "body_mor",
+                      "speaker":  "메르네",
+                      "situation":  "DUN_MENTAL",
+                      "condition":  "멘탈\u003c30",
+                      "expression":  "blank",
+                      "effects":  [
+                                      "silent",
+                                      "slow"
+                                  ],
+                      "text":  "살아 있는 몸은 시끄럽네요. 심장도 뛰고, 숨도 쉬고. 너무 열심히 살아.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "RIJE_M02",
+                      "starId":  "body_mor",
+                      "speaker":  "메르네",
+                      "situation":  "DUN_MENTAL",
+                      "condition":  "멘탈\u003c30",
+                      "expression":  "blank",
+                      "effects":  [
+                                      "tremble"
+                                  ],
+                      "text":  "조용한 데로 갈래요. 아래쪽으로. ……아니, 지옥 말고",
+                      "note":  null
+                  },
+                  {
+                      "id":  "RIJE_X01",
+                      "starId":  "body_mor",
+                      "speaker":  "메르네",
+                      "situation":  "DEATH",
+                      "condition":  "{REVIVES}=0",
+                      "expression":  "smile",
+                      "effects":  [
+                                      "slow",
+                                      "silent"
+                                  ],
+                      "text":  "아, 드디어…….",
+                      "note":  null
+                  },
+                  {
+                      "id":  "RIJE_X02",
+                      "starId":  "body_mor",
+                      "speaker":  "메르네",
+                      "situation":  "DEATH",
+                      "condition":  "{REVIVES}=0",
+                      "expression":  "smile",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "죽어라. 몸뚱아리,",
+                      "note":  null
+                  },
+                  {
+                      "id":  "RIJE_X03",
+                      "starId":  "body_mor",
+                      "speaker":  "메르네",
+                      "situation":  "DEATH",
+                      "condition":  "{REVIVES}\u003e=1",
+                      "expression":  "smile",
+                      "effects":  [
+                                      "slow",
+                                      "silent"
+                                  ],
+                      "text":  "이번엔 조금 오래 있게 해주세요. 저도...필요한 척 좀 해보고 싶어서.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "RIJE_X04",
+                      "starId":  "body_mor",
+                      "speaker":  "메르네",
+                      "situation":  "DEATH",
+                      "condition":  "{REVIVES}\u003e=5",
+                      "expression":  "blank",
+                      "effects":  [
+                                      "silent",
+                                      "blackout"
+                                  ],
+                      "text":  "……안 데리러 오셔도 돼요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "RIJE_V01",
+                      "starId":  "body_mor",
+                      "speaker":  "메르네",
+                      "situation":  "REVIVE",
+                      "condition":  "",
+                      "expression":  "blank",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "……벌써요? 회수 너무 빠른 것도 문제 있네.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "RIJE_V02",
+                      "starId":  "body_mor",
+                      "speaker":  "메르네",
+                      "situation":  "REVIVE",
+                      "condition":  "{REVIVES}\u003e=3",
+                      "expression":  "blank",
+                      "effects":  [
+                                      "slow",
+                                      "pause"
+                                  ],
+                      "text":  "{PLAYER}. 저 부탁 하나만 드려도 돼요? ……아니에요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "LUAN_F01",
+                      "starId":  "body_juno",
+                      "speaker":  "루엔",
+                      "situation":  "SHOP_FIRST",
+                      "condition":  "",
+                      "expression":  "smile",
+                      "effects":  [
+
+                                  ],
+                      "text":  "소문 듣고 왔습니다. 물건이 좋다면서요?",
+                      "note":  null
+                  },
+                  {
+                      "id":  "LUAN_F02",
+                      "starId":  "body_juno",
+                      "speaker":  "루엔",
+                      "situation":  "SHOP_FIRST",
+                      "condition":  "",
+                      "expression":  "smile",
+                      "effects":  [
+                                      "pause"
+                                  ],
+                      "text":  "아, 시선 신경 쓰지 마세요. ……안 보이거든요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "LUAN_F03",
+                      "starId":  "body_juno",
+                      "speaker":  "루엔",
+                      "situation":  "SHOP_FIRST",
+                      "condition":  "",
+                      "expression":  "smile",
+                      "effects":  [
+
+                                  ],
+                      "text":  "루엔입니다. 전직은 말 안 할게요. 지금은 방송인이에요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "LUAN_G01",
+                      "starId":  "body_juno",
+                      "speaker":  "루엔",
+                      "situation":  "SHOP_GREET",
+                      "condition":  "{REVIVES}=1",
+                      "expression":  "surprise",
+                      "effects":  [
+                                      "slow",
+                                      "tremble"
+                                  ],
+                      "text":  "……{PLAYER}.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "LUAN_G02",
+                      "starId":  "body_juno",
+                      "speaker":  "루엔",
+                      "situation":  "SHOP_GREET",
+                      "condition":  "{REVIVES}=1",
+                      "expression":  "surprise",
+                      "effects":  [
+                                      "tremble",
+                                      "slow"
+                                  ],
+                      "text":  "보여요. 지금.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "LUAN_G03",
+                      "starId":  "body_juno",
+                      "speaker":  "루엔",
+                      "situation":  "SHOP_GREET",
+                      "condition":  "{REVIVES}=1",
+                      "expression":  "blush",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "……당신은 이렇게 멋진 사람이였군요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "LUAN_G04",
+                      "starId":  "body_juno",
+                      "speaker":  "루엔",
+                      "situation":  "SHOP_GREET",
+                      "condition":  "2\u003c={REVIVES}\u003c=4",
+                      "expression":  "smile",
+                      "effects":  [
+
+                                  ],
+                      "text":  "오늘도 잘 부탁드립니다. 눈 뜨고 하는 도둑질은 처음이라.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "LUAN_G05",
+                      "starId":  "body_juno",
+                      "speaker":  "루엔",
+                      "situation":  "SHOP_GREET",
+                      "condition":  "{REVIVES}\u003e=5",
+                      "expression":  "neutral",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "……요즘은 안 보이는 게 편할 때도 있네요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "LUAN_T01",
+                      "starId":  "body_juno",
+                      "speaker":  "루엔",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "smile",
+                      "effects":  [
+
+                                  ],
+                      "text":  "손버릇이요? 안 훔쳐요. 계약서에 썼잖습니까.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "LUAN_T02",
+                      "starId":  "body_juno",
+                      "speaker":  "루엔",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "smile",
+                      "effects":  [
+                                      "pause"
+                                  ],
+                      "text":  "……오른쪽 선반 세 번째 칸, 비어 있죠?",
+                      "note":  null
+                  },
+                  {
+                      "id":  "LUAN_T03",
+                      "starId":  "body_juno",
+                      "speaker":  "루엔",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "smile",
+                      "effects":  [
+
+                                  ],
+                      "text":  "농담입니다. 소리로 알아요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "LUAN_T04",
+                      "starId":  "body_juno",
+                      "speaker":  "루엔",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "neutral",
+                      "effects":  [
+
+                                  ],
+                      "text":  "{PLAYER}는 발소리가 안 나요. 그거 알아요?",
+                      "note":  null
+                  },
+                  {
+                      "id":  "LUAN_T05",
+                      "starId":  "body_juno",
+                      "speaker":  "루엔",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "smile",
+                      "effects":  [
+                                      "fast"
+                                  ],
+                      "text":  "오늘 시청자 {VIEWERS}명이요. 어제보다 낫네요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "LUAN_T06",
+                      "starId":  "body_juno",
+                      "speaker":  "루엔",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "{REVIVES}\u003e=1",
+                      "expression":  "blush",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "……거울 좀 빌려도 됩니까.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "LUAN_I01",
+                      "starId":  "body_juno",
+                      "speaker":  "루엔",
+                      "situation":  "SHOP_ITEM",
+                      "condition":  "{GEN}\u003e=3",
+                      "expression":  "smile",
+                      "effects":  [
+
+                                  ],
+                      "text":  "손잡이가 많이 닳았네요. 오래 쓰인 물건입니다.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "LUAN_I02",
+                      "starId":  "body_juno",
+                      "speaker":  "루엔",
+                      "situation":  "SHOP_ITEM",
+                      "condition":  "{GEN}\u003e=3",
+                      "expression":  "neutral",
+                      "effects":  [
+                                      "pause"
+                                  ],
+                      "text":  "……이거 썼던 사람들, 다 위에 있죠?",
+                      "note":  null
+                  },
+                  {
+                      "id":  "LUAN_I03",
+                      "starId":  "body_juno",
+                      "speaker":  "루엔",
+                      "situation":  "SHOP_ITEM",
+                      "condition":  "{GEN}=0",
+                      "expression":  "smile",
+                      "effects":  [
+
+                                  ],
+                      "text":  "새 물건은 소리가 다릅니다. 재미없어요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "LUAN_C01",
+                      "starId":  "body_juno",
+                      "speaker":  "루엔",
+                      "situation":  "SHOP_CONTRACT",
+                      "condition":  "",
+                      "expression":  "smile",
+                      "effects":  [
+
+                                  ],
+                      "text":  "서명이요. 손 좀 잡아주시겠어요? 칸을 못 찾아서.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "LUAN_L01",
+                      "starId":  "body_juno",
+                      "speaker":  "루엔",
+                      "situation":  "SHOP_LEAVE",
+                      "condition":  "",
+                      "expression":  "smile",
+                      "effects":  [
+
+                                  ],
+                      "text":  "오늘은 보물 하나 들고 오겠습니다. 방송용으로요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "LUAN_D01",
+                      "starId":  "body_juno",
+                      "speaker":  "루엔",
+                      "situation":  "DUN_START",
+                      "condition":  "",
+                      "expression":  "smile",
+                      "effects":  [
+                                      "fast"
+                                  ],
+                      "text":  "자 신사숙녀 여러분, 오늘은 {FLOOR}층까지 털어보겠습니다!",
+                      "note":  null
+                  },
+                  {
+                      "id":  "LUAN_R01",
+                      "starId":  "body_juno",
+                      "speaker":  "루엔",
+                      "situation":  "DUN_RADIO",
+                      "condition":  "",
+                      "expression":  "smile",
+                      "effects":  [
+
+                                  ],
+                      "text":  "{PLAYER}, 어느 쪽입니까. 저는 어차피 똑같아 보여서.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "LUAN_R02",
+                      "starId":  "body_juno",
+                      "speaker":  "루엔",
+                      "situation":  "DUN_RADIO",
+                      "condition":  "{REVIVES}\u003e=1",
+                      "expression":  "neutral",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "……왼쪽이 막혀 있는데요. 제 눈에는.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "LUAN_R03",
+                      "starId":  "body_juno",
+                      "speaker":  "루엔",
+                      "situation":  "DUN_RADIO",
+                      "condition":  "{REVIVES}\u003e=1",
+                      "expression":  "neutral",
+                      "effects":  [
+                                      "pause"
+                                  ],
+                      "text":  "보고도 물어보는 거, 좀 그렇네요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "LUAN_E01",
+                      "starId":  "body_juno",
+                      "speaker":  "루엔",
+                      "situation":  "DUN_EVENT",
+                      "condition":  "",
+                      "expression":  "smile",
+                      "effects":  [
+
+                                  ],
+                      "text":  "여기 바람이 다릅니다. 지름길이 있어요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "LUAN_E02",
+                      "starId":  "body_juno",
+                      "speaker":  "루엔",
+                      "situation":  "DUN_EVENT",
+                      "condition":  "",
+                      "expression":  "smile",
+                      "effects":  [
+                                      "fast"
+                                  ],
+                      "text":  "자 봅시다, 세 층 스킵입니다! 슈퍼챗 주세요!",
+                      "note":  null
+                  },
+                  {
+                      "id":  "LUAN_E03",
+                      "starId":  "body_juno",
+                      "speaker":  "루엔",
+                      "situation":  "DUN_EVENT",
+                      "condition":  "{FLOOR}\u003e=18",
+                      "expression":  "neutral",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "……흙 냄새가 납니다. 갈아엎은 흙이요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "LUAN_H01",
+                      "starId":  "body_juno",
+                      "speaker":  "루엔",
+                      "situation":  "DUN_HURT",
+                      "condition":  "",
+                      "expression":  "pain",
+                      "effects":  [
+                                      "shake"
+                                  ],
+                      "text":  "윽. 이건 좀 아프네요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "LUAN_H02",
+                      "starId":  "body_juno",
+                      "speaker":  "루엔",
+                      "situation":  "DUN_HURT",
+                      "condition":  "",
+                      "expression":  "pain",
+                      "effects":  [
+                                      "shake",
+                                      "fast"
+                                  ],
+                      "text":  "괜찮습니다 여러분! 이게 방송이죠!",
+                      "note":  null
+                  },
+                  {
+                      "id":  "LUAN_LW01",
+                      "starId":  "body_juno",
+                      "speaker":  "루엔",
+                      "situation":  "DUN_LOW",
+                      "condition":  "",
+                      "expression":  "pain",
+                      "effects":  [
+                                      "tremble"
+                                  ],
+                      "text":  "{PLAYER}. 저 아직 보고싶은 게 많은데요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "LUAN_LW02",
+                      "starId":  "body_juno",
+                      "speaker":  "루엔",
+                      "situation":  "DUN_LOW",
+                      "condition":  "{REVIVES}\u003e=1",
+                      "expression":  "pain",
+                      "effects":  [
+                                      "tremble",
+                                      "slow"
+                                  ],
+                      "text":  "……이번엔 좀 아깝습니다. 진짜로.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "LUAN_M01",
+                      "starId":  "body_juno",
+                      "speaker":  "루엔",
+                      "situation":  "DUN_MENTAL",
+                      "condition":  "멘탈\u003c30",
+                      "expression":  "neutral",
+                      "effects":  [
+                                      "silent"
+                                  ],
+                      "text":  "저 여기서 그만 내려가겠습니다.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "LUAN_M02",
+                      "starId":  "body_juno",
+                      "speaker":  "루엔",
+                      "situation":  "DUN_MENTAL",
+                      "condition":  "멘탈\u003c30",
+                      "expression":  "neutral",
+                      "effects":  [
+                                      "slow",
+                                      "pause"
+                                  ],
+                      "text":  "……잃을 게 생겨서요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "LUAN_X01",
+                      "starId":  "body_juno",
+                      "speaker":  "루엔",
+                      "situation":  "DEATH",
+                      "condition":  "{REVIVES}=0",
+                      "expression":  "pain",
+                      "effects":  [
+                                      "slow",
+                                      "silent"
+                                  ],
+                      "text":  "아, 이럴 줄 알았어요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "LUAN_X02",
+                      "starId":  "body_juno",
+                      "speaker":  "루엔",
+                      "situation":  "DEATH",
+                      "condition":  "{REVIVES}=0",
+                      "expression":  "smile",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "{PLAYER}. 회수 잘 부탁합니다. 값은 빚질게요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "LUAN_X03",
+                      "starId":  "body_juno",
+                      "speaker":  "루엔",
+                      "situation":  "DEATH",
+                      "condition":  "{REVIVES}\u003e=1",
+                      "expression":  "pain",
+                      "effects":  [
+                                      "slow",
+                                      "tremble"
+                                  ],
+                      "text":  "……어두워지네요. 다시.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "LUAN_X04",
+                      "starId":  "body_juno",
+                      "speaker":  "루엔",
+                      "situation":  "DEATH",
+                      "condition":  "{REVIVES}\u003e=5",
+                      "expression":  "empty",
+                      "effects":  [
+                                      "silent",
+                                      "blackout"
+                                  ],
+                      "text":  "이번엔 작별인가요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "LUAN_V01",
+                      "starId":  "body_juno",
+                      "speaker":  "루엔",
+                      "situation":  "REVIVE",
+                      "condition":  "{REVIVES}=1",
+                      "expression":  "surprise",
+                      "effects":  [
+                                      "big",
+                                      "slow"
+                                  ],
+                      "text":  "……빛이.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "LUAN_V02",
+                      "starId":  "body_juno",
+                      "speaker":  "루엔",
+                      "situation":  "REVIVE",
+                      "condition":  "{REVIVES}\u003e=2",
+                      "expression":  "smile",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "돌아왔습니다. 보이는 채로요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_F01",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_FIRST",
+                      "condition":  "",
+                      "expression":  "blank",
+                      "effects":  [
+                                      "slow",
+                                      "silent"
+                                  ],
+                      "text":  "……멋지다.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_F02",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_FIRST",
+                      "condition":  "",
+                      "expression":  "blush",
+                      "effects":  [
+                                      "shake",
+                                      "fast"
+                                  ],
+                      "text":  "아, 아니. 방금 건 혼잣말이에요. 죄송합니다. 들으실 줄 몰라서…….",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_F03",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_FIRST",
+                      "condition":  "",
+                      "expression":  "blush",
+                      "effects":  [
+                                      "tremble",
+                                      "slow"
+                                  ],
+                      "text":  "저, 저기……. 계약, 하러 왔는데요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_F04",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_FIRST",
+                      "condition":  "",
+                      "expression":  "blush",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "노일 세이로입니다.…검은 자신있어요. 참고로 검은 이스라고 해요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_F05",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_FIRST",
+                      "condition":  "",
+                      "expression":  "blush",
+                      "effects":  [
+                                      "tremble"
+                                  ],
+                      "text":  "그게……이런 귀여운분이 이런 일을 하고 계실 줄은 몰랐어요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_F06",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_FIRST",
+                      "condition":  "",
+                      "expression":  "blush",
+                      "effects":  [
+                                      "tremble",
+                                      "pause"
+                                  ],
+                      "text":  "……하우우.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_F07",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_LEAVE",
+                      "condition":  "{REVIVES}=0 · 혼잣말",
+                      "expression":  "blank",
+                      "effects":  [
+                                      "slow",
+                                      "silent"
+                                  ],
+                      "text":  "……다음엔 좀 제대로 입고 와야겠다. 최소한 츄리닝은……",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_F08",
+                      "starId":  "body_karin",
+                      "speaker":  "이스",
+                      "situation":  "SHOP_FIRST",
+                      "condition":  "",
+                      "expression":  "smile",
+                      "effects":  [
+                                      "fast"
+                                  ],
+                      "text":  "얘 지금 벽 보고 말하고 있어. 미안.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_G01",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_GREET",
+                      "condition":  "{REVIVES}=1",
+                      "expression":  "blush",
+                      "effects":  [
+                                      "tremble"
+                                  ],
+                      "text":  "저, 저기. 오늘은……이거.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_G02",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_GREET",
+                      "condition":  "{REVIVES}=1",
+                      "expression":  "blush",
+                      "effects":  [
+                                      "tremble",
+                                      "slow"
+                                  ],
+                      "text":  "……핀이요. 머리 넘겨봤는데.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_G03",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_GREET",
+                      "condition":  "{REVIVES}=1",
+                      "expression":  "blush",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "옷은 그대로예요. 새 옷 사러 나가는 건……조금 난도가 높아서.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_G04",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_GREET",
+                      "condition":  "{REVIVES}=1",
+                      "expression":  "blush",
+                      "effects":  [
+                                      "tremble",
+                                      "slow"
+                                  ],
+                      "text":  "어, 어울리나요. (Yes / No)",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_G05",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_GREET",
+                      "condition":  "{REVIVES}=1 \u0026 답변=Yes",
+                      "expression":  "blush",
+                      "effects":  [
+                                      "big",
+                                      "shake"
+                                  ],
+                      "text":  "자, 잠깐만요. 그렇게 바로 대답하시면……우으으…….",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_G06",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_GREET",
+                      "condition":  "{REVIVES}=1 \u0026 답변=No",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "……아. 네. 역시 저한텐 이상했죠. 괜히 보여드려서 죄송합니다.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_G07",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_GREET",
+                      "condition":  "2\u003c={REVIVES}\u003c=4",
+                      "expression":  "blush",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "오늘도 왔습니다. ……평소보다 조금 늦게 열었네요",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_G08",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_GREET",
+                      "condition":  "2\u003c={REVIVES}\u003c=4",
+                      "expression":  "blush",
+                      "effects":  [
+                                      "tremble"
+                                  ],
+                      "text":  "{PLAYER} 계신 것 보면, 좀 안심이 돼요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_G09",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_GREET",
+                      "condition":  "{REVIVES}\u003e=5",
+                      "expression":  "blush",
+                      "effects":  [
+                                      "slow",
+                                      "silent"
+                                  ],
+                      "text":  "……보고 싶었어요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_G10",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_GREET",
+                      "condition":  "{REVIVES}\u003e=5",
+                      "expression":  "blush",
+                      "effects":  [
+                                      "shake",
+                                      "fast"
+                                  ],
+                      "text":  "아니. 그, 이상한 뜻은……아니, 이상한 뜻도 조금은 있는데, 죄송합니다.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_T01",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "blush",
+                      "effects":  [
+                                      "tremble"
+                                  ],
+                      "text":  "네? 아, 아뇨. 아무것도 아닙니다.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_T02",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "blank",
+                      "effects":  [
+                                      "slow",
+                                      "silent"
+                                  ],
+                      "text":  "……멋지다.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_T03",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "blush",
+                      "effects":  [
+                                      "shake"
+                                  ],
+                      "text":  "…지금 것도 못 들으신 걸로 해주시면 안 될까요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_T04",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "blush",
+                      "effects":  [
+                                      "slow",
+                                      "silent"
+                                  ],
+                      "text":  "{PLAYER}.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_T05",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "blush",
+                      "effects":  [
+                                      "tremble",
+                                      "slow"
+                                  ],
+                      "text":  "……아. 한 번 불러보고 싶었어요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_T06",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "blush",
+                      "effects":  [
+                                      "slow",
+                                      "pause"
+                                  ],
+                      "text":  "저, 사실 {PLAYER}를……조…….",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_T07",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "blush",
+                      "effects":  [
+                                      "shake",
+                                      "fast"
+                                  ],
+                      "text":  "조, 조랑말 좋아하세요?",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_T08",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "slow",
+                                      "silent"
+                                  ],
+                      "text":  "……아하하, 동물원 티켓이 남아서..읏,",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_T09",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "blush",
+                      "effects":  [
+                                      "tremble"
+                                  ],
+                      "text":  "저, 저는 {PLAYER}처럼 되고 싶어요.언제나 태연한 모습이 멋지니까..",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_T10",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "아까 인사할 때 목소리 좀 이상했죠. 계속 생각나서…….",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_T11",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "tremble"
+                                  ],
+                      "text":  "죄송합니다. ……아. 또 죄송하다고 했네. 이것도 죄송……아니, 그만할게요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_T12",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "오 년 전엔 이러지 않았거든요. 뭘 해도 잘한다고들 했는데.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_T13",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "slow",
+                                      "pause"
+                                  ],
+                      "text":  "……그런데 지금은 지금은 왜 이럴까요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_T14",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "blush",
+                      "effects":  [
+                                      "tremble",
+                                      "slow"
+                                  ],
+                      "text":  "저는 사람이 좀 무서워서요. ……{PLAYER}은 안 무서운데.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_T15",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "blush",
+                      "effects":  [
+                                      "tremble",
+                                      "pause"
+                                  ],
+                      "text":  "……하우우.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_T16",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "angry",
+                      "effects":  [
+                                      "bold"
+                                  ],
+                      "text":  "혹시, {PLAYER}는 마왕을 어떻게 생각하나요..",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_T17",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "neutral",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "……저는 마왕은 용서 못 합니다.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_T18",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "오 년 전에 형이랑 같이 올라갔습니다. 내려올 때는……저 혼자였고요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_T19",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "tremble",
+                                      "slow"
+                                  ],
+                      "text":  "저는 몸을 못 들었어요. 생각보다 무거워서.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_T20",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "tremble",
+                                      "pause"
+                                  ],
+                      "text":  "손이 미끄러졌어요. ……딱 한 번이요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_T21",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "회수가 안 되면 어떻게 되는지 아세요. 아무것도 안 남아요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_T22",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "slow",
+                                      "pause"
+                                  ],
+                      "text":  "묘도 없어요. 기록에서도 지워져요. ……이름까지요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_T23",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "angry",
+                      "effects":  [
+                                      "shake",
+                                      "big"
+                                  ],
+                      "text":  "{PLAYER}를 위해서라도……마왕은 반드시 쓰러뜨릴게요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_T24",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "tremble",
+                                      "slow"
+                                  ],
+                      "text":  "언젠가 마왕을 쓰러뜨리고, {PLAYER}가 더는 이런 일을 하지 않아도 되는 날이 왔으면 좋겠어요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_T25",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "blush",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "그리고 그때가 오면……저랑 같이..",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_T26",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "blush",
+                      "effects":  [
+                                      "tremble",
+                                      "slow"
+                                  ],
+                      "text":  "아, 아무것도 아니에요. 못 들은 걸로 해주세요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_T27",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "{REVIVES}\u003e=3",
+                      "expression":  "blank",
+                      "effects":  [
+                                      "slow",
+                                      "silent"
+                                  ],
+                      "text":  "{PLAYER}가 오 년 전에 있었으면 좋았을 텐데…아니. 그러면 지금 못 만났겠네요.……그건 좀 싫은데.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_T28",
+                      "starId":  "body_karin",
+                      "speaker":  "이스",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "neutral",
+                      "effects":  [
+                                      "pause"
+                                  ],
+                      "text":  "……{PLAYER}. 너한테서 좀 이상한 게 느껴지는데.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_T29",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "angry",
+                      "effects":  [
+                                      "shake",
+                                      "bold"
+                                  ],
+                      "text":  "이스. 그만해.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_T30",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "neutral",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "이 사람은 악인이 아니야. 모험하면서 별사람 다 봤어. 적어도 그 정도는 알아.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_T31",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "angry",
+                      "effects":  [
+                                      "slow",
+                                      "tremble"
+                                  ],
+                      "text":  "……내가 사람 보는 눈까지 틀렸다면, 정말 아무것도 안 남잖아.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_T32",
+                      "starId":  "body_karin",
+                      "speaker":  "이스",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "……알았어. 미안.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_I01",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_ITEM",
+                      "condition":  "중고",
+                      "expression":  "blush",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "이거……앞에 누가 쓰던 장비죠.…그 사람도 {PLAYER}가 직접 골라주셨나요?",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_I02",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_ITEM",
+                      "condition":  "중고",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "저보다 훨씬 잘 쓰던 사람이 있었을 것 같아서……조금 미안하네요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_I03",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_ITEM",
+                      "condition":  "신품",
+                      "expression":  "blush",
+                      "effects":  [
+                                      "tremble"
+                                  ],
+                      "text":  "새 거네요. ……{PLAYER}가 골라주신 거면, 뭐든.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_I04",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_ITEM",
+                      "condition":  "",
+                      "expression":  "blush",
+                      "effects":  [
+                                      "slow",
+                                      "silent"
+                                  ],
+                      "text":  "역시 {PLAYER}가 골라준 건 다르네요.…저를 자세히 봐주셨다는 거잖아요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_C01",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_CONTRACT",
+                      "condition":  "",
+                      "expression":  "blush",
+                      "effects":  [
+                                      "tremble",
+                                      "slow"
+                                  ],
+                      "text":  "서, 서명이요. ……손이 좀 떨려서요. 잠깐만요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_C02",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_CONTRACT",
+                      "condition":  "",
+                      "expression":  "blush",
+                      "effects":  [
+                                      "tremble"
+                                  ],
+                      "text":  "저, 죄송한데. 무서워서 손 좀 잡아주시면 안 될까요...",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_C03",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_CONTRACT",
+                      "condition":  "{REVIVES}\u003e=3",
+                      "expression":  "blush",
+                      "effects":  [
+                                      "slow",
+                                      "silent"
+                                  ],
+                      "text":  "……{PLAYER} 글씨, 예쁘시네요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_C04",
+                      "starId":  "body_karin",
+                      "speaker":  "이스",
+                      "situation":  "SHOP_CONTRACT",
+                      "condition":  "",
+                      "expression":  "smile",
+                      "effects":  [
+
+                                  ],
+                      "text":  "기억은 지우지 마. 그거 하나만.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_L01",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_LEAVE",
+                      "condition":  "",
+                      "expression":  "blush",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "다, 다녀오겠습니다. ……그, 가기 전에 인사 한 번만 받아주실 수 있나요?",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_L02",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "SHOP_LEAVE",
+                      "condition":  "{REVIVES}\u003e=3",
+                      "expression":  "blush",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "오늘은 좀 잘해볼게요. ……보고 계실 거잖아요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_D01",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "DUN_START",
+                      "condition":  "",
+                      "expression":  "neutral",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "{FLOOR}층까지. ……해볼게요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_R01",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "DUN_RADIO",
+                      "condition":  "",
+                      "expression":  "blush",
+                      "effects":  [
+                                      "tremble"
+                                  ],
+                      "text":  "어, 어느 쪽일까요. {PLAYER}가 정해주시면 그쪽으로 갈게요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_R02",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "DUN_RADIO",
+                      "condition":  "",
+                      "expression":  "neutral",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "저는 판단이 별로라서요. 시키는 대로 하는 게 나아요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_R03",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "DUN_RADIO",
+                      "condition":  "{REVIVES}\u003e=3",
+                      "expression":  "blush",
+                      "effects":  [
+                                      "slow",
+                                      "silent"
+                                  ],
+                      "text":  "{PLAYER}의 목소리는 부드러워서 기분이 좋아져요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_E01",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "DUN_EVENT",
+                      "condition":  "",
+                      "expression":  "neutral",
+                      "effects":  [
+
+                                  ],
+                      "text":  "……옵니다.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_E02",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "DUN_EVENT",
+                      "condition":  "",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "……방금 한 대 맞았죠. 늦었어요. 죄송합니다.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_E03",
+                      "starId":  "body_karin",
+                      "speaker":  "이스",
+                      "situation":  "DUN_EVENT",
+                      "condition":  "",
+                      "expression":  "smile",
+                      "effects":  [
+                                      "fast"
+                                  ],
+                      "text":  "야 잘했어! 그 정도면 잘한 거야!",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_E04",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "DUN_EVENT",
+                      "condition":  "{FLOOR}\u003e=23",
+                      "expression":  "surprise",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "……이건 마물이 아닌데요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_H01",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "DUN_HURT",
+                      "condition":  "",
+                      "expression":  "pain",
+                      "effects":  [
+                                      "shake"
+                                  ],
+                      "text":  "…{PLAYER}를 위해서라면,",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_H02",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "DUN_HURT",
+                      "condition":  "",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "shake",
+                                      "tremble"
+                                  ],
+                      "text":  "죄, 죄송합니다. 또 이래요. 저 진짜 왜 이러죠.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_LW01",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "DUN_LOW",
+                      "condition":  "",
+                      "expression":  "pain",
+                      "effects":  [
+                                      "tremble",
+                                      "slow"
+                                  ],
+                      "text":  "{PLAYER}. 저, 물약은 안 보내셔도 돼요. 돈 드니까.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_LW02",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "DUN_LOW",
+                      "condition":  "",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "tremble"
+                                  ],
+                      "text":  "비싸잖아요. 저 하나 살릴 돈이면 {PLAYER}가 쓰는 게 더 효율적이고..",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_LW03",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "DUN_LOW",
+                      "condition":  "{REVIVES}\u003e=3",
+                      "expression":  "blush",
+                      "effects":  [
+                                      "tremble",
+                                      "slow"
+                                  ],
+                      "text":  "근데. ……보내주시면, ...필요하다고 생각해주시는 것 같아서 기뻐요,",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_M01",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "DUN_MENTAL",
+                      "condition":  "멘탈\u003c30",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "silent",
+                                      "slow"
+                                  ],
+                      "text":  "……제가 여기 있어도 되나 싶어서요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_M02",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "DUN_MENTAL",
+                      "condition":  "멘탈\u003c30",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "tremble",
+                                      "slow"
+                                  ],
+                      "text":  "{PLAYER}. 저 같은 거 왜 쓰세요. 더 좋은 사람 많잖아요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_M03",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "DUN_MENTAL",
+                      "condition":  "멘탈\u003c15 \u0026 무기없음",
+                      "expression":  "empty",
+                      "effects":  [
+                                      "silent",
+                                      "slow"
+                                  ],
+                      "text":  "……이스가 없어요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_M04",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "DUN_MENTAL",
+                      "condition":  "멘탈\u003c15 \u0026 무기없음",
+                      "expression":  "empty",
+                      "effects":  [
+                                      "tremble"
+                                  ],
+                      "text":  "혼자서는, 저는.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_X01",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "DEATH",
+                      "condition":  "{REVIVES}=0",
+                      "expression":  "pain",
+                      "effects":  [
+                                      "slow",
+                                      "silent"
+                                  ],
+                      "text":  "……죄송합니다.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_X02",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "DEATH",
+                      "condition":  "{REVIVES}=0",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "제가 죽으면 데리러 와주세요. ……다른 사람 말고, {PLAYER}가요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_X03",
+                      "starId":  "body_karin",
+                      "speaker":  "이스",
+                      "situation":  "DEATH",
+                      "condition":  "{REVIVES}=0",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "tremble",
+                                      "slow"
+                                  ],
+                      "text":  "야. 야, 그만 사과해. 잘했어.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_X04",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "DEATH",
+                      "condition":  "1\u003c={REVIVES}\u003c=4",
+                      "expression":  "pain",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "{PLAYER}. 회수, 꼭 부탁드려요.…기다리고 있을게요. {PLAYER}가 와줄 때까지.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_X05",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "DEATH",
+                      "condition":  "{REVIVES}\u003e=5",
+                      "expression":  "blank",
+                      "effects":  [
+                                      "silent",
+                                      "slow"
+                                  ],
+                      "text":  "……이번엔 좀 멋있었나요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_X06",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "DEATH",
+                      "condition":  "{REVIVES}\u003e=7",
+                      "expression":  "empty",
+                      "effects":  [
+                                      "silent",
+                                      "blackout"
+                                  ],
+                      "text":  "깨어났을때 처음 보는 사람이 {PLAYER}라서 다행이라고 생각했어요. …이런 말도 부담스럽죠.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_V01",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "REVIVE",
+                      "condition":  "",
+                      "expression":  "blush",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "...조금만 여기 있을게요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_V02",
+                      "starId":  "body_karin",
+                      "speaker":  "세이로",
+                      "situation":  "REVIVE",
+                      "condition":  "{REVIVES}\u003e=3",
+                      "expression":  "blush",
+                      "effects":  [
+                                      "tremble",
+                                      "slow"
+                                  ],
+                      "text":  "{PLAYER} 얼굴 보니까, 좀 낫네요.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "GARD_V03",
+                      "starId":  "body_karin",
+                      "speaker":  "이스",
+                      "situation":  "REVIVE",
+                      "condition":  "",
+                      "expression":  "smile",
+                      "effects":  [
+                                      "fast"
+                                  ],
+                      "text":  "여기 있어. 바보야.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "BERN_F01",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "SHOP_FIRST",
+                      "condition":  "",
+                      "expression":  "angry",
+                      "effects":  [
+                                      "bold"
+                                  ],
+                      "text":  "고개를 들거라. 이 몸을 앞에 두고 언제까지 바닥만 볼 셈이냐?",
+                      "note":  null
+                  },
+                  {
+                      "id":  "BERN_F02",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "SHOP_FIRST",
+                      "condition":  "",
+                      "expression":  "neutral",
+                      "effects":  [
+
+                                  ],
+                      "text":  "비오레. 흡혈귀이고……도적 노릇도 하지. 크로우와 함께 계약하러 왔다.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "BERN_F03",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "SHOP_FIRST",
+                      "condition":  "",
+                      "expression":  "angry",
+                      "effects":  [
+
+                                  ],
+                      "text":  "크로우가 제법 쓸 만하다고 하더구나. 그러니 한번 믿어보도록 하지.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "BERN_G01",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "SHOP_GREET",
+                      "condition":  "{REVIVES}=1",
+                      "expression":  "angry",
+                      "effects":  [
+
+                                  ],
+                      "text":  "한 번 실수한 것뿐이야. 실력은 그대로고.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "BERN_G02",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "SHOP_GREET",
+                      "condition":  "2\u003c={REVIVES}\u003c=4",
+                      "expression":  "neutral",
+                      "effects":  [
+
+                                  ],
+                      "text":  "……왔어.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "BERN_G03",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "SHOP_GREET",
+                      "condition":  "2\u003c={REVIVES}\u003c=4",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "오늘은 몇 층까지 가면 될지. 네가 정해주거라.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "BERN_G04",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "SHOP_GREET",
+                      "condition":  "{REVIVES}\u003e=5",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "slow",
+                                      "silent"
+                                  ],
+                      "text":  "……오늘 하루쯤은 쉬어도 되지 않겠느냐?",
+                      "note":  null
+                  },
+                  {
+                      "id":  "BERN_G05",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "SHOP_GREET",
+                      "condition":  "{REVIVES}\u003e=5",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "tremble"
+                                  ],
+                      "text":  "아니. 방금 건 잊거라. 용사가 나약한 소리를 해서야 되겠느냐.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "BERN_T01",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "{REVIVES}\u003c=1",
+                      "expression":  "angry",
+                      "effects":  [
+
+                                  ],
+                      "text":  "크로우에게 함부로 손대지 마라. ……이 몸의 아주 중요한 동료다.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "BERN_T02",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "{REVIVES}\u003c=1",
+                      "expression":  "angry",
+                      "effects":  [
+                                      "bold"
+                                  ],
+                      "text":  "이 정도쯤은 아무것도 아니다. 그렇지, 크로우? ……왜 대답이 없지.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "BERN_T03",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "neutral",
+                      "effects":  [
+
+                                  ],
+                      "text":  "잠? 필요 없다. 우리 종족에겐 축복받은 체질이지. ……응, 축복이다.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "BERN_T04",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "pause"
+                                  ],
+                      "text":  "밤은 길구나. 모두 잠들고 나면 세상에 이 몸만 남은 것 같아서 말이다.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "BERN_T05",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "",
+                      "expression":  "neutral",
+                      "effects":  [
+
+                                  ],
+                      "text":  "전기도 독도 안 통해. ……본의 아니게 강해지고 말았구나.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "BERN_T06",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "{REVIVES}\u003e=3",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "……크로우. 나, 제대로 하고 있는 것이 맞겠지?",
+                      "note":  null
+                  },
+                  {
+                      "id":  "BERN_T07",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "SHOP_TOUCH",
+                      "condition":  "{REVIVES}\u003e=5",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "tremble",
+                                      "slow"
+                                  ],
+                      "text":  "오늘은 슈퍼챗이 많이 들어왔더구나. 얼굴 때문이라던데. 흠.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "BERN_I01",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "SHOP_ITEM",
+                      "condition":  "{GEN}\u003e=3",
+                      "expression":  "angry",
+                      "effects":  [
+
+                                  ],
+                      "text":  "남이 쓰던 걸 나한테? ……꽤 대담하구나, 그대.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "BERN_I02",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "SHOP_ITEM",
+                      "condition":  "{GEN}\u003e=3 \u0026 {REVIVES}\u003e=3",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "……됐어. 그걸 주거라. 나도 같은 것으로 하겠다.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "BERN_I03",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "SHOP_ITEM",
+                      "condition":  "{GEN}=0",
+                      "expression":  "neutral",
+                      "effects":  [
+
+                                  ],
+                      "text":  "새것이군. ……이 몸에게 새 물건을 준비해둔 것이냐. 흠. 제법 기특하구나.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "BERN_C01",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "SHOP_CONTRACT",
+                      "condition":  "",
+                      "expression":  "angry",
+                      "effects":  [
+
+                                  ],
+                      "text":  "위약금 따위는 필요 없다. 이 몸이 죽을 리 없으니 말이다.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "BERN_C02",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "SHOP_CONTRACT",
+                      "condition":  "{REVIVES}\u003e=3",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "서명……. 회수는 꼭 해줘. 크로우까지 혼자 남게 하는 건 싫으니까.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "BERN_L01",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "SHOP_LEAVE",
+                      "condition":  "",
+                      "expression":  "angry",
+                      "effects":  [
+
+                                  ],
+                      "text":  "다녀오도록 하지. 크로우, 가자. ……응? 내가 들어야 한다고?",
+                      "note":  null
+                  },
+                  {
+                      "id":  "BERN_D01",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "DUN_START",
+                      "condition":  "",
+                      "expression":  "angry",
+                      "effects":  [
+                                      "fast"
+                                  ],
+                      "text":  "오늘은 {FLOOR}층까지다. 이 정도면 산책이지. 햇빛만 없다면 말이다.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "BERN_R01",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "DUN_RADIO",
+                      "condition":  "{REVIVES}\u003c=1",
+                      "expression":  "angry",
+                      "effects":  [
+
+                                  ],
+                      "text":  "아무 쪽이나 고르거라. 어느 길이든 이 몸이 뚫어주마.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "BERN_R02",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "DUN_RADIO",
+                      "condition":  "{REVIVES}\u003e=3",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "……그대가 골라라. 나는 이런 걸 고르면 꼭 이상한 데로 가더구나.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "BERN_E01",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "DUN_EVENT",
+                      "condition":  "",
+                      "expression":  "angry",
+                      "effects":  [
+
+                                  ],
+                      "text":  "이런 것이 몬스터라고? 흠. 기대 이하로구나.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "BERN_E02",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "DUN_EVENT",
+                      "condition":  "{REVIVES}\u003e=3",
+                      "expression":  "neutral",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "……잠깐. 이 녀석도 무언가를 지키고 있는 것 같구나. 함부로 죽이지 말자.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "BERN_H01",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "DUN_HURT",
+                      "condition":  "",
+                      "expression":  "pain",
+                      "effects":  [
+                                      "shake"
+                                  ],
+                      "text":  "이 정도는 긁힌 것뿐이다. 호들갑 떨지 마라.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "BERN_H02",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "DUN_HURT",
+                      "condition":  "{REVIVES}\u003e=3",
+                      "expression":  "pain",
+                      "effects":  [
+                                      "shake",
+                                      "tremble"
+                                  ],
+                      "text":  "아, 아파. 아프다고.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "BERN_LW01",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "DUN_LOW",
+                      "condition":  "{REVIVES}\u003c=1",
+                      "expression":  "pain",
+                      "effects":  [
+                                      "tremble"
+                                  ],
+                      "text":  "이런 것으로 그대의 재산을 축내는 건……조금 미안하니까.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "BERN_LW02",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "DUN_LOW",
+                      "condition":  "{REVIVES}\u003e=3",
+                      "expression":  "pain",
+                      "effects":  [
+                                      "tremble",
+                                      "slow"
+                                  ],
+                      "text":  "{PLAYER}. 나 좀 도와줘. 제발.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "BERN_M01",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "DUN_MENTAL",
+                      "condition":  "멘탈\u003c30",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "silent",
+                                      "slow"
+                                  ],
+                      "text":  "……안 갈래.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "BERN_M02",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "DUN_MENTAL",
+                      "condition":  "멘탈\u003c30",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "tremble"
+                                  ],
+                      "text":  "무전은 잠시 끄겠다.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "BERN_M03",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "DUN_MENTAL",
+                      "condition":  "멘탈\u003c15",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "shake",
+                                      "tremble"
+                                  ],
+                      "text":  "싫어! 안 올라간다고!",
+                      "note":  null
+                  },
+                  {
+                      "id":  "BERN_X01",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "DEATH",
+                      "condition":  "{REVIVES}=0",
+                      "expression":  "angry",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "……방금 것은 사고다. 실력과는 관계없다. 크로우, 웃지 마라.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "BERN_X02",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "DEATH",
+                      "condition":  "1\u003c={REVIVES}\u003c=3",
+                      "expression":  "pain",
+                      "effects":  [
+                                      "slow",
+                                      "tremble"
+                                  ],
+                      "text":  "또야. ……또 나야.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "BERN_X03",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "DEATH",
+                      "condition":  "{REVIVES}\u003e=4",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "slow",
+                                      "silent"
+                                  ],
+                      "text":  "아무도 없는 밤은 이제 지겨워.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "BERN_X04",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "DEATH",
+                      "condition":  "{REVIVES}\u003e=6",
+                      "expression":  "empty",
+                      "effects":  [
+                                      "silent",
+                                      "blackout"
+                                  ],
+                      "text":  "……깨우지 마.크로우도 여기 있잖아. 조금만 더 이대로 있을래.",
+                      "note":  null
+                  },
+                  {
+                      "id":  "BERN_V01",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "REVIVE",
+                      "condition":  "{REVIVES}\u003c=2",
+                      "expression":  "angry",
+                      "effects":  [
+
+                                  ],
+                      "text":  "뭐, 당연한 결과다. 이 몸이니까. ……크로우, 들었지? 방금 꽤 멋있었지?",
+                      "note":  null
+                  },
+                  {
+                      "id":  "BERN_V02",
+                      "starId":  "body_sela",
+                      "speaker":  "비오레",
+                      "situation":  "REVIVE",
+                      "condition":  "{REVIVES}\u003e=4",
+                      "expression":  "sad",
+                      "effects":  [
+                                      "slow"
+                                  ],
+                      "text":  "……또 깼네.",
+                      "note":  null
+                  }
+              ]
+}

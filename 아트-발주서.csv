@@ -4,7 +4,7 @@
 1,캐릭터 · 어필 컷,star/karin_appeal.png,384×480,192×240 (1/2),카린 어필 컷 — 억지 웃음 + 카메라를 본다 (M06 §7 최우선 컷),도착,star.appeal.karin
 1,캐릭터 · 어필 컷,star/mor_appeal.png,384×480,192×240 (1/2),모르 어필 컷,도착,star.appeal.mor
 1,캐릭터 · 어필 컷,star/sela_appeal.png,384×480,192×240 (1/2),셀라 어필 컷,도착,star.appeal.sela
-2,배경,bg/shop_bench_crop.png,1645×1123,1:1,② 편성실 우측 — 작업대,도착,bg.shop.bench
+2,배경,bg/shop_bench_crop.png,1755×1198,1:1,② 편성실 우측 — 작업대,도착,bg.shop.bench
 2,배경,bg/shop_room.png,650×792,1:1,② 편성실 좌측 — 방문자가 서는 자리,도착,bg.shop.room
 2,배경,bg/tower.png,1000×792,1:1,③ 생방송 전투 칸 배경 (던전),도착,bg.tower
 2,캐릭터 · 전신,star/body_ilan.png,752×792,1:1,일란 전신,도착,star.body.ilan
@@ -23,15 +23,17 @@
 3,배경,bg/live_final.png,1182×936,1:1,③ 던전 · 최종 구역 (31F~),도착,bg.live.final
 3,배경,bg/live_flame.png,1182×936,1:1,③ 던전 · 화염 구역 (23~30F),도착,bg.live.flame
 3,배경,bg/live_ice.png,1182×936,1:1,③ 던전 · 얼음 구역 (23~30F),도착,bg.live.ice
+3,배경,bg/live_screen_final.png,462×452,1:1,③ 방송화면 액자 · 최종 구역,도착,bg.live.screen.final
+3,배경,bg/live_screen_flame.png,462×452,1:1,③ 방송화면 액자 · 화염 구역,도착,bg.live.screen.flame
+3,배경,bg/live_screen_ice.png,462×452,1:1,③ 방송화면 액자 · 얼음 구역,도착,bg.live.screen.ice
+3,배경,bg/live_screen_stone.png,462×452,1:1,③ 방송화면 액자 · 돌 구역 — 적 스프라이트 뒤에 깔린다,도착,bg.live.screen.stone
 3,배경,bg/live_stone.png,1182×936,1:1,③ 던전 · 돌 구역 (~22F),도착,bg.live.stone
 3,배경,bg/live.png,1920×1080,1:1,③ 생방송 5분할 바탕 (칸 사이 여백),도착,bg.live
-3,배경,bg/revive_bench_crop.png,1644×1122,1:1,① 소생실 우측 (없으면 bg.shop.bench 를 쓴다),도착,bg.revive.bench
+3,배경,bg/revive_bench_crop.png,1745×1191,1:1,① 소생실 우측 (없으면 bg.shop.bench 를 쓴다),도착,bg.revive.bench
 3,배경,bg/revive_room.png,650×792,1:1,① 소생실 좌측 (없으면 bg.shop.room 을 쓴다),도착,bg.revive.room
 3,배경,bg/studio.png,1920×936,1:1,⑥ 발표 스튜디오,도착,bg.studio
-3,배경,bg/title_lamp1.png,1920×1080,1:1,타이틀 램프 밝기 1/4 — 넣으면 창의 불빛이 깜빡인다 (4장 다 있어야 켜진다),도착,bg.title.lamp1
-3,배경,bg/title_lamp2.png,1920×1080,1:1,타이틀 램프 밝기 2/4 — 넣으면 창의 불빛이 깜빡인다 (4장 다 있어야 켜진다),도착,bg.title.lamp2
-3,배경,bg/title_lamp3.png,1920×1080,1:1,타이틀 램프 밝기 3/4 — 넣으면 창의 불빛이 깜빡인다 (4장 다 있어야 켜진다),도착,bg.title.lamp3
-3,배경,bg/title_lamp4.png,1920×1080,1:1,타이틀 램프 밝기 4/4 — 넣으면 창의 불빛이 깜빡인다 (4장 다 있어야 켜진다),도착,bg.title.lamp4
+3,배경,bg/title_lantern.png,86×59,1:1,타이틀 처마등 실루엣 — 문 위 등 자리에 얹고 약하게 흔든다,도착,bg.title.lantern
+3,배경,bg/title_window.png,567×300,1:1,타이틀 진열창 빛 조절판 — 창 위에 얹고 알파로 밝기를 조절한다 (lamp1~4 를 대체),도착,bg.title.window
 3,배경,bg/title.png,1920×1080,1:1,타이틀 화면 배경,도착,bg.title
 3,적,enemy/beast.png,512×512,256×256 (1/2),짐승 — 23~30F,도착,enemy.beast
 3,적,enemy/flame.png,512×512,256×256 (1/2),화염 — 23~30F,도착,enemy.flame
@@ -63,6 +65,7 @@
 4,소리,sfx/click.mp3,,1:1,버튼 누름,도착,sfx.click
 4,소리,sfx/death.mp3,,1:1,신호 두절 — 방송 끊김음 + 저역 험 (M06 §8 「소리가 절반이다」),도착,sfx.death
 4,소리,sfx/record.mp3,,1:1,신기록 갱신,도착,sfx.record
+4,소리,sfx/revive_knock.mp3,,1:1,빈 소생실에서 2초 뒤 들리는 편성실 쪽 노크,도착,sfx.revive.knock
 4,소리,sfx/revive.mp3,,1:1,소생 — 수조에서 몸이 일어난다,도착,sfx.revive
 4,소리,sfx/stamp.mp3,,1:1,봉랍 도장 — 검시 판정·폐기 확정,도착,sfx.stamp
 4,소리,sfx/superchat.mp3,,1:1,슈퍼챗 알림,도착,sfx.superchat
@@ -74,6 +77,61 @@
 4,소품,prop/scroll.png,176×64,1:1,계약서 서류 조각,도착,prop.scroll
 4,소품,prop/stamp.png,128×208,1:1,최종 판정서에서 잘라낸 실물 도장,도착,prop.stamp
 4,소품,prop/tag.png,152×104,1:1,작업대의 가격표,도착,prop.tag
+4,캐릭터 · 기타,star/expressions/ilan_angry.png,752×792,1:1,ilan angry 대사 표정 전신,도착,star.expression.ilan.angry
+4,캐릭터 · 기타,star/expressions/ilan_blank.png,752×792,1:1,ilan blank 대사 표정 전신,도착,star.expression.ilan.blank
+4,캐릭터 · 기타,star/expressions/ilan_blush.png,752×792,1:1,ilan blush 대사 표정 전신,도착,star.expression.ilan.blush
+4,캐릭터 · 기타,star/expressions/ilan_empty.png,752×792,1:1,ilan empty 대사 표정 전신,도착,star.expression.ilan.empty
+4,캐릭터 · 기타,star/expressions/ilan_neutral.png,752×792,1:1,ilan neutral 대사 표정 전신,도착,star.expression.ilan.neutral
+4,캐릭터 · 기타,star/expressions/ilan_pain.png,752×792,1:1,ilan pain 대사 표정 전신,도착,star.expression.ilan.pain
+4,캐릭터 · 기타,star/expressions/ilan_sad.png,752×792,1:1,ilan sad 대사 표정 전신,도착,star.expression.ilan.sad
+4,캐릭터 · 기타,star/expressions/ilan_smile.png,752×792,1:1,ilan smile 대사 표정 전신,도착,star.expression.ilan.smile
+4,캐릭터 · 기타,star/expressions/ilan_surprise.png,752×792,1:1,ilan surprise 대사 표정 전신,도착,star.expression.ilan.surprise
+4,캐릭터 · 기타,star/expressions/juno_angry.png,752×792,1:1,juno angry 대사 표정 전신,도착,star.expression.juno.angry
+4,캐릭터 · 기타,star/expressions/juno_blank.png,752×792,1:1,juno blank 대사 표정 전신,도착,star.expression.juno.blank
+4,캐릭터 · 기타,star/expressions/juno_blush.png,752×792,1:1,juno blush 대사 표정 전신,도착,star.expression.juno.blush
+4,캐릭터 · 기타,star/expressions/juno_empty.png,752×792,1:1,juno empty 대사 표정 전신,도착,star.expression.juno.empty
+4,캐릭터 · 기타,star/expressions/juno_neutral.png,752×792,1:1,juno neutral 대사 표정 전신,도착,star.expression.juno.neutral
+4,캐릭터 · 기타,star/expressions/juno_pain.png,752×792,1:1,juno pain 대사 표정 전신,도착,star.expression.juno.pain
+4,캐릭터 · 기타,star/expressions/juno_sad.png,752×792,1:1,juno sad 대사 표정 전신,도착,star.expression.juno.sad
+4,캐릭터 · 기타,star/expressions/juno_smile.png,752×792,1:1,juno smile 대사 표정 전신,도착,star.expression.juno.smile
+4,캐릭터 · 기타,star/expressions/juno_surprise.png,752×792,1:1,juno surprise 대사 표정 전신,도착,star.expression.juno.surprise
+4,캐릭터 · 기타,star/expressions/karin_angry.png,752×792,1:1,karin angry 대사 표정 전신,도착,star.expression.karin.angry
+4,캐릭터 · 기타,star/expressions/karin_blank.png,752×792,1:1,karin blank 대사 표정 전신,도착,star.expression.karin.blank
+4,캐릭터 · 기타,star/expressions/karin_blush.png,752×792,1:1,karin blush 대사 표정 전신,도착,star.expression.karin.blush
+4,캐릭터 · 기타,star/expressions/karin_empty.png,752×792,1:1,karin empty 대사 표정 전신,도착,star.expression.karin.empty
+4,캐릭터 · 기타,star/expressions/karin_neutral.png,752×792,1:1,karin neutral 대사 표정 전신,도착,star.expression.karin.neutral
+4,캐릭터 · 기타,star/expressions/karin_pain.png,752×792,1:1,karin pain 대사 표정 전신,도착,star.expression.karin.pain
+4,캐릭터 · 기타,star/expressions/karin_sad.png,752×792,1:1,karin sad 대사 표정 전신,도착,star.expression.karin.sad
+4,캐릭터 · 기타,star/expressions/karin_smile.png,752×792,1:1,karin smile 대사 표정 전신,도착,star.expression.karin.smile
+4,캐릭터 · 기타,star/expressions/karin_surprise.png,752×792,1:1,karin surprise 대사 표정 전신,도착,star.expression.karin.surprise
+4,캐릭터 · 기타,star/expressions/mor_angry.png,752×792,1:1,mor angry 대사 표정 전신,도착,star.expression.mor.angry
+4,캐릭터 · 기타,star/expressions/mor_blank.png,752×792,1:1,mor blank 대사 표정 전신,도착,star.expression.mor.blank
+4,캐릭터 · 기타,star/expressions/mor_blush.png,752×792,1:1,mor blush 대사 표정 전신,도착,star.expression.mor.blush
+4,캐릭터 · 기타,star/expressions/mor_empty.png,752×792,1:1,mor empty 대사 표정 전신,도착,star.expression.mor.empty
+4,캐릭터 · 기타,star/expressions/mor_neutral.png,752×792,1:1,mor neutral 대사 표정 전신,도착,star.expression.mor.neutral
+4,캐릭터 · 기타,star/expressions/mor_pain.png,752×792,1:1,mor pain 대사 표정 전신,도착,star.expression.mor.pain
+4,캐릭터 · 기타,star/expressions/mor_sad.png,752×792,1:1,mor sad 대사 표정 전신,도착,star.expression.mor.sad
+4,캐릭터 · 기타,star/expressions/mor_smile.png,752×792,1:1,mor smile 대사 표정 전신,도착,star.expression.mor.smile
+4,캐릭터 · 기타,star/expressions/mor_surprise.png,752×792,1:1,mor surprise 대사 표정 전신,도착,star.expression.mor.surprise
+4,캐릭터 · 기타,star/expressions/sela_angry.png,752×792,1:1,sela angry 대사 표정 전신,도착,star.expression.sela.angry
+4,캐릭터 · 기타,star/expressions/sela_blank.png,752×792,1:1,sela blank 대사 표정 전신,도착,star.expression.sela.blank
+4,캐릭터 · 기타,star/expressions/sela_blush.png,752×792,1:1,sela blush 대사 표정 전신,도착,star.expression.sela.blush
+4,캐릭터 · 기타,star/expressions/sela_empty.png,752×792,1:1,sela empty 대사 표정 전신,도착,star.expression.sela.empty
+4,캐릭터 · 기타,star/expressions/sela_neutral.png,752×792,1:1,sela neutral 대사 표정 전신,도착,star.expression.sela.neutral
+4,캐릭터 · 기타,star/expressions/sela_pain.png,752×792,1:1,sela pain 대사 표정 전신,도착,star.expression.sela.pain
+4,캐릭터 · 기타,star/expressions/sela_sad.png,752×792,1:1,sela sad 대사 표정 전신,도착,star.expression.sela.sad
+4,캐릭터 · 기타,star/expressions/sela_smile.png,752×792,1:1,sela smile 대사 표정 전신,도착,star.expression.sela.smile
+4,캐릭터 · 기타,star/expressions/sela_surprise.png,752×792,1:1,sela surprise 대사 표정 전신,도착,star.expression.sela.surprise
+4,캐릭터 · 기타,star/ilan_dialogue.png,752×792,1:1,일란 대사 전신,도착,star.dialogue.ilan
+4,캐릭터 · 기타,star/ilan_expression.png,752×792,1:1,일란 표정 전신,도착,star.expression.ilan
+4,캐릭터 · 기타,star/juno_dialogue.png,752×792,1:1,주노 대사 전신,도착,star.dialogue.juno
+4,캐릭터 · 기타,star/juno_expression.png,752×792,1:1,주노 큰웃음 표정 전신,도착,star.expression.juno
+4,캐릭터 · 기타,star/karin_dialogue.png,752×792,1:1,카린 대사 전신,도착,star.dialogue.karin
+4,캐릭터 · 기타,star/karin_expression.png,752×792,1:1,카린 표정 전신,도착,star.expression.karin
+4,캐릭터 · 기타,star/mor_dialogue.png,752×792,1:1,모르 대사 전신,도착,star.dialogue.mor
+4,캐릭터 · 기타,star/mor_expression.png,752×792,1:1,모르 표정 전신,도착,star.expression.mor
+4,캐릭터 · 기타,star/sela_dialogue.png,752×792,1:1,세라 대사 전신,도착,star.dialogue.sela
+4,캐릭터 · 기타,star/sela_expression.png,752×792,1:1,세라 표정 전신,도착,star.expression.sela
 4,캐릭터 · 기타,star/silhouette.png,1536×480,384×480 프레임 1칸 (1:1),이름 없는 몸 실루엣 4프레임,대기,star.silhouette
 4,UI · 기타,ui/character_cover.png,1087×258,1:1,편성실 좌측 캐릭터 전경 가리개 — 대사 배치용,도착,ui.guest.cover
 4,UI · 기타,ui/clock_hour.png,29×42,1:1,HUD game-clock hour hand,도착,ui.clock.hour
@@ -106,9 +164,10 @@
 4,UI · 기타,ui/live_map.png,620×786,1:1,③ 플레이어가 보는 지도 (찢어진 종이),도착,ui.live.map
 4,UI · 기타,ui/live_noise.png,1182×936,1:1,③ 방송 잡음 1장 (씬이 뒤집어 가며 쓴다),도착,ui.live.noise
 4,UI · 기타,ui/live_radio.png,220×420,1:1,③ 무전기,도착,ui.live.radio
-4,UI · 기타,ui/live_superchat.png,528×86,1:1,③ 슈퍼챗 한 줄 (고정 크기),도착,ui.live.superchat
+4,UI · 기타,ui/live_superchat.png,383×62,1:1,③ 슈퍼챗 팝업 판 — 받은 원본이 383x62 라 1:1 로 놓는다,도착,ui.live.superchat
 4,UI · 기타,ui/logo.png,960×240,1:1,타이틀 로고,대기,ui.logo
 4,UI · 기타,ui/seal.png,768×192,192×192 프레임 1칸 (1:1),봉랍 도장 4프레임,대기,ui.seal
+4,UI · 기타,ui/shelf_arrow.png,154×161,정확히 1/2 (77x80),진열대 지시 화살표 — 고른 장비를 놓을 칸 위에 뜬다,도착,ui.shelf.arrow
 4,UI · 기타,ui/suspicion1.png,192×128,1:1,의심도 1/5 — 눈이 떠지는 5단 (5장 다 있어야 승계 화면에 뜬다),도착,ui.suspicion1
 4,UI · 기타,ui/suspicion2.png,192×128,1:1,의심도 2/5 — 눈이 떠지는 5단 (5장 다 있어야 승계 화면에 뜬다),도착,ui.suspicion2
 4,UI · 기타,ui/suspicion3.png,192×128,1:1,의심도 3/5 — 눈이 떠지는 5단 (5장 다 있어야 승계 화면에 뜬다),도착,ui.suspicion3

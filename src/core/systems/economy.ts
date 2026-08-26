@@ -32,6 +32,60 @@ function addLootToInventory(state: GameState, loot: string[]): GameState['invent
   return inventory;
 }
 
+/**
+ * 방송이 끝나 몸이 돌아왔을 때 — **진열대에 올려 들려 보낸 장비가 시체에 남는다** (CCR-006).
+ * 인벤토리에서는 그만큼 빠진다. 소생실에서 회수하기 전까지는 다시 진열할 수 없다.
+ */
+export function detachCarried(
+  state: GameState,
+  shelf: readonly (string | null)[],
+): { carried: string[]; inventory: GameState['inventory'] } {
+  const carried = shelf.filter((id): id is string => id !== null);
+  if (carried.length === 0) return { carried, inventory: state.inventory };
+  const inventory = [...state.inventory];
+  for (const itemId of carried) {
+    const index = inventory.findIndex((stack) => stack.id === itemId && stack.qty > 0);
+    if (index < 0) continue;
+    const stack = inventory[index]!;
+    if (stack.qty <= 1) inventory.splice(index, 1);
+    else inventory[index] = { ...stack, qty: stack.qty - 1 };
+  }
+  return { carried, inventory };
+}
+
+/**
+ * 시체가 지닌 장비 한 점을 회수한다 (CCR-006).
+ * 시체에서 빼고 인벤토리로 옮기는 것뿐이다 — 수량·가격·판정은 건드리지 않는다.
+ */
+export function takeCorpseCarried(state: GameState, starId: string, itemId: string): GameState {
+  const corpse = state.corpses.find((candidate) => candidate.starId === starId);
+  if (corpse === undefined) return state;
+  const index = (corpse.carried ?? []).indexOf(itemId);
+  if (index < 0) return state;
+  const carried = [...corpse.carried!];
+  carried.splice(index, 1);
+  return {
+    ...state,
+    inventory: addLootToInventory(state, [itemId]),
+    corpses: state.corpses.map((candidate) => candidate === corpse ? { ...candidate, carried } : candidate),
+  };
+}
+
+/**
+ * 시체가 소생실을 떠날 때(소생·폐기·훼손) **회수하지 않고 남은 장비**를 돌려준다.
+ * 조용히 사라지게 두지 않는다 — 잃는 규칙은 밸런스가 검증한 뒤에나 넣을 일이다.
+ */
+export function reclaimCorpseCarried(state: GameState, starId: string): GameState {
+  const corpse = state.corpses.find((candidate) => candidate.starId === starId);
+  const carried = corpse?.carried ?? [];
+  if (corpse === undefined || carried.length === 0) return state;
+  return {
+    ...state,
+    inventory: addLootToInventory(state, carried),
+    corpses: state.corpses.map((candidate) => candidate === corpse ? { ...candidate, carried: [] } : candidate),
+  };
+}
+
 function drawUniqueRelics(state: GameState, count: number, diedFloor: number): [string[], GameState] {
   const rules = content.balance.autopsy;
   const truthRelicsAllowed = diedFloor >= rules.truthRelicMinFloor;
@@ -50,7 +104,8 @@ function drawUniqueRelics(state: GameState, count: number, diedFloor: number): [
   return [loot, next];
 }
 
-export function discardReviveCorpse(state: GameState, starId: string): GameState {
+export function discardReviveCorpse(rawState: GameState, starId: string): GameState {
+  const state = reclaimCorpseCarried(rawState, starId);
   const corpse = state.corpses.find((candidate) => candidate.starId === starId);
   const star = state.stars.find((candidate) => candidate.id === starId);
   if (corpse === undefined || star?.status !== 'DEAD') return state;
@@ -68,7 +123,8 @@ export function discardReviveCorpse(state: GameState, starId: string): GameState
   };
 }
 
-export function damageAutopsyCorpse(state: GameState, starId: string): GameState {
+export function damageAutopsyCorpse(rawState: GameState, starId: string): GameState {
+  const state = reclaimCorpseCarried(rawState, starId);
   const corpse = state.corpses.find((candidate) => candidate.starId === starId);
   const star = state.stars.find((candidate) => candidate.id === starId && candidate.status === 'DEAD');
   if (corpse === undefined || star === undefined) return state;

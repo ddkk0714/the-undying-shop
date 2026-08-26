@@ -52,9 +52,15 @@ export function isEncounterFloor(floor: number): boolean {
 
 export function createHero(star: Star, equipped: readonly ItemDef[], degradeMultiplier: number): Combatant {
   const rules = content.balance.combat.hero;
-  const hp = degraded(rules.hpBase + star.stats.grit * rules.hpPerGrit + equippedBonus(equipped, 'hp'), degradeMultiplier);
-  const atk = degraded(rules.atkBase + star.stats.grit * rules.atkPerGrit + equippedBonus(equipped, 'atk'), degradeMultiplier);
-  return { hp, maxHp: hp, atk, def: rules.defBase + equippedBonus(equipped, 'def') };
+  const profile = content.starProfiles[star.id];
+  const scale = content.balance.combat.profileScale;
+  const baseHp = profile === undefined ? rules.hpBase + star.stats.grit * rules.hpPerGrit : profile.hp * scale.hp;
+  const baseAtk = profile === undefined ? rules.atkBase + star.stats.grit * rules.atkPerGrit : profile.atk * scale.atk;
+  const baseDef = profile === undefined ? rules.defBase : profile.def * scale.def;
+  const hp = degraded(baseHp + equippedBonus(equipped, 'hp'), degradeMultiplier);
+  const atk = degraded(baseAtk + equippedBonus(equipped, 'atk'), degradeMultiplier);
+  const def = degraded(baseDef + equippedBonus(equipped, 'def'), degradeMultiplier);
+  return { hp, maxHp: hp, atk, def };
 }
 
 export function createEncounter(floor: number, hazard: ForkOutcome['hazard'], enemyRoll: number, line = combatLine('HEALTHY', enemyRoll)): Encounter {

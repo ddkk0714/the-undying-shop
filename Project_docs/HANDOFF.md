@@ -1181,3 +1181,49 @@ return 'ATTACK';
 바뀌면 `LivePhase.potionAsk()` 도 같이 봐야 한다.
 
 **상태**: [ ] core 로 옮길지 판단
+
+---
+
+## CCR-006  (승인: 사람, 2026-08-26 · 반영: Claude Code(서브))  D6
+
+**한 줄** — 방송이 끝나도 장비가 저절로 돌아오지 않는다. **시체에 남고, 소생실에서 회수한다.**
+
+### 왜
+「1번 루프를 돈 다음에 아이템을 바로 획득하는 것이 아니라, 소생실에서 용사의 인벤토리를
+볼 수 있고 내가 그 아이템을 가져갈 수 있게」 — 사람 요청 (2026-08-26).
+전에는 `ANNOUNCE → 다음 날` 에서 `shelf: [null,null,null]` 로 지우기만 해서, 들려 보낸 장비가
+어디로 갔는지 화면에 한 번도 나오지 않았다.
+
+### 계약 변경 (2곳)
+```ts
+// src/core/types.ts — Corpse
+carried?: ItemId[];   // 죽을 때 지니고 내려간 장비. 선택 필드 — 옛 세이브·기존 테스트 리터럴이 그대로 통과한다
+
+// src/core/actions.ts
+| { type: 'REVIVE/LOOT'; starId: StarId; itemId: ItemId }
+```
+
+### core 변경 (Codex 영역 — 승인 위임 아래 서브 Claude 가 대신 씀)
+- `systems/economy.ts` **신규 3함수**
+  - `detachCarried(state, shelf)` — 사망 시 진열대 장비를 인벤토리에서 빼 시체로 옮긴다
+  - `takeCorpseCarried(state, starId, itemId)` — 한 점 회수
+  - `reclaimCorpseCarried(state, starId)` — 시체가 소생실을 떠날 때 **남은 것을 돌려준다**
+- `reducer.ts`
+  - `concludeRun()` — `corpse.carried` 를 채우고 `inventory` 를 줄인다
+  - `REVIVE/PAY` — `reclaimCorpseCarried` 를 먼저 통과시킨다
+  - `REVIVE/LOOT` 케이스 추가
+- `discardReviveCorpse` / `damageAutopsyCorpse` — 몸을 처리하기 전에 남은 장비를 먼저 돌려준다
+
+### 밸런스에 손대지 않았다
+- **RNG 스트림을 건드리지 않는다** — 사망 시 새로 뽑는 난수가 0개다 (`rngCursor` 불변).
+  유품(`corpse.loot`) 생성 시점·개수·`balance.autopsy` 는 전과 똑같다.
+- `npm test` 실패 개수 **11 → 11** (같은 목록). 전부 이 CCR 이전부터 깨져 있던 것들이다
+  (combat/dive/office 진행 중 작업).
+- **장비를 잃는 경로는 만들지 않았다.** 회수하지 않아도 소생·폐기·훼손 어느 쪽이든 돌아온다.
+  「회수 안 하면 잃는다」로 조이는 것은 밸런스 확인 뒤에 한 줄(`reclaimCorpseCarried` 호출 제거)로 된다.
+
+### 화면 (Claude Code 영역)
+`RevivePhase.ts` — 작업대에 「소지품 N점」 버튼, 누르면 **편성실 인벤토리와 같은 창**
+(`ui.inventory.window`)이 열린다. 장비를 누르면 `REVIVE/LOOT`.
+
+**상태**: [x] 반영됨 — 브라우저에서 1일차 진열 → 사망 → 2일차 소생실 회수까지 실측 확인.

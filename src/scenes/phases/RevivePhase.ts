@@ -1,16 +1,19 @@
+import Phaser from 'phaser';
 import { SCENES } from '../../config';
 import { content } from '../../core/content';
+import { pickDialogue, totalRevivals } from '../../core/systems/dialogue';
 import { reviveQuote } from '../../core/systems/economy';
-import { starArt } from '../../render/assets';
+import { key, starArt, starExpression } from '../../render/assets';
 import { L, actionX, ACTION_W } from '../../ui/layout';
 import { Button } from '../../ui/Button';
+import { Dialogue } from '../../ui/Dialogue';
 import { reducedMotion } from '../../ui/options';
 import { sealStamp } from '../../ui/SealStamp';
 import { degradeOverlay, portrait } from '../../ui/Portrait';
 import { onboard } from '../../ui/Onboarding';
 import { playBgm, playSfx } from '../../audio/Sfx';
 import { PhaseScene } from './PhaseScene';
-import type { Corpse, GameState, Persona, Star } from '../../core/types';
+import type { Corpse, GameState, ItemDef, Persona, Star } from '../../core/types';
 
 /**
  * M04 ① 소생실 — 이 게임의 유일한 지출.
@@ -20,6 +23,11 @@ import type { Corpse, GameState, Persona, Star } from '../../core/types';
  *   이 씬은 숫자를 만들지 않는다. 받아서 그린다.
  * ★ v3(CCR-001) 에는 제한시간이 없다. M04 문서의 10초 타이머 항목은 폐기됐다.
  */
+/** 편성실 인벤토리 창과 같은 칸 규격 — 두 화면이 같은 창처럼 보여야 한다 */
+const CARRIED_PANEL = { w: 736, h: 420 };
+// 진열대가 3칸이라 소지품도 최대 3점이다. 4칸으로 나누면 글자가 옆 칸에 붙는다
+const CARRIED_COLUMNS = 3;
+
 export class RevivePhase extends PhaseScene {
   private index = 0;
   /** 도장이 찍히는 동안 다시 누르지 못하게 */
@@ -28,6 +36,11 @@ export class RevivePhase extends PhaseScene {
   private inheriting = false;
   /** 씌울 대상이 여럿일 때 보고 있는 사람 */
   private heirIndex = 0;
+  /** 시체가 지니고 있던 장비를 펼쳐 놓은 상태 (CCR-006) */
+  private carriedOpen = false;
+  /** 빈 소생실에서 한 번만 울리는 편성실 쪽 노크 */
+  private emptyKnockTimer: Phaser.Time.TimerEvent | null = null;
+  private emptyKnockPlayed = false;
 
   constructor() {
     super(SCENES.PHASE_REVIVE);
@@ -42,6 +55,9 @@ export class RevivePhase extends PhaseScene {
     this.discarding = false;
     this.inheriting = false;
     this.heirIndex = 0;
+    this.carriedOpen = false;
+    this.emptyKnockTimer = null;
+    this.emptyKnockPlayed = false;
     super.create();
     playBgm(this, 'bgm.shop');
   }
@@ -60,6 +76,8 @@ export class RevivePhase extends PhaseScene {
     const waiting = s.corpses.filter((c) =>
       s.stars.some((st) => st.id === c.starId && (st.status === 'DEAD' || st.status === 'HIDDEN')),
     );
+    if (waiting.length === 0) this.scheduleEmptyKnock();
+    else this.cancelEmptyKnock();
     if (this.index >= waiting.length) this.index = 0;
 
     const corpse = waiting[this.index];
@@ -68,9 +86,26 @@ export class RevivePhase extends PhaseScene {
     this.buildGuest(s, star, waiting.length);
     this.buildBench(s, corpse, star);
     this.buildPager(waiting.length);
+    this.buildCarriedButton(corpse);
     this.buildInheritButton(s);
     this.buildActions(s, corpse, star);
+    if (this.carriedOpen && corpse !== undefined) this.buildCarried(corpse);
     onboard(this, s.day, 'REVIVE', { x: L.pad, y: L.actionsFull.y - 52, w: L.W - L.pad * 2 });
+  }
+
+  /** 빈 화면이 유지된 경우에만 2초 뒤 한 번 울린다. 별도 안내 문구는 추가하지 않는다. */
+  private scheduleEmptyKnock(): void {
+    if (this.emptyKnockPlayed || this.emptyKnockTimer !== null) return;
+    this.emptyKnockTimer = this.time.delayedCall(2000, () => {
+      this.emptyKnockTimer = null;
+      this.emptyKnockPlayed = true;
+      playSfx(this, 'sfx.revive.knock', 0.75);
+    });
+  }
+
+  private cancelEmptyKnock(): void {
+    this.emptyKnockTimer?.remove(false);
+    this.emptyKnockTimer = null;
   }
 
   /* ── 좌 · 소생 수조의 몸 ──────────────────────────────── */
@@ -102,8 +137,13 @@ export class RevivePhase extends PhaseScene {
     // 전신은 좌측 칸과 1:1 이다 (752x792). 이름 글자는 그 위에 얹는다
     const full = { x: g.x, y: g.y, w: g.w, h: g.h };
     const reduced = reducedMotion(this.registry);
+    const reviveLine = pickDialogue(star.id, 'REVIVE', {
+      revives: totalRevivals(star.id, star.reviveCount),
+      deaths: s.stats.totalDiscarded,
+    }, (s.day % 10) / 10);
     // 열화는 숫자가 아니라 몸으로 보여준다 (M03 §열화)
-    if (this.spriteFit(full, [art.body])) {
+    const bodyKeys = reviveLine === null ? [art.body] : [starExpression(star.id, reviveLine.expression), art.body];
+    if (this.spriteFit(full, bodyKeys)) {
       degradeOverlay(this, full, star.reviveCount, reduced);
     } else {
       portrait(this, { x, y, w, h }, star, { reduced });
@@ -113,7 +153,17 @@ export class RevivePhase extends PhaseScene {
     this.buildRoomLabel(count);
 
     const persona = s.personas.find((p) => p.id === star.personaId);
-    this.title(d.x + L.pad, d.y + 40, this.clip(persona?.displayName ?? '무명', d.w - 96, 'title'));
+    this.title(d.x + L.pad, d.y + 12, this.clip(persona?.displayName ?? '무명', d.w - 96, 'title')).setScale(0.65);
+    if (reviveLine !== null) {
+      new Dialogue(this, {
+        x: d.x + L.pad,
+        y: d.y + 58,
+        w: d.w - 96,
+        line: this.clip(reviveLine.text, d.w - 96, 'title'),
+        scale: 0.68,
+        effects: reviveLine.effects,
+      });
+    }
   }
 
   /** 좌측 칸 좌상단의 방 이름 — 배경이 밝은 곳에 걸려도 읽히게 판을 깐다 */
@@ -166,6 +216,99 @@ export class RevivePhase extends PhaseScene {
     this.label(b.x + b.w - L.pad * 3 - 200, py, '보유', 'dust');
     this.textRight(b.x + b.w - L.pad * 3, py + 32, `${fmtGold(s.gold)} G`, 'dust');
     if (!quote.affordable) this.text(ox + 320, py + 32, '자금이 부족합니다', 'wax');
+  }
+
+  /* ── 우 · 시체가 지니고 있던 것 (CCR-006) ─────────────── */
+
+  /**
+   * 방송이 끝나도 장비는 저절로 돌아오지 않는다. **몸에 남는다.**
+   * 소생실에서 그 몸을 살피고 한 점씩 회수하는 것이 이 버튼이 여는 화면이다.
+   */
+  private buildCarriedButton(corpse: Corpse | undefined): void {
+    if (corpse === undefined || this.carriedOpen) return;
+    const carried = corpse.carried ?? [];
+    if (carried.length === 0) return;
+    const b = L.bench;
+    // 시체 기록(최대 y 631)과 소생 비용 띠(723 부터) 사이의 빈 칸.
+    // 비용 위에 겹치면 금액을 가린다 — 실제로 가렸었다
+    const x = b.x + L.pad * 3;
+    const y = b.y + 500;
+    // 작업대 배경이 고주파 디더라 투명한 버튼 위의 글자가 뭉개진다. 깔고 그린다
+    this.scrimBlock(x - 16, y - 12, 332, 88);
+    new Button(this, {
+      x, y, w: 300, h: 64,
+      label: `소지품 ${carried.length}점`, hotkey: '5',
+      onClick: () => {
+        this.carriedOpen = true;
+        this.redraw();
+      },
+    });
+  }
+
+  /** 편성실 인벤토리 창과 같은 그림·같은 칸 규격을 쓴다 — 플레이어가 두 번 배우지 않게. */
+  private buildCarried(corpse: Corpse): void {
+    const b = L.bench;
+    const panel = {
+      x: b.x + Math.round((b.w - CARRIED_PANEL.w) / 2),
+      y: b.y + b.h - CARRIED_PANEL.h,
+      w: CARRIED_PANEL.w,
+      h: CARRIED_PANEL.h,
+    };
+    const ix = panel.x + 28;
+    if (!this.spriteFit(panel, ['ui.inventory.window'])) {
+      this.rect(panel.x, panel.y, panel.w, panel.h, 'ink');
+      this.frame(panel.x, panel.y, panel.w, panel.h, 'bone');
+    }
+
+    const carried = corpse.carried ?? [];
+    this.text(ix, panel.y + 16, `소지품  ${carried.length}점`, 'ink');
+    this.label(ix, panel.y + 70, '장비를 눌러 회수합니다. 두고 가도 몸과 함께 돌아옵니다.', 'dust').setScale(1.3);
+    new Button(this, {
+      x: panel.x + panel.w + 12, y: panel.y + 8, w: 128, h: 52,
+      label: '닫기',
+      onClick: () => {
+        this.carriedOpen = false;
+        this.redraw();
+      },
+    });
+
+    if (carried.length === 0) {
+      this.text(ix, panel.y + 150, '맨몸으로 내려갔다.', 'dust');
+      return;
+    }
+
+    const cellW = Math.floor((panel.w - 56) / CARRIED_COLUMNS);
+    const cellTop = panel.y + 144;
+    carried.forEach((itemId, index) => {
+      const def = content.items.find((item) => item.id === itemId);
+      if (def === undefined) return;
+      const cellX = ix + (index % CARRIED_COLUMNS) * cellW;
+      const cellY = cellTop + Math.floor(index / CARRIED_COLUMNS) * 128;
+      const art = this.itemArt(def, { x: cellX + 3, y: cellY + 5, w: cellW - 6, h: 84 });
+      if (art !== null) {
+        // 원화의 도트 무게 보정 — 편성실 인벤토리와 같은 값이라야 두 창이 같아 보인다
+        art.setX(Math.round(cellX + cellW / 2 - 14));
+        art.setInteractive({ cursor: 'pointer' });
+        art.on('pointerup', () => this.store.dispatch({ type: 'REVIVE/LOOT', starId: corpse.starId, itemId }));
+      }
+      const textPx = Math.floor((cellW - 20) / 0.75);
+      this.text(cellX, cellY + 86, this.clip(def.name, textPx, 'body'), 'bone').setScale(0.75);
+      this.text(cellX, cellY + 112, this.clip(this.itemStats(def), textPx, 'body'), 'dust').setScale(0.75);
+    });
+  }
+
+  /** 편성실과 같은 규칙 — 원본 비율을 지켜 칸 안에 넣는다. */
+  private itemArt(item: ItemDef, box: { x: number; y: number; w: number; h: number }): Phaser.GameObjects.Image | null {
+    if (!this.hasArt(item.iconKey)) return null;
+    const texture = key(item.iconKey);
+    const source = this.textures.get(texture).getSourceImage() as { width: number; height: number };
+    const scale = Math.min(box.w / source.width, box.h / source.height);
+    return this.add.image(Math.round(box.x + box.w / 2), Math.round(box.y + box.h / 2), texture)
+      .setDisplaySize(Math.max(1, Math.round(source.width * scale)), Math.max(1, Math.round(source.height * scale)));
+  }
+
+  private itemStats(item: ItemDef): string {
+    return item.kind === 'POTION' ? `회복 +${item.healing}` : `HP+${item.hp} 공+${item.atk} 방+${item.def}`;
   }
 
   /* ── 페르소나 승계 (M03) ─────────────────────────────── */
@@ -271,7 +414,15 @@ export class RevivePhase extends PhaseScene {
     this.label(lx, ly + slot.h + 56, line === '' ? '계보 없음' : line, 'dust');
 
     this.text(rx, ly + slot.h + 16, this.clip(heir.bodyName, slot.w));
-    this.label(rx, ly + slot.h + 56, `grit ${heir.stats.grit}  cha ${heir.stats.charisma}  luck ${heir.stats.luck}`, 'dust');
+    const heirProfile = content.starProfiles[heir.id];
+    this.label(
+      rx,
+      ly + slot.h + 56,
+      heirProfile === undefined
+        ? `grit ${heir.stats.grit}  cha ${heir.stats.charisma}  luck ${heir.stats.luck}`
+        : `HP ${heirProfile.hp}  ATK ${heirProfile.atk}  DEF ${heirProfile.def}  WILL ${heirProfile.will}`,
+      'dust',
+    );
 
     // 가운데 — 이름이 건너가는 자리. 팬덤이 얼마나 떨어져 나가는지 여기서 말한다
     const mx = lx + slot.w + 24;

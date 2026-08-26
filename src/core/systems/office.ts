@@ -11,6 +11,18 @@ function haggledContractKey(starId: string): string {
   return `contractHaggled:${starId}`;
 }
 
+function profileClaimedTiers(starId: string): { floor: number; rate: number }[] {
+  const rules = content.balance.contract;
+  const profile = content.starProfiles[starId];
+  if (profile === undefined) return rules.claimedTiers.map((tier) => ({ ...tier }));
+  const upperFloor = Math.max(...(profile.likelyEnd.match(/\d+/g)?.map(Number) ?? [profile.targetFloor]));
+  return [
+    { floor: Math.max(1, profile.targetFloor - 6), rate: rules.claimedTiers[0]?.rate ?? 1 },
+    { floor: profile.targetFloor, rate: rules.claimedTiers[1]?.rate ?? 0.6 },
+    { floor: upperFloor, rate: rules.claimedTiers[2]?.rate ?? 0.25 },
+  ];
+}
+
 export function populateVisitors(state: GameState): GameState {
   if (state.phase !== 'OFFICE' || state.visitors.length > 0 || state.recruitPool.length === 0) return state;
   const eligible = state.recruitPool.filter((star) => !state.rejectedStarIds.includes(star.id));
@@ -23,14 +35,17 @@ export function populateVisitors(state: GameState): GameState {
   if (star === undefined) return afterCandidate;
   const [honestyRoll, next] = draw(afterCandidate);
   const honesty = rules.honestyMin + honestyRoll * (rules.honestyMax - rules.honestyMin);
-  const fandom = rules.fandomBase + star.stats.charisma * rules.fandomPerCharisma;
+  const profile = content.starProfiles[star.id];
+  const fandom = profile?.fans ?? rules.fandomBase + star.stats.charisma * rules.fandomPerCharisma;
+  // 팬 수는 계약서에 원본 수치를 보여주되, 계약금 밸런스는 기존 charisma 계수를 유지한다.
   const fee = Math.max(0, Math.round(rules.feeBase + star.stats.charisma * rules.feePerFandomK + (1 - honesty) * rules.feeHonestyBias));
+  const claimedTiers = profileClaimedTiers(star.id);
   const visitor: Contract = {
     starId: star.id,
     displayName: star.bodyName,
-    recognition: 'C',
+    recognition: profile?.fame ?? 'C',
     fandom,
-    claimedTiers: rules.claimedTiers.map((tier) => ({ ...tier })),
+    claimedTiers,
     fee,
     honesty,
   };
@@ -87,7 +102,7 @@ function degradationMultiplier(star: Star): number {
 
 function claimedCeiling(state: GameState, starId: string): number {
   const contract = state.visitors.find((visitor) => visitor.starId === starId);
-  const claimedTiers = contract?.claimedTiers ?? (state.flags[signedContractKey(starId)] === true ? content.balance.contract.claimedTiers : []);
+  const claimedTiers = contract?.claimedTiers ?? (state.flags[signedContractKey(starId)] === true ? profileClaimedTiers(starId) : []);
   const highestClaim = claimedTiers.length === 0 ? undefined : Math.max(...claimedTiers.map((tier) => tier.floor));
   return Math.max(1, highestClaim ?? state.maxFloor);
 }

@@ -1,7 +1,7 @@
 import { content } from './content';
 import { createInitialState } from './state';
 import { answerRadio, chooseCombat, startLive, tickLive, useCombatItem } from './systems/dive';
-import { damageAutopsyCorpse, discardReviveCorpse, reviveQuote } from './systems/economy';
+import { damageAutopsyCorpse, detachCarried, discardReviveCorpse, reclaimCorpseCarried, reviveQuote, takeCorpseCarried } from './systems/economy';
 import { acceptContract, confirmOffice, haggleContract, pickStar, placeOfficeItem, populateVisitors, rejectContract, sellOfficeItem } from './systems/office';
 import { inherit } from './systems/roster';
 import { awardSuperchat, expireChats, moderateChat, spawnChat } from './systems/opinion';
@@ -54,11 +54,13 @@ function concludeRun(state: GameState): GameState {
   const drama = 1 + (isRecord ? rules.recordBonus : 0) + (state.today.forks.some((fork) => fork.wasLie) ? rules.shallowLiePenalty : 0) + state.today.appealCount * rules.appealMul;
   const fansDelta = Math.floor(rules.base * (1 + (diedFloor - rules.depthPivot) * rules.depthMul) * drama * (1 - state.viewerFatigue / 100));
   const goodsIncome = Math.floor(state.fans * content.balance.income.goodsPerFan);
-  const corpse: Corpse = { starId: star.id, diedFloor, diedDay: state.day, grade: 'INTACT', announced: null, loot: [] };
+  // 들고 내려간 장비는 저절로 돌아오지 않는다 — 몸에 남고, 소생실에서 회수한다 (CCR-006)
+  const { carried, inventory } = detachCarried(state, state.shelf);
+  const corpse: Corpse = { starId: star.id, diedFloor, diedDay: state.day, grade: 'INTACT', announced: null, loot: [], carried };
   const stars = state.stars.map((candidate) => candidate.id === star.id ? { ...candidate, status: 'DEAD' as const } : candidate);
   const maxFloor = Math.max(state.maxFloor, diedFloor);
   const settled: GameState = {
-    ...state, phase: 'DEATH', stars, corpses: [...state.corpses, corpse], gold: state.gold + goodsIncome,
+    ...state, phase: 'DEATH', stars, corpses: [...state.corpses, corpse], inventory, gold: state.gold + goodsIncome,
     fans: Math.max(0, state.fans + fansDelta),
     today: {
       ...state.today, currentFloor: diedFloor, diedFloor,
@@ -119,7 +121,7 @@ export function reducer(state: GameState, action: Action): GameState {
       if (corpse === undefined || star === undefined) return state;
       const quote = reviveQuote(state, corpse, star);
       if (!quote.affordable) return state;
-      const revealed = revealWitnessedTruth(state, action.starId);
+      const revealed = reclaimCorpseCarried(revealWitnessedTruth(state, action.starId), action.starId);
       return {
         ...revealed,
         gold: revealed.gold - quote.cost,
@@ -128,6 +130,7 @@ export function reducer(state: GameState, action: Action): GameState {
       };
     }
     case 'REVIVE/SKIP': return state;
+    case 'REVIVE/LOOT': return state.phase === 'REVIVE' ? takeCorpseCarried(state, action.starId, action.itemId) : state;
     case 'REVIVE/DISCARD': return state.phase === 'REVIVE' ? discardReviveCorpse(state, action.starId) : state;
     case 'REVIVE/INHERIT': return inherit(state, action.personaId, action.toStarId);
     case 'OFFICE/CONTRACT_ACCEPT': {

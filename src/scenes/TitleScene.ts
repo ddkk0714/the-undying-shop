@@ -301,7 +301,7 @@ export class TitleScene extends Phaser.Scene {
   }
 
   private startNewGame(): void {
-    playSfx(this, 'sfx.title.chime', 0.55);
+    playSfx(this, 'sfx.title.chime', 0.32);
     playSfx(this, 'sfx.title.door', 0.62);
     newRun(this.game);          // 스토어를 새로 만든다 — DayScene 은 이걸 집어 든다
     this.scene.start(SCENES.DAY);

@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { SCENES } from '../../config';
 import { content } from '../../core/content';
+import { pickDialogue, totalRevivals } from '../../core/systems/dialogue';
 import { key } from '../../render/assets';
 import { PALETTE } from '../../render/palette';
 import { L } from '../../ui/layout';
@@ -116,7 +117,7 @@ export class DeathPhase extends PhaseScene {
     const ox = L.pad * 4;
     let oy = L.stage.y + 380;
     // 잡음 위에 그대로 얹으면 글자가 먹힌다 (본 아트가 오기 전에는 배경이 비어 있어서 몰랐다)
-    this.scrimBlock(ox - 32, oy - 28, 920, 332);
+    this.scrimBlock(ox - 32, oy - 28, 1080, 380);
     this.title(ox, oy, `${persona?.displayName ?? '무명'} · ${star?.bodyName ?? '-'}`);
     oy += 88;
     this.title(ox, oy, `${floor}F 에서 끊겼다`, 'wax');
@@ -124,6 +125,14 @@ export class DeathPhase extends PhaseScene {
     this.text(ox, oy, run?.deathCause ?? '원인 불명', 'dust');
     oy += 64;
     this.text(ox, oy, `최고 기록 ${s.maxFloor} / ${content.balance.start.targetFloor}F`, 'dust');
+    if (star !== undefined) {
+      const lastWords = pickDialogue(star.id, 'DEATH', {
+        floor,
+        revives: totalRevivals(star.id, star.reviveCount),
+        deaths: s.stats.totalDiscarded,
+      }, (floor % 10) / 10);
+      if (lastWords !== null) this.text(ox, oy + 48, this.clip(`“${lastWords.text}”`, 1000), 'bone').setScale(0.72);
+    }
 
     if (this.stage >= 1 && this.isRecord) this.buildRecord(floor);
     if (this.stage >= 2) this.buildTally(s, floor);

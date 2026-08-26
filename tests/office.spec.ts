@@ -49,7 +49,10 @@ describe('office', () => {
     expect(office.visitors).toHaveLength(content.balance.contract.visitorsPerDay);
     expect(new Set(office.visitors.map((visitor) => visitor.starId)).size).toBe(office.visitors.length);
     expect(office.visitors.some((visitor) => visitor.starId === rejectedId)).toBe(false);
-    expect(office.visitors[0]?.claimedTiers).toEqual(content.balance.contract.claimedTiers);
+    const offeredProfile = content.starProfiles[office.visitors[0]!.starId]!;
+    expect(office.visitors[0]?.fandom).toBe(offeredProfile.fans);
+    expect(office.visitors[0]?.recognition).toBe(offeredProfile.fame);
+    expect(office.visitors[0]?.claimedTiers[1]?.floor).toBe(offeredProfile.targetFloor);
     const visitor = office.visitors.find((candidate) => office.gold >= candidate.fee);
     expect(visitor).toBeDefined();
     expect(randomPolicy(office)).toMatchObject({ type: 'OFFICE/CONTRACT_ACCEPT' });
@@ -57,12 +60,12 @@ describe('office', () => {
     expect(accepted.stars.some((star) => star.id === visitor!.starId && star.status === 'ALIVE')).toBe(true);
     expect(accepted.phase).toBe('LIVE');
     expect(accepted.today?.starId).toBe(visitor!.starId);
-    expect(accepted.today?.claimedCeiling).toBe(Math.max(...content.balance.contract.claimedTiers.map((tier) => tier.floor)));
+    expect(accepted.today?.claimedCeiling).toBe(Math.max(...visitor!.claimedTiers.map((tier) => tier.floor)));
   });
 
   it('creates a real combatant and a non-stub ceiling when a star is picked', () => {
     const state = reducer(officeState(), { type: 'OFFICE/PICK_STAR', starId: 'body_karin' });
-    expect(state.today?.hero).toEqual({ hp: 82, maxHp: 82, atk: 13, def: 2 });
+    expect(state.today?.hero).toEqual({ hp: 84, maxHp: 84, atk: 14, def: 2 });
     expect(state.today?.claimedCeiling).toBe(26);
     const live = reducer(state, { type: 'OFFICE/CONFIRM' });
     const finished = reducer(live, { type: 'PHASE/ADVANCE' });
@@ -139,7 +142,7 @@ describe('office', () => {
 
     state = reducer(state, { type: 'OFFICE/CONFIRM' });
     expect(state.gold).toBe(content.balance.start.gold + 4400);
-    expect(state.today?.hero).toEqual({ hp: 94, maxHp: 94, atk: 13, def: 9 });
+    expect(state.today?.hero).toEqual({ hp: 96, maxHp: 96, atk: 14, def: 9 });
   });
 
   it('hands each star one weapon, armor, and utility; only the handed potion can be used live', () => {
@@ -155,7 +158,7 @@ describe('office', () => {
     state = reducer(state, { type: 'OFFICE/CONFIRM' });
     const wounded = { ...state, today: { ...state.today!, hero: { ...state.today!.hero, hp: 20 } } };
     const healed = reducer(wounded, { type: 'COMBAT/USE_ITEM', itemId: 'potion_crimson' });
-    expect(healed.today?.hero).toMatchObject({ hp: 44, maxHp: 88, atk: 18, def: 4 });
+    expect(healed.today?.hero).toMatchObject({ hp: 44, maxHp: 90, atk: 19, def: 4 });
     expect(healed.shelf).toEqual(['dagger_crack', 'rope_hemp', null]);
     expect(healed.inventory.some((stack) => stack.id === 'potion_crimson')).toBe(false);
   });

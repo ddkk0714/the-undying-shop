@@ -2,11 +2,14 @@ import { SCENES } from '../../config';
 import Phaser from 'phaser';
 import { content } from '../../core/content';
 import { isEarlyClosure } from '../../core/systems/narrative';
-import { key, starArt } from '../../render/assets';
+import { pickDialogue, totalRevivals } from '../../core/systems/dialogue';
+import { key, starArt, starExpression } from '../../render/assets';
 import { L, actionX, ACTION_W } from '../../ui/layout';
 import { Button } from '../../ui/Button';
+import { Dialogue } from '../../ui/Dialogue';
 import { onboard } from '../../ui/Onboarding';
-import { playBgm } from '../../audio/Sfx';
+import { reducedMotion } from '../../ui/options';
+import { playBgm, playSfx } from '../../audio/Sfx';
 import { PhaseScene } from './PhaseScene';
 import type { GameState, ItemDef, Persona } from '../../core/types';
 
@@ -48,6 +51,10 @@ export class OfficePhase extends PhaseScene {
   private contractReaderOpen = false;
   /** 첫날에는 배경의 문을 직접 열기 전까지 손님을 맞지 않는다. */
   private shopOpened = false;
+  /** 첫 영업의 빈 편성실에서 문을 열 때까지 반복되는 노크 */
+  private officeKnockTimer: Phaser.Time.TimerEvent | null = null;
+  /** 전신을 누를 때 SHOP_TOUCH 대사를 순서대로 넘긴다. */
+  private guestTouchCount = 0;
 
   constructor() {
     super(SCENES.PHASE_OFFICE);
@@ -66,6 +73,8 @@ export class OfficePhase extends PhaseScene {
     this.draggingInventoryItem = false;
     this.contractReaderOpen = false;
     this.shopOpened = false;
+    this.officeKnockTimer = null;
+    this.guestTouchCount = 0;
     super.create();
     playBgm(this, 'bgm.shop');
   }
@@ -76,9 +85,11 @@ export class OfficePhase extends PhaseScene {
     this.draggingInventoryItem = false;
     this.stageBackdrop();
     if (s.day === 1 && !this.shopOpened) {
+      this.scheduleOfficeKnock();
       this.buildShopStart();
       return;
     }
+    this.cancelOfficeKnock();
     this.buildGuest(s);
     this.buildBenchBackdrop();
     this.buildShelf(s);
@@ -102,16 +113,46 @@ export class OfficePhase extends PhaseScene {
     this.buildBenchBackdrop();
 
     // 원화의 문(약 x=500~640, y=180~510)에 맞춘 클릭 영역이다.
-    const door = { x: g.x + 548, y: g.y + 326, w: 170, h: 326 };
+    const door = { x: g.x + 520, y: g.y + 326, w: 170, h: 326 };
     const handle = this.add.zone(door.x, door.y, door.w, door.h).setOrigin(0, 0).setInteractive({ cursor: 'pointer' });
     handle.on('pointerup', () => {
       this.shopOpened = true;
+      this.cancelOfficeKnock();
+      playSfx(this, 'sfx.title.door', 0.28);
       this.redraw();
     });
-    this.label(g.x + 44, g.y + 44, '첫 영업', 'bone').setScale(1.25);
-    this.text(g.x + 44, g.y + 88, '문을 눌러 장사를 시작하세요.', 'bone').setScale(0.78);
-    this.label(door.x - 8, door.y + door.h + 10, '문을 열기', 'bone').setScale(0.74);
+    // 안내 묶음을 패널 좌상단에 붙인다. 용사 이름과 같은 ink→디더 가리개라
+    // 밝은 문 그림 위에서도 읽힌다.
+    const prompt = { x: g.x + L.line, y: g.y + L.line, w: 620, h: 104 };
+    this.scrimBlock(prompt.x, prompt.y, prompt.w, prompt.h);
+    this.label(prompt.x + 28, prompt.y + 18, '첫 영업', 'bone').setScale(1.25);
+    this.text(prompt.x + 28, prompt.y + 58, '문을 눌러 장사를 시작하세요.', 'bone').setScale(0.78);
     this.label(L.bench.x + 70, L.bench.y + 70, '문이 열리면 첫 손님이 계약서를 들고 옵니다.', 'dust').setScale(0.86);
+  }
+
+  /** 진입 2초 뒤 한 번, 이후 문을 열 때까지 3초마다 노크한다. */
+  private scheduleOfficeKnock(): void {
+    if (this.officeKnockTimer !== null) return;
+    this.officeKnockTimer = this.time.delayedCall(2000, () => {
+      if (this.shopOpened) return;
+      playSfx(this, 'sfx.revive.knock', 0.75);
+      this.officeKnockTimer = this.time.addEvent({
+        delay: 3000,
+        loop: true,
+        callback: () => {
+          if (this.shopOpened) {
+            this.cancelOfficeKnock();
+            return;
+          }
+          playSfx(this, 'sfx.revive.knock', 0.75);
+        },
+      });
+    });
+  }
+
+  private cancelOfficeKnock(): void {
+    this.officeKnockTimer?.remove(false);
+    this.officeKnockTimer = null;
   }
 
   private buildGuest(s: Readonly<GameState>): void {
@@ -140,8 +181,8 @@ export class OfficePhase extends PhaseScene {
     const y = g.y + g.h - h - 24;
     // 전신은 좌측 칸과 1:1 이다 (752x792). 이름 글자는 그 위에 얹는다
     const full = { x: g.x, y: g.y, w: g.w, h: g.h };
-    const body = art === null ? false : this.spriteFit(full, [art.body]);
-    if (!body && !this.spriteFit({ x, y, w, h }, [...(art === null ? [] : [art.portrait]), 'star.silhouette'])) {
+    const body = art === null ? null : this.spriteFitObject(full, [art.body]);
+    if (body === null && !this.spriteFit({ x, y, w, h }, [...(art === null ? [] : [art.portrait]), 'star.silhouette'])) {
       this.rect(x, y, w, h, 'mid');
     }
 
@@ -157,9 +198,52 @@ export class OfficePhase extends PhaseScene {
     this.sprite(coverX, coverY, 'ui.guest.cover', coverW, coverH);
     const d = L.dialogue;
     this.rect(d.x, d.y, d.w, d.h, 'ink');
-    const line = contracting ? '...일할 자리 있나요?' : '...강한 무기 있나요?';
-    this.title(coverX + L.pad, coverY + 52, this.clip(line, coverW - 96, 'title'), 'bone').setScale(0.78);
-    this.text(coverX + coverW - 48, coverY + 64, '▼', 'dust');
+    const profile = star === undefined ? undefined : content.starProfiles[star.id];
+    const situation = this.guestTouchCount > 0
+      ? 'SHOP_TOUCH'
+      : contracting ? 'SHOP_FIRST' : 'SHOP_GREET';
+    const speechLine = star === undefined ? null : pickDialogue(star.id, situation, {
+      floor: profile?.targetFloor,
+      revives: totalRevivals(star.id, star.reviveCount),
+      viewers: profile?.fans,
+      deaths: s.stats.totalDiscarded,
+      generation: s.personas.find((persona) => persona.id === star.personaId)?.generation,
+    }, ((s.day * 17 + this.contractIndex * 7 + this.guestTouchCount) % 100) / 100);
+    const speech: { line: string; expressionAsset?: string; effects?: readonly string[] } = {
+      line: speechLine?.text ?? (contracting ? '...일할 자리 있나요?' : '...강한 무기 있나요?'),
+      expressionAsset: star === undefined || speechLine === null ? undefined : starExpression(star.id, speechLine.expression),
+      effects: speechLine?.effects,
+    };
+    const bodyGeometry = body === null ? null : {
+      x: body.x,
+      y: body.y,
+      w: body.displayWidth,
+      h: body.displayHeight,
+    };
+    const setCharacterFrame = (asset: string | undefined): void => {
+      if (body === null || bodyGeometry === null || art === null || asset === undefined || !this.hasArt(asset)) return;
+      body
+        .setTexture(key(asset))
+        // setTexture가 프레임의 내부 크기를 다시 읽어도 화면 기하가 바뀌지 않게 고정한다.
+        .setPosition(bodyGeometry.x, bodyGeometry.y)
+        .setDisplaySize(bodyGeometry.w, bodyGeometry.h);
+    };
+    if (art !== null) setCharacterFrame(speech.expressionAsset ?? art.dialogue);
+    if (body !== null && star !== undefined) {
+      body.setInteractive({ cursor: 'pointer' });
+      body.on('pointerup', () => {
+        this.guestTouchCount += 1;
+        this.redraw();
+      });
+    }
+    new Dialogue(this, {
+      x: coverX + L.pad,
+      y: coverY + 52,
+      w: coverW - L.pad,
+      line: this.clip(speech.line, coverW - 96, 'title'),
+      scale: 0.78,
+      effects: speech.effects,
+    });
   }
 
   /* ── 우 · 작업대 배경 ─────────────────────────────────── */
@@ -184,6 +268,7 @@ export class OfficePhase extends PhaseScene {
       return;
     }
     const body = s.recruitPool.find((candidate) => candidate.id === visitor.starId);
+    const profile = content.starProfiles[visitor.starId];
     // 원본 비율(700×914)을 유지한다. 읽기 상태에서는 HUD까지 쓰는 1.43배 크기로
     // 올려, 서류의 표기와 실제 입력값을 한눈에 읽을 수 있게 한다.
     const paper = { x: 900, y: 18, w: 800, h: 1045 };
@@ -215,13 +300,13 @@ export class OfficePhase extends PhaseScene {
     // 초상칸 오른쪽의 기입선에 맞춘 개인정보 블록.
     const identityX = 325;
     at(identityX, 130, '예명', 0.50);
-    at(identityX, 150, this.clip(visitor.displayName, 240, 'title'), 0.82);
+    at(identityX, 150, this.clip(profile?.stageName ?? visitor.displayName, 240, 'title'), 0.82);
     at(identityX, 190, '본명', 0.50);
     at(identityX, 210, body?.bodyName ?? '미상', 0.82);
     at(identityX, 250, '출신', 0.50);
-    at(identityX, 270, '미등록 구역', 0.64);
+    at(identityX, 270, profile?.origin ?? '미등록 구역', 0.64);
     at(identityX, 300, '직종', 0.50);
-    at(identityX, 320, '하강 용병', 0.64);
+    at(identityX, 320, profile?.role ?? '하강 용병', 0.64);
     at(326, 350, visitor.recognition, 0.88);
     at(525, 350, visitor.fandom.toLocaleString('en-US'), 0.82);
 
@@ -231,6 +316,9 @@ export class OfficePhase extends PhaseScene {
     at(300, 552, `${visitor.fee.toLocaleString('en-US')} G`, 0.82);
     at(90, 582, '목표층', 0.46);
     at(300, 607, `${target} F`, 0.92);
+    if (profile !== undefined) {
+      at(90, 650, `HP ${profile.hp} · ATK ${profile.atk} · DEF ${profile.def} · WILL ${profile.will}`, 0.46);
+    }
     const rates = visitor.claimedTiers.map((tier) => `${tier.floor}F ${Math.round(tier.rate * 100)}%`).join(' · ');
     at(90, 694, this.clip(rates, 500, 'body'), 0.46);
     this.label(paper.x + 72, paper.y + paper.h - 62, '종이를 누르면 접기 · 하단 계약을 누르면 수락', 'ink').setScale(0.62 * textScale).setDepth(paperDepth + 2);
@@ -239,12 +327,16 @@ export class OfficePhase extends PhaseScene {
   /* ── 작업대 B · 장비 진열 ─────────────────────────────── */
 
   private buildShelf(s: Readonly<GameState>): void {
-    this.label(
-      SHELF_SLOTS[0].x,
-      SHELF_SLOTS[0].y - 28,
-      this.inventoryOpen ? '장비를 끌거나 선택한 뒤, 맞는 진열대를 누르세요.' : '하단 진열을 눌러 인벤토리를 여세요.',
-      'dust',
-    );
+    // 장비를 고른 순간부터는 이 줄 대신 **화살표**가 어느 칸인지 말한다.
+    // 둘을 같이 두면 화살표 자리(진열대 위 여백)와 글자가 겹친다.
+    if (this.selectedItemId === null) {
+      this.label(
+        SHELF_SLOTS[0].x,
+        SHELF_SLOTS[0].y - 28,
+        this.inventoryOpen ? '장비를 끌거나 선택한 뒤, 맞는 진열대를 누르세요.' : '하단 진열을 눌러 인벤토리를 여세요.',
+        'dust',
+      );
+    }
     for (let i = 0; i < 3; i += 1) {
       const slot = SHELF_SLOTS[i]!;
       const { x, y, w, h } = slot;
@@ -257,6 +349,7 @@ export class OfficePhase extends PhaseScene {
       const dropZone = this.add.zone(x, y, w, h).setOrigin(0, 0);
       dropZone.setInteractive({ cursor: acceptsSelected ? 'pointer' : 'default' });
       dropZone.on('pointerup', () => this.placeSelected(i));
+      if (acceptsSelected) this.shelfArrow(slot);
       this.text(x + 12, y + 10, SLOT_NAMES[i]!, 'bone').setScale(0.75);
       if (def === undefined) {
         this.text(x + 12, y + 72, '여기로 끌기', 'bone').setScale(0.75);
@@ -270,6 +363,23 @@ export class OfficePhase extends PhaseScene {
       this.text(x + 12, y + 168, this.clip(this.itemStats(def), Math.floor((w - 24) / 0.75), 'body'), 'bone').setScale(0.75);
     }
 
+  }
+
+  /**
+   * 고른 장비가 들어갈 칸을 진열대 **위**에서 가리키는 화살표.
+   * 원화 154x161 을 정확히 1/2 로 놓는다 (소수배는 도트가 지글거린다).
+   */
+  private shelfArrow(slot: { x: number; y: number; w: number; h: number }): void {
+    const w = 77;
+    const h = 80;
+    const x = slot.x + Math.round((slot.w - w) / 2);
+    const y = slot.y - h - 12;
+    const arrow = this.spriteObject(x, y, 'ui.shelf.arrow', w, h);
+    if (arrow === null) return;
+    arrow.setDepth(60);
+    if (reducedMotion(this.registry)) return;
+    // 위아래로 얕게 까딱인다 — 「여기」를 글자 없이 말하는 유일한 수단이다
+    this.tweens.add({ targets: arrow, y: y + 10, duration: 520, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
   }
 
   /* ── 작업대 B · 인벤토리 ───────────────────────────────── */

@@ -1,10 +1,12 @@
 import Phaser from 'phaser';
 import { SCENES } from '../../config';
 import { content } from '../../core/content';
+import { dialogueCandidates, interpolateDialogue, pickDialogue, totalRevivals } from '../../core/systems/dialogue';
 import { PALETTE } from '../../render/palette';
 import { starArt, starExpression, key, slice } from '../../render/assets';
 import { L } from '../../ui/layout';
 import { Button } from '../../ui/Button';
+import { Dialogue } from '../../ui/Dialogue';
 import { Ticker } from '../../ui/Ticker';
 import { createTooltip } from '../../ui/Tooltip';
 import { playBgm, playSfx } from '../../audio/Sfx';
@@ -139,6 +141,18 @@ const CHOICE_LABEL: Record<CombatChoice, string> = {
 const DIVE_ZOOM = 1.08;
 const DIVE_ZOOM_MS = 200;
 
+/**
+ * 무전 대사 사이의 **최소 간격** (사용자 확정 — 「연출이 충분히 나오도록 빈도를 줄여줘」).
+ *
+ * core 는 전투 한 수마다 새 줄을 물린다. 자동 전투가 0.9초 간격이라 그대로 두면
+ * 타자가 두 글자 나오고 다음 줄로 갈아 끼워진다. 이만큼 지나야 다음 줄을 받는다.
+ */
+const RADIO_GAP_MS = 4200;
+/** 「pause」 연출 — 말하기 전에 뜸을 들이는 시간 */
+const RADIO_PAUSE_MS = 520;
+/** 「blackout」 연출 — 화면이 꺼져 있는 시간 */
+const BLACKOUT_MS = 260;
+
 export class LivePhase extends PhaseScene {
   private ticker: Phaser.Time.TimerEvent | null = null;
   private chatPump: Phaser.Time.TimerEvent | null = null;
@@ -174,6 +188,13 @@ export class LivePhase extends PhaseScene {
   /** 조우가 끝나는 순간을 잡기 위한 직전 상태 */
   private wasFighting = false;
 
+  /** 지금 떠 있는 무전 줄 — 다시 그려도 살아남는다 (`stageRadio` 참조) */
+  private radioText = '';
+  private radioObj: Dialogue | null = null;
+  private radioAt = 0;
+  /** 이 줄에 붙은 표정. 줄이 떠 있는 동안 초상이 이걸 쓴다 */
+  private radioFace: string | null = null;
+
   /** 프레임마다 손보는 오브젝트 — build() 가 매번 다시 채운다 */
   private blinkers: (Phaser.GameObjects.Rectangle | Phaser.GameObjects.Image)[] = [];
   private shaken: { obj: Phaser.GameObjects.GameObject & { x: number; y: number }; x: number; y: number }[] = [];
@@ -206,6 +227,10 @@ export class LivePhase extends PhaseScene {
     this.lastAuto = null;
     this.potionDeclined = false;
     this.wasFighting = false;
+    this.radioText = '';
+    this.radioObj = null;
+    this.radioAt = 0;
+    this.radioFace = null;
     this.fanDropUntil = 0;
 
     this.chat = new Ticker(this, { x: L.live.chat.x + L.pad, y: L.live.chat.y + 58, w: L.live.chat.w - L.pad * 2, h: L.live.chat.h - 80 },
@@ -680,20 +705,108 @@ export class LivePhase extends PhaseScene {
    * 둘 다 core 가 문장을 만든다 — 씬은 지어내지 않는다 (HO-005).
    */
   private buildDialogue(s: Readonly<GameState>): void {
-    const fork = pendingFork(s);
-    const spoken = fork !== null
-      ? pick(content.radio.forkAsk, fork.floor)
-      : (s.today?.encounter?.line ?? '');
-    if (spoken === '') return;
+    const spoken = this.spokenDialogue(s);
+    if (spoken.text === '') return;
 
     const v = L.live.dialogue;
     if (this.spriteObject(v.x, v.y, 'ui.live.dialogue', v.w, v.h) === null) {
       this.rect(v.x, v.y, v.w, v.h, 'ink');
       this.frame(v.x, v.y, v.w, v.h, 'bone');
     }
-    // 배너가 사선으로 잘린 그림이라 글은 가운데 검은 띠 안에만 놓는다.
-    // 띠의 중심이 그림 한가운데보다 조금 아래에 있어서 그만큼 내려 앉힌다
-    this.text(v.x + 200, v.y + Math.round(v.h / 2) - 4, this.clip(`"${spoken}"`, v.w - 330), 'bone');
+    this.stageRadio(spoken);
+  }
+
+  /**
+   * 무전 한 줄을 **연출과 함께** 띄운다 (사용자 확정).
+   *
+   * ★ 여기서 `new Dialogue` 를 매번 만들면 안 된다. 생방송 화면은 채팅이 들어올 때마다
+   *   (750ms) 통째로 다시 그려서, 타자 연출이 매번 처음으로 되감긴다 — 줄이 끝까지
+   *   나오는 걸 볼 수가 없다. 그래서 **줄이 바뀔 때만** 만들고 `keepAlive` 로 살려 둔다.
+   *
+   * ★ 빈도도 줄인다. core 는 전투 한 수마다 새 줄을 물리는데 자동 전투가 0.9초 간격이라
+   *   연출이 늘 중간에 끊겼다. `RADIO_GAP_MS` 만큼 지나야 다음 줄로 넘어간다.
+   */
+  private stageRadio(spoken: { text: string; expression: string | null; effects: readonly string[] }): void {
+    if (spoken.text === this.radioText) return;                 // 같은 줄 — 하던 걸 계속한다
+    const now = this.time.now;
+    if (this.radioObj !== null && now - this.radioAt < RADIO_GAP_MS) return; // 아직 이르다
+
+    this.clearRadio();
+    this.radioText = spoken.text;
+    this.radioFace = spoken.expression;
+    this.radioAt = now;
+
+    const fx = new Set(spoken.effects);
+    const v = L.live.dialogue;
+    // 「blackout」 — 말하기 전에 화면이 한 번 꺼진다
+    if (fx.has('blackout') && !this.reduced) this.blackout();
+
+    const start = (): void => {
+      if (this.radioText !== spoken.text) return;               // 기다리는 사이에 줄이 바뀌었다
+      const line = new Dialogue(this, {
+        x: v.x + 200,
+        y: v.y + Math.round(v.h / 2) - 4,
+        w: v.w - 330,
+        line: this.clip(`"${spoken.text}"`, v.w - 330),
+        size: 'body',
+        effects: spoken.effects,
+        // 「silent」 — 속으로 하는 말이다. 타자 소리를 내지 않는다
+        ...(fx.has('silent') ? {} : { onChar: () => playSfx(this, 'sfx.text', 0.05) }),
+      });
+      this.radioObj = line;
+      this.keepAlive(line);
+    };
+
+    // 「pause」 — 한 박자 뜸을 들이고 말한다
+    if (fx.has('pause') && !this.reduced) this.time.delayedCall(RADIO_PAUSE_MS, start);
+    else start();
+  }
+
+  /** 떠 있던 무전 줄을 걷는다 */
+  private clearRadio(): void {
+    if (this.radioObj === null) return;
+    this.dropAlive(this.radioObj);
+    this.radioObj.destroy();
+    this.radioObj = null;
+  }
+
+  /** 「blackout」 — 화면 전체가 잠깐 꺼졌다 돌아온다. 페이드가 아니라 뚝 끊는다 */
+  private blackout(): void {
+    const cover = this.add.rectangle(0, 0, L.W, L.H, PALETTE.ink).setOrigin(0, 0).setDepth(900);
+    this.keepAlive(cover);
+    this.time.delayedCall(BLACKOUT_MS, () => {
+      this.dropAlive(cover);
+      cover.destroy();
+    });
+  }
+
+  private spokenDialogue(s: Readonly<GameState>): { text: string; expression: string | null; effects: readonly string[] } {
+    const run = s.today;
+    const star = s.stars.find((candidate) => candidate.id === run?.starId);
+    if (run === null || star === undefined) return { text: '', expression: null, effects: [] };
+    const context = {
+      floor: run.currentFloor,
+      revives: totalRevivals(star.id, star.reviveCount),
+      mental: run.mental,
+      viewers: s.fans,
+      deaths: s.stats.totalDiscarded,
+      generation: s.personas.find((persona) => persona.id === star.personaId)?.generation,
+    };
+    const fork = pendingFork(s);
+    if (fork !== null) {
+      const line = pickDialogue(star.id, 'DUN_RADIO', context, (fork.floor % 10) / 10);
+      return line === null
+        ? { text: pick(content.radio.forkAsk, fork.floor), expression: null, effects: [] }
+        : { text: line.text, expression: line.expression, effects: line.effects };
+    }
+    const encounterText = run.encounter?.line ?? '';
+    if (encounterText === '') return { text: '', expression: null, effects: [] };
+    for (const situation of ['DUN_EVENT', 'DUN_HURT', 'DUN_LOW', 'DUN_MENTAL'] as const) {
+      const line = dialogueCandidates(star.id, situation, context)
+        .find((candidate) => interpolateDialogue(candidate.text, context) === encounterText);
+      if (line !== undefined) return { text: encounterText, expression: line.expression, effects: line.effects };
+    }
+    return { text: encounterText, expression: null, effects: [] };
   }
 
   /**
@@ -774,6 +887,7 @@ export class LivePhase extends PhaseScene {
     }
     const ratio = run.hero.maxHp <= 0 ? 0 : run.hero.hp / run.hero.maxHp;
     const appealing = run.encounter?.log.at(-1) === 'APPEAL';
+    const spoken = this.spokenDialogue(s);
     // 상태 한 줄과 **표정 스프라이트를 같은 사다리에서 뽑는다** (사용자 확정).
     // 글과 그림이 따로 놀면 「평상」이라고 써 놓고 우는 얼굴이 뜬다.
     const mood = appealing ? { text: '카메라를 본다', face: 'smile' }
@@ -781,6 +895,7 @@ export class LivePhase extends PhaseScene {
       : ratio >= 0.4 ? { text: '땀. 눈썹이 처졌다', face: 'sad' }
       : ratio >= 0.15 ? { text: '피. 숨이 가쁘다', face: 'pain' }
       : { text: '초점이 없다', face: 'empty' };
+    if (spoken.expression !== null) mood.face = spoken.expression;
 
     // 어필 중에는 어필 컷으로 갈아낀다 (M06 §7 "이 게임의 썸네일")
     const art = starArt(star.id);
@@ -789,7 +904,11 @@ export class LivePhase extends PhaseScene {
     this.screenBackdrop(v, zoneScreen(s));
     // 표정 → 어필 컷 → 기본 초상 순으로 **있는 것을 쓴다.** 표정 에셋은 아직 다 오지 않았고
     // (`star/expressions/` 가 캐릭터마다 몇 장씩 비어 있다) 없으면 `bust` 가 다음 것으로 넘어간다
+    // 무전 줄이 떠 있는 동안에는 **그 줄에 붙은 표정**이 이긴다 (사용자 확정).
+    // 대사집이 줄마다 표정을 들고 있다 (`dialogue.ko.json` 의 `expression`).
+    // 체력에서 뽑은 표정은 줄이 없을 때의 기본값으로 남는다
     const keys = [
+      ...(this.radioFace === null ? [] : [starExpression(star.id, this.radioFace)]),
       starExpression(star.id, mood.face),
       ...(appealing ? [art.appeal] : []),
       art.portrait,

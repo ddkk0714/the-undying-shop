@@ -29,6 +29,7 @@
   },
   "combat": {
     "hero": { "hpBase": 40, "hpPerGrit": 6, "atkBase": 6, "atkPerGrit": 1, "defBase": 2 },
+    "profileScale": { "hp": 0.55, "atk": 0.5, "def": 0.1 },
     "enemy": { "hpBase": 18, "hpPerFloor": 1.6, "atkBase": 5, "atkPerFloor": 0.55 },
     "attack": { "varMin": 0.9, "varMax": 1.1, "counterChance": 0.55 },
     "defend": { "damageMul": 0.25, "fanPenalty": 0.004 },

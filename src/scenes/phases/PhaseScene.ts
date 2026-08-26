@@ -213,17 +213,25 @@ export abstract class PhaseScene extends Phaser.Scene {
     assetKeys: string[],
     frame = 0,
   ): boolean {
+    return this.spriteFitObject(box, assetKeys, frame) !== null;
+  }
+
+  /** `spriteFit`과 같지만 대사 표정 전환처럼 나중에 조작할 이미지를 돌려준다. */
+  protected spriteFitObject(
+    box: { x: number; y: number; w: number; h: number },
+    assetKeys: string[],
+    frame = 0,
+  ): Phaser.GameObjects.Image | null {
     const textureKey = firstTexture(this, ...assetKeys);
-    if (textureKey === null) return false;
+    if (textureKey === null) return null;
     const src = this.textures.get(textureKey).getSourceImage() as { width: number; height: number };
     const scale = Math.min(box.w / src.width, box.h / src.height);
     const w = Math.round(src.width * scale);
     const h = Math.round(src.height * scale);
-    this.add
+    return this.add
       .image(Math.round(box.x + (box.w - w) / 2), Math.round(box.y + (box.h - h) / 2), textureKey, frame)
       .setOrigin(0, 0)
       .setDisplaySize(w, h);
-    return true;
   }
 
   /** 상자를 꽉 채운다 (배경 전용 — 잘려도 되는 그림). 없으면 false */

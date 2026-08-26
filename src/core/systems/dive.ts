@@ -1,6 +1,7 @@
 import { content } from '../content';
 import { draw } from '../rng';
 import { combatLine, createEncounter, createHero, isEncounterFloor, resolveCombatChoice, type CombatLineTone } from './combat';
+import { pickDialogue, totalRevivals } from './dialogue';
 import { addAppealChat, awardSuperchat } from './opinion';
 import type { CombatChoice, Combatant, GameState, ItemDef, ItemId, Star } from '../types';
 
@@ -37,7 +38,8 @@ function actualCeiling(state: GameState): number {
 function reduceMental(mental: number, star: Star, rawLoss: number): number {
   if (rawLoss <= 0) return mental;
   const rules = content.balance.mental;
-  const multiplier = Math.max(rules.minimumDamageMultiplier, 1 - star.stats.grit * rules.gritResistancePerPoint);
+  const will = content.starProfiles[star.id]?.will ?? star.stats.grit;
+  const multiplier = Math.max(rules.minimumDamageMultiplier, 1 - will * rules.gritResistancePerPoint);
   return Math.max(0, Math.round(mental - rawLoss * multiplier));
 }
 
@@ -54,6 +56,33 @@ function combatLineTone(star: Star, hero: Combatant, mental: number, choice?: Co
   if (healthRatio <= 0.15) return 'DANGER';
   if (healthRatio <= 0.5) return 'HALF';
   return 'HEALTHY';
+}
+
+function characterCombatLine(
+  star: Star,
+  hero: Combatant,
+  mental: number,
+  floor: number,
+  roll: number,
+  choice?: CombatChoice,
+  damage = 0,
+): string {
+  const tone = combatLineTone(star, hero, mental, choice);
+  const situation = tone === 'MENTAL_BREAK' || tone === 'DEGRADE4'
+    ? 'DUN_MENTAL'
+    : hero.hp / hero.maxHp <= 0.25
+      ? 'DUN_LOW'
+      : damage > 0
+        ? 'DUN_HURT'
+        : choice === undefined
+          ? 'DUN_EVENT'
+          : null;
+  const line = situation === null ? null : pickDialogue(star.id, situation, {
+    floor,
+    revives: totalRevivals(star.id, star.reviveCount),
+    mental,
+  }, roll);
+  return line?.text ?? combatLine(tone, roll);
 }
 
 function waitingPenalty(state: GameState, now: number): GameState {
@@ -125,7 +154,9 @@ export function tickLive(state: GameState, dt: number): GameState {
       const star = withRng.stars.find((candidate) => candidate.id === today.starId);
       const encounter = createEncounter(floor, 'NONE', enemyRoll);
       const mental = star === undefined ? today.mental : reduceMental(today.mental, star, content.balance.mental.enemyFear[encounter.enemyKey] ?? 0);
-      const line = star === undefined ? combatLine('HEALTHY', lineRoll) : combatLine(combatLineTone(star, today.hero, mental), lineRoll);
+      const line = star === undefined
+        ? combatLine('HEALTHY', lineRoll)
+        : characterCombatLine(star, today.hero, mental, floor, lineRoll);
       return {
         ...withRng,
         waitingSince: now,
@@ -174,7 +205,10 @@ export function chooseCombat(state: GameState, choice: CombatChoice): GameState 
     afterDialogue = next;
     const damage = Math.max(0, activeRun.hero.hp - result.hero.hp);
     const mental = mentalAfterDamage(activeRun.mental, star, damage);
-    encounter = { ...encounter, line: combatLine(combatLineTone(star, result.hero, mental, choice), lineRoll) };
+    encounter = {
+      ...encounter,
+      line: characterCombatLine(star, result.hero, mental, activeRun.currentFloor, lineRoll, choice, damage),
+    };
   }
   const fans = Math.max(0, Math.floor(afterDialogue.fans * result.fanMultiplier) + result.fansDelta);
   const today = {

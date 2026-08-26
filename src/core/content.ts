@@ -6,6 +6,7 @@ import floorsJson from '../../content/floors.json';
 import radioJson from '../../content/radio.ko.json';
 import chatJson from '../../content/chat.ko.json';
 import narrativeJson from '../../content/narrative.ko.json';
+import dialogueJson from '../../content/dialogue.ko.json';
 import type { ForkOutcome, ItemDef, Persona, Star } from './types';
 
 export interface Balance {
@@ -102,6 +103,7 @@ export interface Balance {
 
 export interface CombatBalance {
   hero: { hpBase: number; hpPerGrit: number; atkBase: number; atkPerGrit: number; defBase: number };
+  profileScale: { hp: number; atk: number; def: number };
   enemy: { hpBase: number; hpPerFloor: number; atkBase: number; atkPerFloor: number };
   attack: { varMin: number; varMax: number; counterChance: number };
   defend: { damageMul: number; fanPenalty: number };
@@ -116,15 +118,65 @@ export interface FloorContent {
   forks: { atFloor: number; a: ForkOutcome; b: ForkOutcome }[];
 }
 
+export interface StarProfile {
+  stageName: string;
+  realName: string;
+  role: string;
+  origin: string;
+  heightCm: number;
+  hp: number;
+  atk: number;
+  def: number;
+  will: number;
+  fame: 'S' | 'A' | 'B' | 'C' | 'F';
+  fans: number;
+  pastRevivals: number;
+  nature: string;
+  refuses: string;
+  purse: number;
+  targetFloor: number;
+  likelyEnd: string;
+  bodyGrade: string;
+  salvage: string;
+  revival: string;
+  bestZone: string;
+  equipment: string[];
+  notes: string;
+}
+
+export type DialogueSituation =
+  | 'SHOP_FIRST' | 'SHOP_GREET' | 'SHOP_TOUCH' | 'SHOP_ITEM' | 'SHOP_CONTRACT' | 'SHOP_LEAVE'
+  | 'DUN_START' | 'DUN_RADIO' | 'DUN_EVENT' | 'DUN_HURT' | 'DUN_LOW' | 'DUN_MENTAL'
+  | 'DEATH' | 'REVIVE';
+
+export interface DialogueLine {
+  id: string;
+  starId: string;
+  speaker: string;
+  situation: DialogueSituation;
+  condition: string;
+  expression: string;
+  effects: string[];
+  text: string;
+  note: string | null;
+}
+
+export interface DialogueContent {
+  variables: Record<string, string>;
+  lines: DialogueLine[];
+}
+
 export interface Content {
   balance: Balance;
   items: ItemDef[];
   stars: Star[];
+  starProfiles: Record<string, StarProfile>;
   personas: Persona[];
   floors: FloorContent;
   radio: Record<string, string[]>;
   chat: Record<string, unknown>;
   narrative: Record<string, unknown>;
+  dialogue: DialogueContent;
 }
 
 function assertShape(condition: boolean, message: string): asserts condition {
@@ -208,6 +260,45 @@ function makeItems(raw: unknown): ItemDef[] {
   });
 }
 
+function makeStarProfiles(raw: unknown): Record<string, StarProfile> {
+  assertShape(Array.isArray(raw), 'stars must be an array');
+  return Object.fromEntries(raw.map((value, index) => {
+    assertShape(isRecord(value) && typeof value.id === 'string', `stars[${index}] id missing`);
+    assertShape(isRecord(value.profile), `stars[${index}].profile missing`);
+    const profile = value.profile;
+    for (const key of ['stageName', 'realName', 'role', 'origin', 'fame', 'nature', 'refuses', 'likelyEnd', 'bodyGrade', 'salvage', 'revival', 'bestZone', 'notes'] as const) {
+      assertShape(typeof profile[key] === 'string', `stars[${index}].profile.${key} missing`);
+    }
+    for (const key of ['heightCm', 'hp', 'atk', 'def', 'will', 'fans', 'pastRevivals', 'purse', 'targetFloor'] as const) {
+      assertNumber(profile[key], `stars[${index}].profile.${key}`);
+    }
+    assertShape(Array.isArray(profile.equipment) && profile.equipment.every((item) => typeof item === 'string'), `stars[${index}].profile.equipment missing`);
+    return [value.id, profile as unknown as StarProfile];
+  }));
+}
+
+function makeDialogue(raw: unknown): DialogueContent {
+  assertShape(isRecord(raw) && isRecord(raw.variables) && Array.isArray(raw.lines), 'dialogue sections missing');
+  const ids = new Set<string>();
+  const situations = new Set<DialogueSituation>([
+    'SHOP_FIRST', 'SHOP_GREET', 'SHOP_TOUCH', 'SHOP_ITEM', 'SHOP_CONTRACT', 'SHOP_LEAVE',
+    'DUN_START', 'DUN_RADIO', 'DUN_EVENT', 'DUN_HURT', 'DUN_LOW', 'DUN_MENTAL', 'DEATH', 'REVIVE',
+  ]);
+  const lines = raw.lines.map((value, index) => {
+    assertShape(isRecord(value), `dialogue.lines[${index}] invalid`);
+    for (const key of ['id', 'starId', 'speaker', 'situation', 'condition', 'expression', 'text'] as const) {
+      assertShape(typeof value[key] === 'string', `dialogue.lines[${index}].${key} missing`);
+    }
+    assertShape(!ids.has(value.id as string), `dialogue duplicate id ${value.id as string}`);
+    ids.add(value.id as string);
+    assertShape(situations.has(value.situation as DialogueSituation), `dialogue.lines[${index}].situation invalid`);
+    assertShape(Array.isArray(value.effects) && value.effects.every((effect) => typeof effect === 'string'), `dialogue.lines[${index}].effects invalid`);
+    assertShape(value.note === null || typeof value.note === 'string', `dialogue.lines[${index}].note invalid`);
+    return value as unknown as DialogueLine;
+  });
+  return { variables: raw.variables as Record<string, string>, lines };
+}
+
 function makeOutcome(raw: Record<string, unknown>, path: string): ForkOutcome {
   assertShape(typeof raw.label === 'string', `${path}.label must be a string`);
   assertNumber(raw.reachDelta, `${path}.reachDelta`);
@@ -256,6 +347,11 @@ export function loadContent(): Content {
   assertNumber(balanceJson.revive.gradeMul.INTACT, 'balance.revive.gradeMul.INTACT');
   assertNumber(balanceJson.revive.gradeMul.DAMAGED, 'balance.revive.gradeMul.DAMAGED');
   for (const key of ['floorSeconds', 'encounterEvery', 'delayGraceSeconds', 'delayFanLossPerSec', 'delayFanLossCap'] as const) assertNumber(balanceJson.dive[key], `balance.dive.${key}`);
+  assertShape(isRecord(balanceJson.combat.profileScale), 'balance.combat.profileScale missing');
+  for (const key of ['hp', 'atk', 'def'] as const) {
+    assertNumber(balanceJson.combat.profileScale[key], `balance.combat.profileScale.${key}`);
+    assertShape(balanceJson.combat.profileScale[key] > 0, `balance.combat.profileScale.${key} must be positive`);
+  }
   for (const key of ['max', 'panicThreshold', 'damageThreshold', 'damagePerHp', 'gritResistancePerPoint', 'minimumDamageMultiplier'] as const) assertNumber(balanceJson.mental[key], `balance.mental.${key}`);
   assertShape(isRecord(balanceJson.mental.enemyFear) && isRecord(balanceJson.mental.witnessFear), 'balance.mental fear tables missing');
   for (const [enemyKey, fear] of Object.entries(balanceJson.mental.enemyFear)) assertNumber(fear, `balance.mental.enemyFear.${enemyKey}`);
@@ -320,11 +416,13 @@ export function loadContent(): Content {
     balance: balanceJson as unknown as Balance,
     items,
     stars: makeStars(starsJson),
+    starProfiles: makeStarProfiles(starsJson),
     personas: makePersonas(personasJson),
     floors: makeFloors(floorsJson),
     radio: radioJson as Record<string, string[]>,
     chat: chatJson,
     narrative: narrativeJson,
+    dialogue: makeDialogue(dialogueJson),
   };
 }
 

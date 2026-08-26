@@ -77,13 +77,31 @@ export function key(k: AssetKey): string {
 }
 
 /**
- * 출연자 한 명이 쓰는 아트 3종의 키.
+ * 출연자 한 명이 쓰는 아트 키.
  * 이름 규칙은 여기 한 곳에만 있다 — 씬이 문자열을 조립하지 않는다.
  *   body_karin → star.body.karin / star.portrait.karin / star.appeal.karin
  */
-export function starArt(starId: string): { body: string; portrait: string; appeal: string } {
+export function starArt(starId: string): {
+  body: string;
+  portrait: string;
+  appeal: string;
+  dialogue: string;
+  expression: string;
+} {
   const name = starId.replace(/^body_/, '');
-  return { body: `star.body.${name}`, portrait: `star.portrait.${name}`, appeal: `star.appeal.${name}` };
+  return {
+    body: `star.body.${name}`,
+    portrait: `star.portrait.${name}`,
+    appeal: `star.appeal.${name}`,
+    dialogue: `star.dialogue.${name}`,
+    expression: `star.expression.${name}`,
+  };
+}
+
+/** 워크북 표정 코드(neutral/smile/...)를 캐릭터별 전신 에셋 키로 바꾼다. */
+export function starExpression(starId: string, expression: string): string {
+  const name = starId.replace(/^body_/, '');
+  return `star.expression.${name}.${expression}`;
 }
 
 /**
@@ -182,4 +200,4 @@ export function swallowLoadErrors(scene: Phaser.Scene): string[] {
   return failed;
 }
 
-export const Assets = { key, slice, queuePack, allKeys, createMissingTexture, starArt, hasTexture, firstTexture, isFinalArt, MISSING_TEXTURE };
+export const Assets = { key, slice, queuePack, allKeys, createMissingTexture, starArt, starExpression, hasTexture, firstTexture, isFinalArt, MISSING_TEXTURE };
