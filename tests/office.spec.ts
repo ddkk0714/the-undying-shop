@@ -198,6 +198,23 @@ describe('office', () => {
     expect(state.today?.hero.atk).toBeGreaterThan(content.starProfiles.body_karin!.atk * content.balance.combat.profileScale.atk);
   });
 
+  it('keeps sold equipment on the visitor forecast before that visitor is selected', () => {
+    const weaponSlot = content.balance.equipment.weaponSlot;
+    const visitor = content.stars.find((star) => star.id === 'body_karin')!;
+    let state = {
+      ...officeState(7),
+      inventory: [{ id: 'dagger_crack', qty: 1 }],
+      visitors: [contractFor(visitor)],
+    };
+    state = reducer(state, { type: 'OFFICE/PLACE', slot: weaponSlot, itemId: 'dagger_crack' });
+    state = reducer(state, { type: 'OFFICE/SALE_PRICE_SET', multiplier: 0.5 });
+    state = reducer(state, { type: 'OFFICE/SELL_BATCH' });
+
+    expect(state.today).toBeNull();
+    expect(state.shelf[weaponSlot]).toBeNull();
+    expect(equippedItemIds(state, visitor.id)[weaponSlot]).toBe('dagger_crack');
+  });
+
   it('applies one seeded result to the whole shelf and allows at most three new price proposals', () => {
     const weaponSlot = content.balance.equipment.weaponSlot;
     const armorSlot = content.balance.equipment.armorSlot;

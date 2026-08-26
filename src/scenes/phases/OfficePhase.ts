@@ -361,9 +361,9 @@ export class OfficePhase extends PhaseScene {
       // TV는 그 상자 '안'에 그려지는 소품이라 겹침 자체는 남는다).
       tv.setInteractive({ cursor: 'default' }).setDepth(0);
     }
-    // 손님이 와 있는 동안에도 문은 방에 그대로 있다. 이때는 여는 기능이 없지만
-    // TV 와 같은 이유로 클릭은 삼킨다 — 안 그러면 문을 눌렀는데 용사 대사가 넘어간다.
-    this.buildOfficeDoor(g)?.setInteractive({ cursor: 'default' });
+    // 손님이 들어온 동안에는 문을 숨긴다. 계약 후 작별까지 끝나 빈 방이 된 경우에만
+    // 다시 배경 문을 보이게 하되, 방송 진입은 TV로만 진행한다.
+    if (this.contractedGuestDeparted) this.buildOfficeDoor(g)?.setInteractive({ cursor: 'default' });
     this.frame(g.x, g.y, g.w, g.h, 'dust');
 
     // 계약 모드에서 좌측에 서 있는 사람은 **방문자**다. 아직 계약 전이라 recruitPool 에 있다.

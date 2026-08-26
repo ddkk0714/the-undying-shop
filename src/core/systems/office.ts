@@ -181,13 +181,16 @@ export function sellOfficeBatch(state: GameState): GameState {
 
   const price = displayed.reduce((sum, { item }) => sum + Math.max(0, Math.round(item.price * multiplier)), 0);
   const truthRelics = displayed.filter(({ item }) => item.id === 'soil_deep' || item.id === 'page_torn').length;
+  // 예상서는 손님 기준으로 그려진다. 아직 손님을 선택하지 않은 상태에서 판매해도
+  // 판매한 장비가 그 손님의 방송 장비로 확정되어야 한다.
+  const equipmentStarId = state.today?.starId ?? state.visitors[0]?.starId;
   const shelf = [...state.shelf];
   let inventory = state.inventory;
   for (const { item, slot } of displayed) {
     shelf[slot] = null;
     inventory = removeInventoryItem(inventory, item.id);
     flags[saleSoldKey(state.day, slot)] = true;
-    if (state.today !== null) flags[runEquipmentFlagKey(state.day, state.today.starId, slot, item.id)] = true;
+    if (equipmentStarId !== undefined) flags[runEquipmentFlagKey(state.day, equipmentStarId, slot, item.id)] = true;
   }
   return {
     ...afterRoll,
