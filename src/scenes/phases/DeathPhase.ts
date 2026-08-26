@@ -139,13 +139,15 @@ export class DeathPhase extends PhaseScene {
     if (this.stage >= 1 && this.isRecord) this.buildRecord(floor);
     if (this.stage >= 2) this.buildTally(s, floor);
 
-    new Button(this, {
+    const nextButton = new Button(this, {
       x: L.W / 2 - 264, y: L.actionsFull.y + L.pad, w: 528, h: 96,
       // 검시실·발표 창은 뺐다 (사용자 확정) — 이 버튼 하나로 다음 날로 넘어간다
       label: '다음으로', hotkey: '1',
       onClick: () => this.store.dispatch({ type: 'PHASE/ADVANCE' }),
-    // 노이즈보다 프레임과 글자까지 모두 앞에 와야 끝까지 읽고 누를 수 있다.
-    }).setDepth(6000);
+    // 깊이값과 display-list 순서를 모두 강제한다. Container 안의 프레임·글자가
+    // 노이즈에 따로 가려지는 Phaser 정렬 경로를 피한다.
+    }).setDepth(10000);
+    this.children.bringToTop(nextButton);
   }
 
   /**
