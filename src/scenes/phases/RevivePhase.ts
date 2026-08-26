@@ -3,6 +3,7 @@ import { SCENES } from '../../config';
 import { content } from '../../core/content';
 import { pickDialogue, totalRevivals } from '../../core/systems/dialogue';
 import { reviveQuote } from '../../core/systems/economy';
+import { starVoice } from '../../audio/Voice';
 import { key, starArt, starExpression } from '../../render/assets';
 import { L, actionX, ACTION_W } from '../../ui/layout';
 import { Button } from '../../ui/Button';
@@ -162,6 +163,7 @@ export class RevivePhase extends PhaseScene {
         line: this.clip(reviveLine.text, d.w - 96, 'title'),
         scale: 0.68,
         effects: reviveLine.effects,
+        voice: starVoice(star?.id),
       });
     }
   }

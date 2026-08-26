@@ -10,6 +10,7 @@ import { Dialogue } from '../../ui/Dialogue';
 import { Ticker } from '../../ui/Ticker';
 import { createTooltip } from '../../ui/Tooltip';
 import { playBgm, playSfx } from '../../audio/Sfx';
+import { starVoice } from '../../audio/Voice';
 import { reducedMotion, speedMul } from '../../ui/options';
 import { PhaseScene } from './PhaseScene';
 import type { WipeScene } from '../WipeScene';
@@ -160,10 +161,6 @@ const RADIO_GAP_MS = 4200;
  * 조금 당겼다 (사용자 확정). 말줄임 뒤 한 박자 쉬는 건 `Dialogue` 가 알아서 한다
  */
 const RADIO_CHAR_MS = 30;
-/** 「pause」 연출 — 말하기 전에 뜸을 들이는 시간 */
-const RADIO_PAUSE_MS = 520;
-/** 「blackout」 연출 — 화면이 꺼져 있는 시간 */
-const BLACKOUT_MS = 260;
 
 export class LivePhase extends PhaseScene {
   private ticker: Phaser.Time.TimerEvent | null = null;
@@ -761,13 +758,10 @@ export class LivePhase extends PhaseScene {
     this.radioAt = now;
     this.radioDone = false;
 
-    const fx = new Set(spoken.effects);
     const v = L.live.dialogue;
-    // 「blackout」 — 말하기 전에 화면이 한 번 꺼진다
-    if (fx.has('blackout') && !this.reduced) this.blackout();
 
     const start = (): void => {
-      // 「pause」로 기다리는 사이에 줄이 바뀌었다 — 잠금은 풀어 준다
+      // 기다리는 사이에 줄이 바뀌었다 — 잠금은 풀어 준다
       if (this.radioText !== spoken.text) { this.radioDone = true; return; }
       // 배너가 사선으로 잘린 그림이라 글은 가운데 검은 띠 안에만 놓는다.
       // 여백을 **상자 폭의 비율**로 잡는다 — 900 기준의 200/330 을 그대로 두면
@@ -784,17 +778,15 @@ export class LivePhase extends PhaseScene {
         size: 'body',
         charMs: RADIO_CHAR_MS,
         effects: spoken.effects,
+        voice: starVoice(this.store.getState().today?.starId),
         onComplete: () => { this.radioDone = true; },
-        // 「silent」 — 속으로 하는 말이다. 타자 소리를 내지 않는다
-        ...(fx.has('silent') ? {} : { onChar: () => playSfx(this, 'sfx.text', 0.05) }),
       });
       this.radioObj = line;
       this.keepAlive(line);
     };
 
-    // 「pause」 — 한 박자 뜸을 들이고 말한다
-    if (fx.has('pause') && !this.reduced) this.time.delayedCall(RADIO_PAUSE_MS, start);
-    else start();
+    // `pause`·`blackout`·`silent` 는 이제 `Dialogue` 안에 있다 — 세 화면이 같이 쓴다
+    start();
   }
 
   /**
@@ -810,15 +802,6 @@ export class LivePhase extends PhaseScene {
     this.radioObj = null;
   }
 
-  /** 「blackout」 — 화면 전체가 잠깐 꺼졌다 돌아온다. 페이드가 아니라 뚝 끊는다 */
-  private blackout(): void {
-    const cover = this.add.rectangle(0, 0, L.W, L.H, PALETTE.ink).setOrigin(0, 0).setDepth(900);
-    this.keepAlive(cover);
-    this.time.delayedCall(BLACKOUT_MS, () => {
-      this.dropAlive(cover);
-      cover.destroy();
-    });
-  }
 
   private spokenDialogue(s: Readonly<GameState>): { text: string; expression: string | null; effects: readonly string[] } {
     const run = s.today;

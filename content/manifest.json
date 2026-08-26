@@ -1575,6 +1575,16 @@
           "file": "sfx/text.mp3",
           "desc": "생방송 채팅이 들어올 때의 낮은 텍스트 틱"
         },
+        "sfx.text.male": {
+          "type": "audio",
+          "file": "sfx/text_male.wav",
+          "desc": "대사 타자음 · 남성 — 원본의 반복 중 한 방만 잘라 낸 90ms (tools/cut-sfx.mjs)"
+        },
+        "sfx.text.female": {
+          "type": "audio",
+          "file": "sfx/text_female.wav",
+          "desc": "대사 타자음 · 여성 — 원본의 반복 중 한 방만 잘라 낸 90ms (tools/cut-sfx.mjs)"
+        },
         "bgm.title": {
           "type": "audio",
           "file": "bgm/title.mp3",
@@ -3092,6 +3102,16 @@
           "type": "audio",
           "file": "sfx/text.mp3",
           "desc": "생방송 채팅이 들어올 때의 낮은 텍스트 틱"
+        },
+        "sfx.text.male": {
+          "type": "audio",
+          "file": "sfx/text_male.wav",
+          "desc": "대사 타자음 · 남성 — 원본의 반복 중 한 방만 잘라 낸 90ms (tools/cut-sfx.mjs)"
+        },
+        "sfx.text.female": {
+          "type": "audio",
+          "file": "sfx/text_female.wav",
+          "desc": "대사 타자음 · 여성 — 원본의 반복 중 한 방만 잘라 낸 90ms (tools/cut-sfx.mjs)"
         },
         "bgm.title": {
           "type": "audio",
