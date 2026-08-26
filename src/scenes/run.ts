@@ -13,7 +13,35 @@ import type { GameState } from '../core/types';
  */
 
 const KEY = 'run';
-const SAVE_KEY = 'undying-shop:save:v1';
+const SAVE_KEY_PREFIX = 'undying-shop:save:v2:slot:';
+const ACTIVE_SLOT_KEY = 'undying-shop:save:v2:active-slot';
+
+export type SaveSlot = 1 | 2 | 3;
+
+export interface SaveSlotInfo {
+  slot: SaveSlot;
+  state: GameState | null;
+  savedAt: number | null;
+}
+
+const SAVE_SLOTS: readonly SaveSlot[] = [1, 2, 3];
+
+function saveKey(slot: SaveSlot): string {
+  return `${SAVE_KEY_PREFIX}${slot}`;
+}
+
+function activeSlot(): SaveSlot {
+  try {
+    const value = Number(localStorage.getItem(ACTIVE_SLOT_KEY));
+    return SAVE_SLOTS.includes(value as SaveSlot) ? value as SaveSlot : 1;
+  } catch {
+    return 1;
+  }
+}
+
+function setActiveSlot(slot: SaveSlot): void {
+  try { localStorage.setItem(ACTIVE_SLOT_KEY, String(slot)); } catch { /* 저장 불가 환경 */ }
+}
 
 /** ?seed=12345 가 있으면 그 값, 없으면 새로 뽑는다 (01-ARCHITECTURE §6) */
 function pickSeed(game: Phaser.Game): number {
@@ -34,19 +62,21 @@ function isSavedState(value: unknown): value is GameState {
     && Array.isArray(state.inventory);
 }
 
-function writeSave(state: Readonly<GameState>): boolean {
+function writeSave(state: Readonly<GameState>, slot = activeSlot()): boolean {
   try {
-    localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+    localStorage.setItem(saveKey(slot), JSON.stringify({ state, savedAt: Date.now() }));
+    setActiveSlot(slot);
     return true;
   } catch {
     return false;
   }
 }
 
-function registerRun(game: Phaser.Game, store: Store): Store {
+function registerRun(game: Phaser.Game, store: Store, slot = activeSlot()): Store {
   game.registry.set(KEY, store);
-  writeSave(store.getState());
-  store.subscribe((state) => { writeSave(state); });
+  game.registry.set('run.saveSlot', slot);
+  writeSave(store.getState(), slot);
+  store.subscribe((state) => { writeSave(state, slot); });
   if (import.meta.env.DEV) {
     console.debug(`[run] active store · seed=${store.getState().seed}`);
     // 디버깅/자동화용. 프로덕션 번들에는 들어가지 않는다.
@@ -58,21 +88,22 @@ function registerRun(game: Phaser.Game, store: Store): Store {
 }
 
 /** 새 방송을 시작하고 즉시 저장한다. */
-export function newRun(game: Phaser.Game): Store {
+export function newRun(game: Phaser.Game, slot = activeSlot()): Store {
   const seed = pickSeed(game);
-  return registerRun(game, createStore(createInitialState(seed), reducer));
+  return registerRun(game, createStore(createInitialState(seed), reducer), slot);
 }
 
 /** 저장된 상태는 reducer의 GAME/LOAD 경로로만 복원한다. */
-export function loadRun(game: Phaser.Game): Store | null {
+export function loadRun(game: Phaser.Game, slot = activeSlot()): Store | null {
   try {
-    const raw = localStorage.getItem(SAVE_KEY);
+    const raw = localStorage.getItem(saveKey(slot));
     if (raw === null) return null;
-    const saved: unknown = JSON.parse(raw);
+    const payload: unknown = JSON.parse(raw);
+    const saved = (payload as { state?: unknown }).state;
     if (!isSavedState(saved)) return null;
     const store = createStore(createInitialState(saved.seed), reducer);
     store.dispatch({ type: 'GAME/LOAD', state: saved });
-    return registerRun(game, store);
+    return registerRun(game, store, slot);
   } catch {
     return null;
   }
@@ -80,17 +111,28 @@ export function loadRun(game: Phaser.Game): Store | null {
 
 /** 타이틀에서 이어하기 활성화에만 쓴다. */
 export function hasSavedRun(): boolean {
-  try {
-    const raw = localStorage.getItem(SAVE_KEY);
-    return raw !== null && isSavedState(JSON.parse(raw));
-  } catch {
-    return false;
-  }
+  return listSaveSlots().some(({ state }) => state !== null);
 }
 
 /** HUD 저장 아이콘의 명시적 저장 동작. 자동 저장도 동시에 유지한다. */
-export function saveRun(store: Store): boolean {
-  return writeSave(store.getState());
+export function saveRun(store: Store, slot = activeSlot()): boolean {
+  return writeSave(store.getState(), slot);
+}
+
+export function listSaveSlots(): SaveSlotInfo[] {
+  return SAVE_SLOTS.map((slot) => {
+    try {
+      const raw = localStorage.getItem(saveKey(slot));
+      if (raw === null) return { slot, state: null, savedAt: null };
+      const payload: unknown = JSON.parse(raw);
+      const record = payload as { state?: unknown; savedAt?: unknown };
+      return isSavedState(record.state)
+        ? { slot, state: record.state, savedAt: typeof record.savedAt === 'number' ? record.savedAt : null }
+        : { slot, state: null, savedAt: null };
+    } catch {
+      return { slot, state: null, savedAt: null };
+    }
+  });
 }
 
 /** 진행 중인 판. 없으면 null */

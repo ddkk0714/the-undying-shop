@@ -7,7 +7,8 @@ import { key as assetKey, hasTexture, isFinalArt } from '../render/assets';
 import { scrimTexture, SCRIM_TILE } from '../render/scrim';
 import { reducedMotion } from '../ui/options';
 import { playAmbience, playBgm, playSfx, stopAmbience } from '../audio/Sfx';
-import { hasSavedRun, loadRun, newRun } from './run';
+import { hasSavedRun, listSaveSlots, loadRun, newRun, type SaveSlot } from './run';
+import { PHASE_LABEL } from './DayScene';
 
 /**
  * 조절판 알파 대본 — `[목표 알파, 걸리는 ms, 방식]`.
@@ -76,15 +77,25 @@ const LANTERN_PERIOD = 3200;
  *      [ 옵션 ]        [ 조작 안내 ]
  */
 export class TitleScene extends Phaser.Scene {
+  private slotPopup: Phaser.GameObjects.GameObject[] = [];
+  private slotPopupMode: 'new' | 'continue' | null = null;
+  private confirmOverwriteSlot: SaveSlot | null = null;
+
   constructor() {
     super(SCENES.TITLE);
   }
 
   create(): void {
+    this.slotPopup = [];
+    this.slotPopupMode = null;
+    this.confirmOverwriteSlot = null;
     this.cameras.main.setBackgroundColor(PALETTE.ink);
     playBgm(this, 'bgm.title', 0.24);
     playAmbience(this, 'bgm.title.noise', 0.16);
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => stopAmbience(this));
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      stopAmbience(this);
+      this.closeSlotPopup();
+    });
 
     // 배경: 밤의 가게 앞 1컷.
     //
@@ -110,13 +121,13 @@ export class TitleScene extends Phaser.Scene {
     }
 
     // 제목 — 로고 아트가 오면 글자 대신 그것을 건다
-    // Preserve the painted storefront: title occupies the empty upper wall.
-    this.veil(500, 72, 920, 280);
     // 로고는 **본 아트일 때만** 건다. 플레이스홀더 로고는 테두리 친 상자라서
     // 배경 그림 위에 얹으면 하늘을 가리는 흰 판이 된다 — 그럴 바엔 글자가 낫다.
     if (isFinalArt('ui.logo') && hasTexture(this, 'ui.logo')) {
-      this.add.image(BASE_W / 2, 156, assetKey('ui.logo')).setOrigin(0.5);
+      this.add.image(BASE_W / 2, 320, assetKey('ui.logo')).setOrigin(0.5).setDisplaySize(560, 475);
     } else {
+      // 플레이스홀더 글자만 배경과 섞이지 않도록 뒤에 판을 깐다.
+      this.veil(500, 44, 920, 592);
       // 자간을 벌려 간판처럼
       this.add
         .text(BASE_W / 2, 208, '죽 지  않 는  가 게', { ...FONT_TITLE, color: css('bone') })
@@ -145,14 +156,13 @@ export class TitleScene extends Phaser.Scene {
     new Button(this, {
       x: left, y: top, w: bw, h: bh,
       label: '새로 시작', hotkey: '1',
-      sound: false,
-      onClick: () => this.startNewGame(),
+      onClick: () => this.openSlotPopup('new'),
     });
     new Button(this, {
       x: right, y: top, w: bw, h: bh,
       label: '이어하기', hotkey: '2',
       enabled: hasSavedRun(),
-      onClick: () => this.continueGame(),
+      onClick: () => this.openSlotPopup('continue'),
     });
     new Button(this, {
       x: left, y: top + bh + gap, w: bw, h: bh,
@@ -292,15 +302,94 @@ export class TitleScene extends Phaser.Scene {
     });
   }
 
-  private startNewGame(): void {
-    playSfx(this, 'sfx.title.chime', 0.32);
-    playSfx(this, 'sfx.title.door', 0.62);
-    newRun(this.game);          // 스토어를 새로 만든다 — DayScene 은 이걸 집어 든다
-    this.scene.start(SCENES.DAY);
+  /** HO-028 — 새로 시작/이어하기 공용 3슬롯 선택 팝업. */
+  private openSlotPopup(mode: 'new' | 'continue'): void {
+    this.slotPopupMode = mode;
+    this.confirmOverwriteSlot = null;
+    this.renderSlotPopup();
   }
 
-  private continueGame(): void {
-    if (loadRun(this.game) === null) return;
-    this.scene.start(SCENES.DAY);
+  private closeSlotPopup(): void {
+    this.slotPopup.forEach((object) => object.destroy());
+    this.slotPopup = [];
+    this.slotPopupMode = null;
+    this.confirmOverwriteSlot = null;
+  }
+
+  private renderSlotPopup(): void {
+    this.slotPopup.forEach((object) => object.destroy());
+    this.slotPopup = [];
+    const mode = this.slotPopupMode;
+    if (mode === null) return;
+
+    const depth = 10_000;
+    const objects = this.slotPopup;
+    const add = <T extends Phaser.GameObjects.GameObject & { setDepth(depth: number): T }>(object: T): T => {
+      object.setDepth(depth + objects.length);
+      objects.push(object);
+      return object;
+    };
+
+    const box = { x: 560, y: 190, w: 800, h: 700 };
+    const close = (): void => this.closeSlotPopup();
+    const panel = add(this.add.rectangle(BASE_W / 2, BASE_H / 2, BASE_W, BASE_H, PALETTE.ink, 0.72).setInteractive());
+    panel.on('pointerup', close);
+    add(this.add.rectangle(box.x, box.y, box.w, box.h, PALETTE.ink, 1).setOrigin(0));
+    const frame = add(this.add.graphics());
+    frame.lineStyle(4, PALETTE.bone, 1).strokeRect(box.x, box.y, box.w, box.h);
+    add(this.add.text(box.x + 42, box.y + 34, mode === 'new' ? '새로 시작 · 슬롯 선택' : '이어하기 · 슬롯 선택', { ...FONT, color: css('bone'), fontSize: '48px' }));
+    add(this.add.text(box.x + 42, box.y + 98, mode === 'new' ? '진행을 시작할 슬롯을 고르세요.' : '불러올 슬롯을 고르세요.', { ...FONT, color: css('dust'), fontSize: '24px' }));
+
+    const rowY: Record<SaveSlot, number> = { 1: box.y + 158, 2: box.y + 314, 3: box.y + 470 };
+    for (const info of listSaveSlots()) {
+      const y = rowY[info.slot];
+      const state = info.state;
+      const empty = state === null;
+      const label = state === null
+        ? `슬롯 ${info.slot}  ·  비어 있음`
+        : `슬롯 ${info.slot}  ·  DAY ${state.day} · ${PHASE_LABEL[state.phase]}`;
+      const pendingConfirm = mode === 'new' && !empty && this.confirmOverwriteSlot === info.slot;
+      const detail = pendingConfirm
+        ? '정말 덮어쓰시겠습니까? 다시 누르면 시작합니다.'
+        : info.savedAt === null
+          ? (mode === 'new' ? '새 판을 시작합니다.' : '저장된 진행이 없습니다.')
+          : new Date(info.savedAt).toLocaleString('ko-KR');
+
+      // 인터랙티브로 잡아 둔다 — 비활성 버튼은 히트 영역이 없어, 안 잡으면 클릭이
+      // 이 판을 뚫고 아래 배경(닫기 트리거)까지 떨어져 팝업이 조용히 닫혀 버린다.
+      add(this.add.rectangle(box.x + 42, y, box.w - 84, 128, PALETTE.mid, 0.45).setOrigin(0).setInteractive());
+      add(this.add.text(box.x + 66, y + 22, label, { ...FONT, color: css('bone'), fontSize: '32px' }));
+      add(this.add.text(box.x + 66, y + 74, detail, { ...FONT, color: css(pendingConfirm ? 'wax' : 'dust'), fontSize: '21px' }));
+
+      const actionLabel = mode === 'continue' ? '불러오기' : pendingConfirm ? '덮어쓰기 확정' : empty ? '시작' : '선택';
+      const finalStep = mode === 'new' && (empty || pendingConfirm);
+      add(new Button(this, {
+        x: box.x + box.w - 172, y: y + 22, w: 130, h: 76,
+        label: actionLabel,
+        variant: pendingConfirm ? 'danger' : 'default',
+        enabled: mode === 'continue' ? !empty : true,
+        sound: finalStep ? false : undefined,
+        onClick: () => {
+          if (mode === 'continue') {
+            if (loadRun(this.game, info.slot) === null) return;
+            this.closeSlotPopup();
+            this.scene.start(SCENES.DAY);
+            return;
+          }
+          if (!empty && this.confirmOverwriteSlot !== info.slot) {
+            this.confirmOverwriteSlot = info.slot;
+            this.renderSlotPopup();
+            return;
+          }
+          playSfx(this, 'sfx.title.chime', 0.32);
+          playSfx(this, 'sfx.title.door', 0.62);
+          newRun(this.game, info.slot);   // 스토어를 새로 만든다 — DayScene 은 이걸 집어 든다
+          this.closeSlotPopup();
+          this.scene.start(SCENES.DAY);
+        },
+      }));
+    }
+
+    add(new Button(this, { x: box.x + box.w - 172, y: box.y + box.h - 86, w: 128, h: 54, label: '닫기', variant: 'ghost', onClick: close }));
   }
 }

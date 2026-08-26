@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { BASE_W, SCENES } from '../config';
+import { content } from '../core/content';
 import { PALETTE, css } from '../render/palette';
 import { FONT, FONT_LABEL } from '../render/font';
 import { L } from '../ui/layout';
@@ -8,7 +9,7 @@ import { reducedMotion } from '../ui/options';
 import { DEATH_CURTAIN_MS } from './phases/LivePhase';
 import { key as assetKey, hasTexture } from '../render/assets';
 import type { WipeScene } from './WipeScene';
-import { currentRun, newRun, saveRun } from './run';
+import { currentRun, listSaveSlots, loadRun, newRun, saveRun, type SaveSlot } from './run';
 import type { Store } from '../core/store';
 import type { GameState, PhaseId } from '../core/types';
 
@@ -20,7 +21,7 @@ import type { GameState, PhaseId } from '../core/types';
  *   그 전까지는 현재 단계를 글자로만 보여주고, 기본 선택으로 진행시킨다.
  */
 
-const PHASE_LABEL: Record<PhaseId, string> = {
+export const PHASE_LABEL: Record<PhaseId, string> = {
   REVIVE: '소생실',
   OFFICE: '편성실',
   LIVE: '생방송',
@@ -62,6 +63,7 @@ export class DayScene extends Phaser.Scene {
   private unsubscribe: (() => void) | null = null;
   private launched: string | null = null;
   private fallback: Button[] = [];
+  private savePopup: Phaser.GameObjects.GameObject[] = [];
   /** M06 §8 — 생방송→사망 교체를 지지직이 끝날 때까지 붙잡는다. 0 이면 지연 없음 */
   private swapAt = 0;
   private skipCurtain = false;
@@ -138,7 +140,7 @@ export class DayScene extends Phaser.Scene {
     this.addWatchEye(this.hudTools.x + 684, this.hudTools.y + 76);
     this.addHudIcon('ui.icon.help', 'ui.icon.help.hover', BASE_W - 365, () => this.openOverlay(SCENES.HELP));
     this.addHudIcon('ui.icon.options', 'ui.icon.options.hover', BASE_W - 240, () => this.openOverlay(SCENES.OPTIONS));
-    this.addHudIcon('ui.icon.save', 'ui.icon.save.hover', BASE_W - 119, () => saveRun(this.store));
+    this.addHudIcon('ui.icon.save', 'ui.icon.save.hover', BASE_W - 119, () => this.openSavePopup());
     // 도달 게이지 — 글자 오른쪽 빈자리. 차오르는 게 보여야 기록이 기록으로 느껴진다
 
     // 본문 (L.stage) — 단계 씬이 들어올 자리
@@ -225,6 +227,58 @@ export class DayScene extends Phaser.Scene {
     icon.on('pointerover', () => hasTexture(this, hover) && icon.setTexture(assetKey(hover)));
     icon.on('pointerout', () => icon.setTexture(assetKey(idle)));
     icon.on('pointerup', onClick);
+  }
+
+  /** HUD 저장 아이콘 — 저장과 불러오기를 한 곳에서 고르는 3슬롯 팝업. */
+  private openSavePopup(): void {
+    this.closeSavePopup();
+    const depth = 10_000;
+    const objects = this.savePopup;
+    const add = <T extends Phaser.GameObjects.GameObject & { setDepth(depth: number): T }>(object: T): T => {
+      object.setDepth(depth + objects.length);
+      objects.push(object);
+      return object;
+    };
+    const box = { x: 560, y: 190, w: 800, h: 700 };
+    const close = () => this.closeSavePopup();
+    const panel = add(this.add.rectangle(L.W / 2, L.H / 2, L.W, L.H, PALETTE.ink, 0.72).setInteractive());
+    panel.on('pointerup', close);
+    add(this.add.rectangle(box.x, box.y, box.w, box.h, PALETTE.ink, 1).setOrigin(0));
+    const frame = add(this.add.graphics());
+    frame.lineStyle(4, PALETTE.bone, 1).strokeRect(box.x, box.y, box.w, box.h);
+    add(this.add.text(box.x + 42, box.y + 34, '저장 / 불러오기', { ...FONT, color: css('bone'), fontSize: '48px' }));
+    add(this.add.text(box.x + 42, box.y + 98, '현재 진행을 저장하거나, 저장된 슬롯을 불러옵니다.', { ...FONT, color: css('dust'), fontSize: '24px' }));
+
+    const addSlot = (slot: SaveSlot, y: number): void => {
+      const info = listSaveSlots().find((entry) => entry.slot === slot)!;
+      const label = info.state === null
+        ? `슬롯 ${slot}  ·  비어 있음`
+        : `슬롯 ${slot}  ·  DAY ${info.state.day} · ${PHASE_LABEL[info.state.phase]}`;
+      const detail = info.savedAt === null ? '저장할 수 있습니다.' : new Date(info.savedAt).toLocaleString('ko-KR');
+      add(this.add.rectangle(box.x + 42, y, box.w - 84, 128, PALETTE.mid, 0.45).setOrigin(0));
+      add(this.add.text(box.x + 66, y + 22, label, { ...FONT, color: css('bone'), fontSize: '32px' }));
+      add(this.add.text(box.x + 66, y + 74, detail, { ...FONT, color: css('dust'), fontSize: '21px' }));
+      const save = new Button(this, { x: box.x + box.w - 280, y: y + 22, w: 104, h: 76, label: '저장', onClick: () => {
+        saveRun(this.store, slot);
+        this.closeSavePopup();
+      } });
+      add(save);
+      const load = new Button(this, { x: box.x + box.w - 160, y: y + 22, w: 104, h: 76, label: '불러오기', enabled: info.state !== null, onClick: () => {
+        if (loadRun(this.game, slot) === null) return;
+        this.closeSavePopup();
+        this.scene.restart();
+      } });
+      add(load);
+    };
+    addSlot(1, box.y + 158);
+    addSlot(2, box.y + 314);
+    addSlot(3, box.y + 470);
+    add(new Button(this, { x: box.x + box.w - 172, y: box.y + box.h - 86, w: 128, h: 54, label: '닫기', variant: 'ghost', onClick: close }));
+  }
+
+  private closeSavePopup(): void {
+    this.savePopup.forEach((object) => object.destroy());
+    this.savePopup = [];
   }
 
   /** 출격 전 08:00, 출격 뒤 20:00. 실제 경과 시간으로는 절대 움직이지 않는다. */
@@ -323,10 +377,25 @@ export class DayScene extends Phaser.Scene {
     }
 
     // 최고층이 갱신되는 순간 직전 값을 넘겨 준다. DeathPhase 의 「이전 기록」 표시용
-    this.statusFloor.setText(`${s.maxFloor}F`);
-    this.statusViewers.setText(String(s.fans));
+    // 좌측 상태칸은 회사 전체 기록이 아니라, 지금 방문했거나 출연 중인 용사의 정보다.
+    // 손님도 오늘의 용사도 없으면 숫자를 지어내지 않고 '-'로 비운다.
+    const visitor = s.today === null ? s.visitors[0] : undefined;
+    const persona = s.today === null ? undefined : s.personas.find((candidate) => candidate.id === s.today?.personaId);
+    const floor = s.today !== null
+      ? `${s.today.currentFloor}F`
+      : visitor === undefined
+        ? '-'
+        : `${Math.max(...visitor.claimedTiers.map((tier) => tier.floor))}F`;
+    const viewers = s.today !== null
+      ? (persona?.fandom ?? '-')
+      : (visitor?.fandom ?? '-');
+    this.statusFloor.setText(floor);
+    this.statusViewers.setText(typeof viewers === 'number' ? viewers.toLocaleString('en-US') : viewers);
     this.dayValue.setText(String(s.day));
-    this.depthValue.setText(`${s.maxFloor}F`);
+    // 기록값은 26F에서 시작하지만, 첫 방송 전 HUD는 아직 도전하지 않은 1F로 표기한다.
+    // 실제 최고 기록과 하강/엔딩 계산은 core의 maxFloor를 그대로 사용한다.
+    const untouchedRun = s.day === 1 && s.today === null && s.maxFloor === content.balance.start.maxFloor;
+    this.depthValue.setText(untouchedRun ? '1F' : `${s.maxFloor}F`);
     this.goldValue.setText(fmtHudGold(s.gold));
     this.syncGameClock(s);
 
