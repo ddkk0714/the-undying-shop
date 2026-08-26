@@ -16,7 +16,7 @@ export type Voice = 'male' | 'female';
 const FALLBACK: Voice = 'female';
 
 const BY_STAR: Record<string, Voice> = {
-  body_karin: 'female',   // 노일 세이로 — 검사 / 에고 웨폰
+  body_karin: 'male',     // 노일 세이로 — 검사 / 에고 웨폰
   body_juno: 'male',      // 펜로 루엔 — 궁수 / 스카우트
   body_sela: 'female',    // 녹스 비오레 / 크로우 — 도적 / 흡혈귀
   body_ilan: 'female',    // 미레 바인 — 마법사 / 영매사
