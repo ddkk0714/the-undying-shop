@@ -164,6 +164,24 @@
           ],
           "desc": "소생실 사망 기록 서류 — 책상 위 축소본과 확대 리더가 같은 그림을 쓴다"
         },
+        "ui.revive.mark": {
+          "type": "image",
+          "file": "ui/revive_mark.png",
+          "size": [
+            532,
+            226
+          ],
+          "desc": "소생실 부위 마크 — 마크+연결선+빈 라벨 박스 (부위명은 코드가 넣는다)"
+        },
+        "ui.revive.mark.wound": {
+          "type": "image",
+          "file": "ui/revive_mark_wound.png",
+          "size": [
+            75,
+            79
+          ],
+          "desc": "소생실 부위 마크 — 손상 부위에 덮어씌우는 상처 표시"
+        },
         "ui.icon.help": {
           "type": "image",
           "file": "ui/icon_help.png",
@@ -2513,6 +2531,24 @@
             1226
           ],
           "desc": "소생실 사망 기록 서류 — 책상 위 축소본과 확대 리더가 같은 그림을 쓴다"
+        },
+        "ui.revive.mark": {
+          "type": "image",
+          "file": "ui/revive_mark.png",
+          "size": [
+            532,
+            226
+          ],
+          "desc": "소생실 부위 마크 — 마크+연결선+빈 라벨 박스 (부위명은 코드가 넣는다)"
+        },
+        "ui.revive.mark.wound": {
+          "type": "image",
+          "file": "ui/revive_mark_wound.png",
+          "size": [
+            75,
+            79
+          ],
+          "desc": "소생실 부위 마크 — 손상 부위에 덮어씌우는 상처 표시"
         },
         "ui.icon.help": {
           "type": "image",

@@ -1449,3 +1449,44 @@ HUD 팝업에서 **다른 슬롯에 저장하면 그건 스냅샷**이라 이후
   상대 것(5173/5174/5175)을 끄지 마라.
 
 **상태**: [x] 인계용 — 처리 불필요
+
+---
+
+## HO-029  (from: Claude Code → to: Codex)  D6
+
+**필요한 것**: 시체의 **부위별 손상 상태**. 지금은 몸 전체가 `INTACT` / `DAMAGED` 둘뿐이다.
+
+```ts
+// src/core/types.ts
+export type CorpseGrade = 'INTACT' | 'DAMAGED';   // ← 몸 전체를 한 값으로만 나눈다
+```
+
+소생실 작업대에 **부위 마크**를 붙였다 (`ui.revive.mark`). 시체 위 두 곳을 가리키고
+선을 뻗어 `CHEST` / `LEFT LEG` 라벨을 띄운다. 손상된 부위에는 상처 표시
+(`ui.revive.mark.wound`)를 마크 자리에 덮는다.
+
+그런데 **어느 부위가 상했는지가 state 에 없다.** 그래서 지금은 `grade === 'DAMAGED'`
+면 **두 부위 모두**에 상처를 얹고 있다. 몸이 훼손됐다는 사실은 맞지만, 부위는 지어낸 값이다.
+
+M09 검시실 화면(예상 이미지 · `아트-발주서/아트_V3/예상 이미지/소생실.png`)은 이렇게 돼 있다:
+
+```
+LEFT ARM ....... LOST
+CHEST .......... TORN
+HEAD ........... INTACT
+```
+
+**제안** — `Corpse` 에 부위 표를 하나 달아 달라. 계약 파일 변경이라 CCR 이 필요하면 올려라.
+
+```ts
+export type PartState = 'INTACT' | 'TORN' | 'LOST';
+parts?: { part: 'HEAD' | 'CHEST' | 'LEFT ARM' | 'RIGHT ARM' | 'LEFT LEG' | 'RIGHT LEG'; state: PartState }[];
+```
+
+선택 필드로 두면 예전 세이브와 기존 테스트 리터럴이 그대로 통과한다 (`carried?` 와 같은 방식).
+
+**화면 쪽은 준비돼 있다** — `MARK_SPOTS`(`RevivePhase.ts`) 의 `part` 문자열과 손상 판정만
+그 표로 갈아끼우면 끝난다. 부위가 3개든 6개든 자리만 늘리면 된다.
+**내가 하지 않은 이유**: `src/core/types.ts` 는 계약 파일이고, 부위 손상은 검시 규칙이다.
+
+**상태**: [ ] 미처리

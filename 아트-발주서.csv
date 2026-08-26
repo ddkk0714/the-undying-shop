@@ -263,6 +263,8 @@
 4,UI · 기타,ui/newspaper_day2.png,1072×1058,1:1,Day 2 end-of-day newspaper,도착,ui.newspaper.day2
 4,UI · 기타,ui/newspaper_day3.png,1072×1058,1:1,Day 3 end-of-day newspaper,도착,ui.newspaper.day3
 4,UI · 기타,ui/newspaper_day4.png,1072×1058,1:1,Day 4 end-of-day newspaper,도착,ui.newspaper.day4
+4,UI · 기타,ui/revive_mark_wound.png,75×79,1:1,소생실 부위 마크 — 손상 부위에 덮어씌우는 상처 표시,도착,ui.revive.mark.wound
+4,UI · 기타,ui/revive_mark.png,532×226,1:1,소생실 부위 마크 — 마크+연결선+빈 라벨 박스 (부위명은 코드가 넣는다),도착,ui.revive.mark
 4,UI · 기타,ui/revive_record.png,740×1226,1:1,소생실 사망 기록 서류 — 책상 위 축소본과 확대 리더가 같은 그림을 쓴다,도착,ui.revive.record
 4,UI · 기타,ui/seal.png,768×192,192×192 프레임 1칸 (1:1),봉랍 도장 4프레임,대기,ui.seal
 4,UI · 기타,ui/shelf_arrow.png,154×161,정확히 1/2 (77x80),진열대 지시 화살표 — 고른 장비를 놓을 칸 위에 뜬다,도착,ui.shelf.arrow

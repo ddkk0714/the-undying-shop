@@ -4,6 +4,8 @@ import { content } from '../../core/content';
 import { reviveDaysHeld, reviveQuote } from '../../core/systems/economy';
 import { pickDialogue, totalRevivals } from '../../core/systems/dialogue';
 import { key, starArt } from '../../render/assets';
+import { FONT } from '../../render/font';
+import { css } from '../../render/palette';
 import { L, actionX, ACTION_W } from '../../ui/layout';
 import { Button } from '../../ui/Button';
 import { Dialogue } from '../../ui/Dialogue';
@@ -31,6 +33,41 @@ const CARRIED_COLUMNS = 3;
 /** 사망 기록 서류(`ui.revive.record`) 원본 크기 — at() 좌표계의 기준이다 */
 const RECORD_NATIVE = { w: 740, h: 1226 };
 
+/* ── 시체 부위 마크 (`ui.revive.mark`) ─────────────────────────
+ *
+ * 받은 원본은 「마크 애니메이션.gif」 28프레임이다. 스프라이트시트로 구우면
+ * 532×226 × 28 = 14,896px 짜리 텍스처가 되므로 그렇게 하지 않았다.
+ * GIF 를 뜯어 보니 **매 프레임이 왼쪽부터 오른쪽으로 단조 증가**하는
+ * 순수한 가로 와이프였다 — 그래서 **마지막 프레임 한 장만** 굽고,
+ * 아래 표대로 `setCrop` 으로 드러내면 원본과 같은 박자가 나온다.
+ * 표의 값은 프레임별로 실제로 그려진 폭을 GIF 에서 그대로 뽑은 것이다.
+ */
+const MARK_NATIVE = { w: 532, h: 226 };
+const MARK_REVEAL = [
+  76, 106, 146, 185, 206, 225, 252, 272, 290, 295, 313, 319, 337, 362,
+  374, 388, 407, 414, 433, 446, 459, 476, 490, 501, 507, 518, 528, 532,
+];
+/** 프레임 간격 — 28프레임 × 46ms ≈ 1.3초. 한 번만 재생하고 마지막에 멈춘다 */
+const MARK_FRAME_MS = 46;
+/** 마크 사각형(=부위를 가리키는 점)의 자리와 중심. 이 중심이 시체의 부위 위에 온다 */
+const MARK_SQUARE = { x: 0, y: 146, w: 76, h: 80 };
+const MARK_ANCHOR = { x: 38, y: 186 };
+/** 라벨 박스 내부 — 부위명은 GIF 에 없다(빈 박스로 끝난다). 여기에 글자를 넣는다 */
+const MARK_LABEL_BOX = { x: 295, y: 0, w: 237, h: 80 };
+
+/**
+ * 작업대 위에서 부위를 가리키는 자리. `L.bench` 기준 **비율**이다 —
+ * 다섯 명의 시체 그림이 저마다 자세가 달라 픽셀로 박으면 한 명에게만 맞는다.
+ *
+ * ⚠️ 어느 부위가 **손상됐는지**는 아직 core 에 없다 (`Corpse.grade` 는 몸 전체를
+ *    INTACT/DAMAGED 로만 나눈다). 그래서 지금은 훼손된 몸이면 두 부위 모두에
+ *    상처를 얹는다. 부위별 상태가 생기면 그대로 갈아끼우면 된다 → HO-029
+ */
+const MARK_SPOTS = [
+  { part: 'CHEST', fx: 0.40, fy: 0.50 },
+  { part: 'LEFT LEG', fx: 0.50, fy: 0.78 },
+] as const;
+
 export class RevivePhase extends PhaseScene {
   private index = 0;
   /** 도장이 찍히는 동안 다시 누르지 못하게 */
@@ -53,6 +90,15 @@ export class RevivePhase extends PhaseScene {
   /** 편성실 인벤토리와 같은 호버 상세 정보 패널 */
   private warehouseItemDetail: Phaser.GameObjects.GameObject[] = [];
 
+  /**
+   * 부위 마크 — 지금 보고 있는 시체가 바뀔 때만 처음부터 다시 그려진다.
+   * `markKey` 가 그 판별자다 (같은 사람이라도 죽은 날·층이 다르면 다른 시체다).
+   */
+  private markKey: string | null = null;
+  private markAt = 0;
+  /** build() 가 매번 다시 채운다. update() 가 프레임을 밀어 준다 */
+  private marks: { img: Phaser.GameObjects.Image; label: Phaser.GameObjects.Text; wound: Phaser.GameObjects.Image | null }[] = [];
+
   constructor() {
     super(SCENES.PHASE_REVIVE);
   }
@@ -73,6 +119,9 @@ export class RevivePhase extends PhaseScene {
     this.warehouseOpen = false;
     this.selectedCarriedItemId = null;
     this.warehouseItemDetail = [];
+    this.markKey = null;
+    this.markAt = 0;
+    this.marks = [];
     super.create();
     // 소생실은 편성실과 다른 곡을 쓴다 (사운드V4 · 소생실메인브금).
     //
@@ -91,6 +140,15 @@ export class RevivePhase extends PhaseScene {
     // 전투 화면이 먼저 같은 이유로 옮겨 갔다 (`ui/Tooltip.ts`).
     // redraw 로 지워지지 않게 keepAlive 로 붙든다.
     this.keepAlive(...createTooltip(this).objects());
+  }
+
+  /**
+   * 부위 마크는 상태가 바뀌지 않아도 계속 진행돼야 한다 — `PhaseScene.update()` 는
+   * `dirty` 일 때만 다시 그리므로, 프레임 진행은 여기서 직접 민다.
+   */
+  override update(): void {
+    super.update();
+    this.stepPartMarks(this.time.now);
   }
 
   protected build(s: Readonly<GameState>): void {
@@ -183,8 +241,77 @@ export class RevivePhase extends PhaseScene {
     this.spriteCover(b, [...(corpseArt === null ? [] : [corpseArt]), 'bg.revive.bench', 'bg.shop.bench']);
     // 소생실에서는 작업대에 장부와 도장만 올려 둔다 (진열은 편성실 몫)
     this.frame(b.x, b.y, b.w, b.h, 'dust');
+    this.buildPartMarks(corpse);
     // 사망 위치·시체 상태·부활 횟수·소생 비용은 전부 좌측의 사망 기록 서류로 옮겼다
     // (사용자 확정) — 작업대는 몸 그림만 남기고 글자를 지운다.
+  }
+
+  /**
+   * 시체 위에 부위 마크를 얹는다 — 마크가 찍히고 선이 뻗어 라벨 박스가 그려진 뒤,
+   * **마지막에** 부위명이 들어온다. 한 번만 재생하고 그 상태로 멈춘다 (반복 없음).
+   *
+   * 오브젝트는 `keepAlive` 하지 않는다. 창고를 여닫을 때마다 redraw 가 도는데
+   * 살려 두면 그 위에 겹쳐 쌓인다. 대신 **시작 시각(`markAt`)만** 들고 있어서,
+   * 다시 그려져도 애니메이션이 처음으로 되감기지 않는다.
+   */
+  private buildPartMarks(corpse: Corpse | undefined): void {
+    this.marks = [];
+    if (corpse === undefined || !this.hasArt('ui.revive.mark')) return;
+
+    // 같은 사람이라도 죽은 날·층이 다르면 다른 시체다 — 그때는 처음부터 다시 그린다
+    const nextKey = `${corpse.starId}:${corpse.diedDay}:${corpse.diedFloor}`;
+    if (this.markKey !== nextKey) {
+      this.markKey = nextKey;
+      this.markAt = this.time.now;
+    }
+
+    const b = L.bench;
+    const damaged = corpse.grade === 'DAMAGED';
+    for (const spot of MARK_SPOTS) {
+      // 마크 사각형의 중심이 부위 위에 오도록 이미지를 끌어다 놓는다
+      const ox = Math.round(b.x + b.w * spot.fx - MARK_ANCHOR.x);
+      const oy = Math.round(b.y + b.h * spot.fy - MARK_ANCHOR.y);
+
+      const img = this.add.image(ox, oy, key('ui.revive.mark')).setOrigin(0, 0);
+      const label = this.add
+        .text(
+          ox + MARK_LABEL_BOX.x + Math.round(MARK_LABEL_BOX.w / 2),
+          oy + MARK_LABEL_BOX.y + Math.round(MARK_LABEL_BOX.h / 2),
+          spot.part,
+          { ...FONT, color: css('bone'), fontSize: '30px' },
+        )
+        .setOrigin(0.5);
+
+      // 상처는 마크 사각형 자리에 그대로 덮는다 (75x79 원본이 76x80 마크 칸에 들어맞는다)
+      const wound = damaged && this.hasArt('ui.revive.mark.wound')
+        ? this.add.image(ox + MARK_SQUARE.x, oy + MARK_SQUARE.y, key('ui.revive.mark.wound')).setOrigin(0, 0)
+        : null;
+
+      this.marks.push({ img, label, wound });
+    }
+    this.stepPartMarks(this.time.now);
+  }
+
+  /**
+   * 마크 한 프레임을 밀어 준다. `MARK_REVEAL` 표의 폭까지만 잘라 보여 주는 것이
+   * 곧 원본 GIF 의 한 프레임이다. 표 끝에 닿으면 거기서 멈춘다 — 되감지 않는다.
+   */
+  private stepPartMarks(now: number): void {
+    if (this.marks.length === 0) return;
+    const last = MARK_REVEAL.length - 1;
+    // 연출 감소면 완성형으로 바로 보여 준다 (04-UI-KIT — 움직임만 걷어내고 정보는 남긴다)
+    const frame = reducedMotion(this.registry)
+      ? last
+      : Math.min(last, Math.floor((now - this.markAt) / MARK_FRAME_MS));
+    const shown = MARK_REVEAL[frame] ?? MARK_NATIVE.w;
+    const done = frame >= last;
+
+    for (const m of this.marks) {
+      m.img.setCrop(0, 0, shown, MARK_NATIVE.h);
+      // 부위명과 상처는 **다 그려진 뒤에** 들어온다 (사용자 확정)
+      m.label.setVisible(done);
+      m.wound?.setVisible(done);
+    }
   }
 
   /* ── 좌 · 사망 기록 서류 ──────────────────────────────── */
