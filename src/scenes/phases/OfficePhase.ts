@@ -5,6 +5,7 @@ import { pickDialogue, totalRevivals } from '../../core/systems/dialogue';
 import { saleHaggleCount, saleOfferTried, salePriceMultiplier, salePurchaseChance, saleSlotSold } from '../../core/systems/office';
 import { key, starArt, starExpression } from '../../render/assets';
 import { PALETTE } from '../../render/palette';
+import { mouthKey, mouthSpot } from '../../render/mouth';
 import { starVoice } from '../../audio/Voice';
 import { L, actionX, ACTION_W } from '../../ui/layout';
 import { Button } from '../../ui/Button';
@@ -51,6 +52,8 @@ export class OfficePhase extends PhaseScene {
   private draggingInventoryItem = false;
   /** 작업대에 놓인 계약서 축소본을 왼쪽 클릭하면, 같은 종이를 읽기 크기로 펼친다. */
   private contractReaderOpen = false;
+  /** 하단 계약 버튼의 첫 클릭은 서류 확인만 열고, 두 번째 클릭에서만 수락한다. */
+  private contractConfirmationOpen = false;
   /** 첫날에는 배경의 문을 직접 열기 전까지 손님을 맞지 않는다. */
   private shopOpened = false;
   /** 첫 영업의 빈 편성실에서 문을 열 때까지 반복되는 노크 */
@@ -78,6 +81,7 @@ export class OfficePhase extends PhaseScene {
     this.itemDetail = [];
     this.draggingInventoryItem = false;
     this.contractReaderOpen = false;
+    this.contractConfirmationOpen = false;
     this.shopOpened = false;
     this.officeKnockTimer = null;
     this.guestTouchCount = 0;
@@ -246,6 +250,11 @@ export class OfficePhase extends PhaseScene {
         this.redraw();
       });
     }
+    // 말하는 동안 입을 얹는다 (사용자 확정). 표정 스프라이트를 칸에 맞춰 늘려 놓았으므로
+    // 입도 같은 배율로 옮긴다 — `render/mouth.ts` 의 표는 원본 752x792 좌표계다.
+    // 다시 그리지 않고 **보였다 감추는 것만** 한다. 여기서 redraw 를 부르면
+    // 새 `Dialogue` 가 만들어지고 그게 또 끝나면서 무한히 돈다
+    const mouth = this.buildGuestMouth(bodyGeometry, star?.id, speech.expressionAsset);
     new Dialogue(this, {
       x: coverX + L.pad,
       y: coverY + 52,
@@ -254,7 +263,43 @@ export class OfficePhase extends PhaseScene {
       scale: 0.78,
       effects: speech.effects,
       voice: starVoice(star?.id),
+      onComplete: () => mouth?.setVisible(false),
     });
+  }
+
+  /**
+   * 손님 전신 위에 얹는 **말하는 입**.
+   *
+   * 몸은 `star.body.*` 를 칸에 맞춰 늘려 놓고 표정이 오면 텍스처만 갈아 끼운다.
+   * 그래서 화면 기하는 `bodyGeometry` 하나로 고정돼 있고, 입도 그 배율로 옮기면 맞는다.
+   * **표정 스프라이트를 쓰고 있을 때만** 얹는다 — 기본 전신 그림은 좌표계가 다르다.
+   */
+  /** 이 에셋 키의 텍스처 원본 크기 — 없으면 null */
+  private textureSize(assetKey: string): { width: number; height: number } | null {
+    if (!this.hasArt(assetKey)) return null;
+    const src = this.textures.get(key(assetKey)).getSourceImage() as { width: number; height: number };
+    return { width: src.width, height: src.height };
+  }
+
+  private buildGuestMouth(
+    geometry: { x: number; y: number; w: number; h: number } | null,
+    starId: string | undefined,
+    expressionAsset: string | undefined,
+  ): Phaser.GameObjects.Image | null {
+    const spot = mouthSpot(starId);
+    if (geometry === null || spot === null || starId === undefined || expressionAsset === undefined) return null;
+    const src = this.textureSize(expressionAsset);
+    if (src === null) return null;
+    const sx = geometry.w / src.width;
+    const sy = geometry.h / src.height;
+    const img = this.spriteObject(
+      geometry.x + spot.x * sx,
+      geometry.y + spot.y * sy,
+      mouthKey(starId),
+      Math.round(spot.w * sx),
+      Math.round(spot.h * sy),
+    );
+    return img;
   }
 
   /* ── 우 · 작업대 배경 ─────────────────────────────────── */
@@ -303,9 +348,17 @@ export class OfficePhase extends PhaseScene {
       page.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
         if (!pointer.leftButtonDown()) return;
         this.contractReaderOpen = false;
+        this.contractConfirmationOpen = false;
         this.redraw();
       });
     });
+
+    if (this.contractConfirmationOpen) {
+      this.title(paper.x + paper.w / 2, paper.y + 52, '정말 계약하시겠습니까?', 'wax')
+        .setOrigin(0.5, 0)
+        .setScale(1.18)
+        .setDepth(paperDepth + 3);
+    }
 
     // 상단 개인정보 칸
     // 초상칸 오른쪽의 기입선에 맞춘 개인정보 블록.
@@ -431,6 +484,7 @@ export class OfficePhase extends PhaseScene {
       if (!pointer.leftButtonDown()) return;
       this.contractIndex = index;
       this.contractReaderOpen = true;
+      this.contractConfirmationOpen = false;
       this.redraw();
     });
   }
@@ -750,9 +804,18 @@ export class OfficePhase extends PhaseScene {
         onClick: () => {
           if (waiting === undefined) return;
           this.contractReaderOpen = false;
+          this.contractConfirmationOpen = false;
           this.store.dispatch({ type: 'OFFICE/CONTRACT_REJECT', starId: waiting.starId });
         },
       });
+      if (s.today !== null) {
+        actionButton(3, {
+          label: '방송', hotkey: '4', variant: 'danger',
+          tip: '계약한 출연자와 함께 오늘의 방송을 시작합니다.',
+          onClick: () => this.store.dispatch({ type: 'OFFICE/CONFIRM' }),
+        });
+        return;
+      }
       const canAccept = waiting !== undefined && s.gold >= waiting.fee;
       actionButton(3, {
         label: '계약', hotkey: '4',
@@ -760,11 +823,20 @@ export class OfficePhase extends PhaseScene {
         tip: waiting === undefined
           ? '계약할 지원자가 없습니다.'
           : canAccept
-            ? `${waiting.fee.toLocaleString('en-US')} G를 지불하고 계약한 뒤 방송을 시작합니다.`
+            ? this.contractConfirmationOpen
+              ? `${waiting.fee.toLocaleString('en-US')} G를 지불하고 계약을 확정합니다. 한 번 더 누르세요.`
+              : '계약서를 펼쳐 최종 계약 여부를 확인합니다.'
             : `계약금 ${waiting.fee.toLocaleString('en-US')} G가 필요합니다.`,
         onClick: () => {
           if (waiting === undefined) return;
+          if (!this.contractConfirmationOpen) {
+            this.contractReaderOpen = true;
+            this.contractConfirmationOpen = true;
+            this.redraw();
+            return;
+          }
           this.contractReaderOpen = false;
+          this.contractConfirmationOpen = false;
           this.store.dispatch({ type: 'OFFICE/CONTRACT_ACCEPT', starId: waiting.starId });
         },
       });
@@ -948,6 +1020,7 @@ export class OfficePhase extends PhaseScene {
     this.selectedItemId = null;
     this.inventoryScrollRow = 0;
     this.contractReaderOpen = false;
+    this.contractConfirmationOpen = false;
     this.redraw();
   }
 }

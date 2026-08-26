@@ -208,6 +208,8 @@ export class LivePhase extends PhaseScene {
   private radioFace: string | null = null;
   /** 흉상이 스프라이트를 어디에 놓았는지 — 입을 같은 좌표계로 얹기 위해 기억한다 */
   private bustOrigin: { x: number; y: number; cx: number; cy: number; cw: number; ch: number } | null = null;
+  /** 이 배우의 입이 스프라이트 어디까지 내려오는가 — 흉상 crop 이 이걸 보고 창을 내린다 */
+  private mouthBottom: number | null = null;
 
   /** 프레임마다 손보는 오브젝트 — build() 가 매번 다시 채운다 */
   private blinkers: (Phaser.GameObjects.Rectangle | Phaser.GameObjects.Image)[] = [];
@@ -948,6 +950,8 @@ export class LivePhase extends PhaseScene {
       art.portrait,
     ];
     this.bustOrigin = null;
+    const spot = mouthSpot(star.id);
+    this.mouthBottom = spot === null ? null : spot.y + spot.h;
     if (!this.bust(v, keys)) this.dither(v.x, v.y, v.w, v.h, 'mid', ratio < 0.15 ? 12 : 8);
     // 대사가 나오는 **동안에만** 입을 얹는다. 다 나오면 표정 스프라이트만 남는다
     if (!this.radioDone) this.buildMouth(v, star.id);
@@ -1092,7 +1096,11 @@ export class LivePhase extends PhaseScene {
     const cw = Math.min(src.width, v.w);
     const ch = Math.min(src.height, v.h);
     const cx = Math.round((src.width - cw) / 2);
-    const cy = Math.min(24, Math.max(0, src.height - ch));
+    // 머리 위 여백 24px 을 버리는 게 기본이다. 다만 **입이 창 밖으로 나가면 안 된다** —
+    // 말할 때 입 그림이 아래 변에서 잘려 네모난 조각으로 보였다 (실측).
+    // 입 아래로 8px 이 남도록 위쪽을 더 버린다
+    const need = this.mouthBottom === null ? 0 : this.mouthBottom + 8 - ch;
+    const cy = Math.max(0, Math.min(Math.max(24, need), src.height - ch));
     img.setPosition(v.x - cx, v.y - cy).setCrop(cx, cy, cw, ch);
     // 입을 얹을 때 쓸 변환 — 스프라이트 좌표 (sx, sy) 는 화면 (v.x - cx + sx, v.y - cy + sy)
     this.bustOrigin = { x: v.x - cx, y: v.y - cy, cx, cy, cw, ch };
