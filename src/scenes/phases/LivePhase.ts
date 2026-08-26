@@ -3,8 +3,8 @@ import { SCENES } from '../../config';
 import { content } from '../../core/content';
 import { dialogueCandidates, interpolateDialogue, pickDialogue, totalRevivals } from '../../core/systems/dialogue';
 import { PALETTE } from '../../render/palette';
-// `starExpression` 은 표정 연결을 되살릴 때 함께 푼다 (아래 `keys` 주석 참조)
-import { starArt, key, slice } from '../../render/assets';
+import { starArt, starExpression, key, slice } from '../../render/assets';
+import { bustFrame } from '../../render/bustframe';
 import { L } from '../../ui/layout';
 import { Button } from '../../ui/Button';
 import { Dialogue } from '../../ui/Dialogue';
@@ -209,8 +209,8 @@ export class LivePhase extends PhaseScene {
   /** 지금 줄이 끝까지 나왔는가. 끝나기 전에는 다음 줄을 받지 않는다 */
   private radioDone = true;
   /** 이 줄에 붙은 표정. 줄이 떠 있는 동안 초상이 이걸 쓴다 */
-  // 표정 연결 — 잠시 내림. 되살릴 때 함께 푼다
-  // private radioFace: string | null = null;
+  /** 이 줄에 붙은 표정. 줄이 떠 있는 동안 초상이 이걸 쓴다 */
+  private radioFace: string | null = null;
   /** 흉상이 스프라이트를 어디에 놓았는지 — 입을 같은 좌표계로 얹기 위해 기억한다 */
   // 입 연출 — 폐지. 되살릴 때 함께 푼다
   // private bustOrigin: { x: number; y: number; cx: number; cy: number; cw: number; ch: number } | null = null;
@@ -253,7 +253,7 @@ export class LivePhase extends PhaseScene {
     this.radioObj = null;
     this.radioAt = 0;
     this.radioDone = true;
-    // this.radioFace = null;
+    this.radioFace = null;
     this.fanDropUntil = 0;
 
     this.chat = new Ticker(this, { x: L.live.chat.x + L.pad, y: L.live.chat.y + 58, w: L.live.chat.w - L.pad * 2, h: L.live.chat.h - 80 },
@@ -765,7 +765,7 @@ export class LivePhase extends PhaseScene {
 
     this.clearRadio();
     this.radioText = spoken.text;
-    // this.radioFace = spoken.expression;
+    this.radioFace = spoken.expression;
     this.radioAt = now;
     this.radioDone = false;
 
@@ -945,31 +945,26 @@ export class LivePhase extends PhaseScene {
     this.rect(v.x, v.y, v.w, v.h, 'ink');
     this.screenBackdrop(v, zoneScreen(s));
     /**
-     * **초상 판형(384x480)만 쓴다** (사용자 확정 — 「전투시 스프라이트도 원래대로」).
+     * 표정 → 어필 컷 → 기본 초상 순으로 **있는 것을 쓴다.**
      *
-     * `bust()` 의 잘라내기는 384x480 흉상 그림에 맞춰 짜여 있다 (가운데 256x248 을
-     * 머리 위 24px 만 버리고 뽑는다). 표정 스프라이트는 **752x792 전신**이라 같은 식으로
-     * 자르면 위쪽 한 조각만 뽑혀 턱이 잘린다 — 그게 「crop 이 안 맞는다」의 정체였다.
+     * 표정 스프라이트는 752x792 전신이라 초상 판형(384x480)과 다르다.
+     * `bust()` 가 판형을 보고 잘라내기를 바꾼다 (`render/bustframe.ts`) —
+     * 전신이면 얼굴 상자를 1/2 로, 초상이면 예전처럼 1:1 로.
      *
-     * 그래서 표정 교체는 잠시 내린다. 되살리려면 전신을 얼굴 기준으로 다시 잡는
-     * 계산이 필요하다 (얼굴 상자를 캐릭터마다 재야 한다).
+     * 무전 줄이 떠 있는 동안에는 **그 줄에 붙은 표정**이 이긴다 (사용자 확정).
+     * 체력에서 뽑은 표정은 줄이 없을 때의 기본값으로 남는다.
      */
     const keys = [
+      ...(this.radioFace === null ? [] : [starExpression(star.id, this.radioFace)]),
+      starExpression(star.id, mood.face),
       ...(appealing ? [art.appeal] : []),
       art.portrait,
     ];
-    // 표정 연결 — 잠시 내림. 되살리려면 위 `keys` 를 이걸로 바꾼다
-    // const keys = [
-    //   ...(this.radioFace === null ? [] : [starExpression(star.id, this.radioFace)]),
-    //   starExpression(star.id, mood.face),
-    //   ...(appealing ? [art.appeal] : []),
-    //   art.portrait,
-    // ];
     // 입 연출 — 폐지
     // this.bustOrigin = null;
     // const spot = mouthSpot(star.id);
     // this.mouthBottom = spot === null ? null : spot.y + spot.h;
-    if (!this.bust(v, keys)) this.dither(v.x, v.y, v.w, v.h, 'mid', ratio < 0.15 ? 12 : 8);
+    if (!this.bust(v, keys, star.id)) this.dither(v.x, v.y, v.w, v.h, 'mid', ratio < 0.15 ? 12 : 8);
     // 입 연출 — 폐지. 대사가 나오는 동안에만 입을 얹던 자리
     // if (!this.radioDone) this.buildMouth(v, star.id);
     this.frame(v.x, v.y, v.w, v.h, appealing ? 'wax' : 'bone');
@@ -1090,6 +1085,7 @@ export class LivePhase extends PhaseScene {
     const img = this.spriteObject(v.x, v.y, key);
     if (img === null) return;
     const src = img.texture.getSourceImage() as { width: number; height: number };
+
     const cw = Math.min(src.width, v.w);
     const ch = Math.min(src.height, v.h);
     const cx = Math.round((src.width - cw) / 2);
@@ -1104,12 +1100,24 @@ export class LivePhase extends PhaseScene {
    * 도트가 지글거린다. 머리 위 여백 24px 을 버리고 가슴까지 `v.h` 만큼만 보인다.
    * 전투 중 표정이 바뀌어도 같은 crop 이 그대로 적용된다.
    */
-  private bust(v: { x: number; y: number; w: number; h: number }, keys: string[]): boolean {
+  private bust(v: { x: number; y: number; w: number; h: number }, keys: string[], starId = ''): boolean {
     const img = keys.reduce<Phaser.GameObjects.Image | null>(
       (hit, k) => hit ?? this.spriteObject(v.x, v.y, k), null,
     );
     if (img === null) return false;
     const src = img.texture.getSourceImage() as { width: number; height: number };
+
+    // 전신 표정 스프라이트(752x792)면 **얼굴 상자를 뽑아 정확히 1/2 로** 줄인다.
+    // 초상 판형(384x480)이면 아래 예전 방식(1:1 잘라내기)으로 내려간다
+    const face = bustFrame(starId, src.width, src.height);
+    if (face !== null) {
+      const scale = v.w / face.w;                     // 256 / 512 = 0.5
+      img.setScale(scale)
+        .setPosition(Math.round(v.x - face.x * scale), Math.round(v.y - face.y * scale))
+        .setCrop(face.x, face.y, face.w, face.h);
+      return true;
+    }
+
     const cw = Math.min(src.width, v.w);
     const ch = Math.min(src.height, v.h);
     const cx = Math.round((src.width - cw) / 2);
